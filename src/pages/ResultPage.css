@@ -1,0 +1,350 @@
+/* Result Page - Dark Theme with Video Background */
+
+.result-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  background: #000;
+}
+
+.result-page .background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.result-page .overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1;
+}
+
+.result-wrapper {
+  position: relative;
+  z-index: 2;
+  max-width: 480px;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+}
+
+/* Header */
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.result-header .back-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.result-header .back-btn:hover {
+  opacity: 0.7;
+}
+
+.result-header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Main Content */
+.result-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* User Info Card */
+.user-info-card {
+  text-align: center;
+  padding: 24px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 16px;
+}
+
+.user-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.sparkle-icon {
+  color: #d4af37;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.user-details .divider {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Saju Table Card */
+.saju-table-card {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.saju-table {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 60px repeat(4, 1fr);
+}
+
+.table-header {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.table-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cell {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.cell.header {
+  font-weight: 600;
+  color: #d4af37;
+  font-size: 0.85rem;
+}
+
+.cell.label {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
+
+.cell.value {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cell.value.highlight {
+  color: #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+/* Zodiac Display */
+.zodiac-display {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.zodiac-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zodiac-item.highlight {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.15);
+}
+
+.zodiac-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+
+.zodiac-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.zodiac-item.highlight .zodiac-value {
+  color: #d4af37;
+}
+
+/* Ilgan Card */
+.ilgan-card {
+  padding: 20px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+}
+
+.ilgan-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin: 0 0 12px;
+}
+
+.ilgan-card p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Info Card */
+.info-card {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.info-card p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Footer */
+.result-footer {
+  padding: 20px 24px 40px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.full-report-btn {
+  width: 100%;
+  padding: 18px 32px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.full-report-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+}
+
+.home-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.home-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Loading State */
+.loading-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .result-content {
+    padding: 16px;
+  }
+
+  .zodiac-display {
+    gap: 8px;
+  }
+
+  .zodiac-item {
+    padding: 10px 12px;
+  }
+
+  .zodiac-value {
+    font-size: 1.1rem;
+  }
+
+  .cell {
+    padding: 12px 4px;
+    font-size: 0.85rem;
+  }
+}

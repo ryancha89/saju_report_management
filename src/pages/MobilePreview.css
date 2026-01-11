@@ -1,0 +1,631 @@
+/* Mobile Preview Page - Dark Theme with White Margins */
+.mobile-preview-page {
+  min-height: 100vh;
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+}
+
+.preview-wrapper {
+  max-width: 480px;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+  color: #e8e8e8;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.preview-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 24px 24px 20px;
+  background: rgba(15, 15, 26, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  text-align: center;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.preview-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* PDF 다운로드 버튼 */
+.pdf-download-btn {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 10px;
+  color: #d4af37;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pdf-download-btn:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: #d4af37;
+  transform: scale(1.05);
+}
+
+.pdf-download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pdf-download-btn .spinning {
+  animation: spin 1s linear infinite;
+}
+
+.user-info {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 8px;
+  display: block;
+}
+
+/* Main Content */
+.preview-content {
+  flex: 1;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 24px 100px;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 100vh;
+  color: #d4af37;
+}
+
+.loading-container .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Error */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 100vh;
+  color: #ff6b6b;
+  text-align: center;
+  padding: 24px;
+}
+
+.error-container button {
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid #d4af37;
+  border-radius: 8px;
+  color: #d4af37;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.error-container button:hover {
+  background: rgba(212, 175, 55, 0.3);
+}
+
+/* Saju Info Section */
+.saju-info-section {
+  margin-bottom: 40px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.saju-pillars {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pillar-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.pillar-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pillar-value.highlight {
+  color: #d4af37;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+}
+
+/* Section Title */
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.main-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 32px 0 24px;
+  text-align: center;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Chapter Subtitle */
+.chapter-subtitle {
+  text-align: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(212, 175, 55, 0.08);
+  border-radius: 12px;
+}
+
+.chapter-subtitle p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Basis Section */
+.basis-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: rgba(212, 175, 55, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.basis-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.basis-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.basis-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+
+.basis-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.basis-value.highlight {
+  color: #d4af37;
+}
+
+.basis-description {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Report Section */
+.report-section {
+  margin-bottom: 32px;
+  padding: 28px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.report-section:first-of-type {
+  margin-top: 8px;
+}
+
+.content-text {
+  font-size: 1rem;
+  line-height: 1.9;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.content-text p {
+  margin: 0 0 20px;
+  text-align: justify;
+  word-break: keep-all;
+}
+
+.content-text p:last-child {
+  margin-bottom: 0;
+}
+
+.content-text .highlight,
+.content-text strong {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.content-text em {
+  color: rgba(255, 255, 255, 0.95);
+  font-style: italic;
+}
+
+/* 콘텐츠 내 헤더 스타일 */
+.content-text .content-h1,
+.content-text h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 40px 0 24px;
+  padding: 16px 0;
+  text-align: center;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.content-text .content-h2,
+.content-text h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #d4af37;
+  margin: 36px 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.content-text .content-h3,
+.content-text h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f4d03f;
+  margin: 32px 0 16px;
+  padding-left: 12px;
+  border-left: 3px solid #d4af37;
+}
+
+.content-text .content-h3:first-child,
+.content-text h3:first-child {
+  margin-top: 0;
+}
+
+/* 리스트 스타일 */
+.content-text ul,
+.content-text ol {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.content-text li {
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+
+/* 인용 스타일 */
+.content-text blockquote {
+  margin: 20px 0;
+  padding: 16px 20px;
+  background: rgba(212, 175, 55, 0.08);
+  border-left: 3px solid #d4af37;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Original Section */
+.original-section {
+  margin-top: 40px;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Decade Flow Section (챕터3) */
+.decade-flow-section {
+  margin-top: 32px;
+}
+
+.decade-flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.decade-item {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.decade-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.decade-age {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.decade-pillar {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.decade-description {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* No Content */
+.no-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+}
+
+.no-content p {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.no-content .sub-text {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 8px;
+}
+
+/* Footer */
+.preview-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 16px 24px;
+  background: rgba(15, 15, 26, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.chapter-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.chapter-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.chapter-link.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 208, 63, 0.2) 100%);
+  border-color: #d4af37;
+  color: #d4af37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .preview-content {
+    padding: 24px 16px 100px;
+  }
+
+  .preview-header {
+    padding: 16px;
+  }
+
+  .header-content h1 {
+    font-size: 1.1rem;
+  }
+
+  .saju-pillars {
+    gap: 8px;
+  }
+
+  .pillar {
+    padding: 12px 14px;
+  }
+
+  .pillar-value {
+    font-size: 1.25rem;
+  }
+
+  .report-section,
+  .basis-section,
+  .saju-info-section {
+    padding: 20px 16px;
+  }
+
+  .chapter-nav {
+    gap: 8px;
+  }
+
+  .chapter-link {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Scrollbar */
+.mobile-preview-page::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobile-preview-page::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-preview-page::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 3px;
+}
+
+.mobile-preview-page::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.5);
+}
+
+/* PDF 출력용 스타일 */
+@media print {
+  .mobile-preview-page {
+    background: #0f0f1a !important;
+  }
+
+  .preview-wrapper {
+    max-width: 100%;
+    box-shadow: none;
+  }
+
+  .preview-header,
+  .preview-footer {
+    position: static;
+  }
+
+  .pdf-download-btn,
+  .chapter-nav {
+    display: none !important;
+  }
+
+  .preview-content {
+    padding-bottom: 32px;
+  }
+
+  .content-h3,
+  .content-h2,
+  .content-h1,
+  .section-title {
+    page-break-after: avoid;
+  }
+
+  .report-section,
+  .basis-section,
+  .decade-item,
+  .saju-info-section,
+  .chapter-subtitle,
+  .basis-item {
+    page-break-inside: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* PDF 다운로드시 적용되는 스타일 */
+.content-text p,
+.content-text h1,
+.content-text h2,
+.content-text h3 {
+  page-break-inside: avoid;
+  orphans: 3;
+  widows: 3;
+}
+
+.content-text h1,
+.content-text h2,
+.content-text h3 {
+  page-break-after: avoid;
+}

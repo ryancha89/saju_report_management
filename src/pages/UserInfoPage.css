@@ -1,0 +1,586 @@
+/* User Info Page - Dark Theme with Video Background */
+
+.user-info-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  background: #ffffff;
+}
+
+.user-info-wrapper .background-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.user-info-wrapper .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+.user-info-wrapper {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Header */
+.user-info-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.back-btn:hover {
+  opacity: 0.7;
+}
+
+.step-indicator {
+  display: flex;
+  gap: 8px;
+}
+
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.step-dot.active {
+  width: 24px;
+  border-radius: 4px;
+  background: #d4af37;
+}
+
+.step-dot.completed {
+  background: rgba(212, 175, 55, 0.6);
+}
+
+/* Main Content */
+.user-info-content {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 24px;
+}
+
+.step-label {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 32px;
+  text-align: left;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Input Groups */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
+.text-input,
+.date-input,
+.time-input {
+  width: 100%;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 1.15rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.text-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.text-input:focus,
+.date-input:focus,
+.time-input:focus {
+  border-color: #d4af37;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.date-input::-webkit-calendar-picker-indicator,
+.time-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* Birthdate Input Row */
+.birthdate-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.birthdate-input-row .text-input {
+  flex: 1;
+}
+
+/* Calendar Type Buttons */
+.calendar-type-group {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-btn {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.calendar-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.calendar-btn.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+.calendar-btn.leap-btn {
+  padding: 16px 14px;
+  font-size: 0.9rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #d4af37;
+}
+
+/* Time Input Row */
+.time-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.time-text-input {
+  flex: 1;
+  text-align: left;
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+}
+
+.time-unknown-btn {
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.time-unknown-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.time-unknown-btn.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+/* City Input */
+.city-input-group {
+  position: relative;
+}
+
+.city-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 40, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin-top: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.city-option {
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.city-option:last-child {
+  border-bottom: none;
+}
+
+.city-option:hover {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.time-adjustment-info {
+  padding: 12px 16px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #d4af37;
+  text-align: center;
+}
+
+/* Gender Buttons */
+.gender-group {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.gender-btn {
+  flex: 1;
+  max-width: 150px;
+  padding: 20px 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.gender-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.gender-btn.active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  color: #d4af37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+/* Completed Steps - Stacking Effect (bottom to top) */
+.completed-steps {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.completed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: stackIn 0.3s ease-out;
+}
+
+@keyframes stackIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.completed-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.02);
+}
+
+.completed-item .label {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.completed-item .value {
+  font-size: 1.1rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Footer */
+.user-info-footer {
+  position: relative;
+  z-index: 10;
+  padding: 20px 24px 40px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+}
+
+.next-btn {
+  width: 100%;
+  padding: 18px 32px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.next-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+}
+
+.next-btn:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+}
+
+.next-btn .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .user-info-content {
+    padding: 24px 16px;
+  }
+
+  .step-label {
+    font-size: 1.3rem;
+  }
+
+  .birthdate-input-row {
+    flex-wrap: wrap;
+  }
+
+  .birthdate-input-row .text-input {
+    width: 100%;
+    flex: none;
+  }
+
+  .calendar-btn {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  .calendar-btn.leap-btn {
+    padding: 12px 12px;
+    font-size: 0.85rem;
+  }
+
+  .time-input-row {
+    flex-wrap: wrap;
+  }
+
+  .time-text-input {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* Order Complete Screen */
+.order-complete-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.order-complete-icon {
+  color: #4ade80;
+  margin-bottom: 24px;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.order-complete-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease-out 0.2s both;
+}
+
+.order-complete-message {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  margin-bottom: 16px;
+  animation: fadeIn 0.5s ease-out 0.3s both;
+}
+
+.order-complete-wait {
+  font-size: 1rem;
+  color: #d4af37;
+  font-weight: 600;
+  margin-bottom: 32px;
+  animation: fadeIn 0.5s ease-out 0.4s both;
+}
+
+.order-complete-email {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  margin-bottom: 32px;
+  animation: fadeIn 0.5s ease-out 0.5s both;
+}
+
+.order-complete-email span {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.order-complete-email strong {
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.order-complete-home-btn {
+  padding: 16px 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease-out 0.6s both;
+}
+
+.order-complete-home-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}

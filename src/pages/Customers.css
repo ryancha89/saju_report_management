@@ -1,0 +1,17 @@
+.customers {
+  width: 100%;
+}
+
+.placeholder-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 60px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.placeholder-content p {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+}
