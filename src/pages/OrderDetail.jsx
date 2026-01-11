@@ -982,6 +982,13 @@ function OrderDetail() {
   // PDF 다운로드 로딩 상태
   const [pdfLoading, setPdfLoading] = useState({});
 
+  // 저장된 레포트 상태
+  const [savedReport, setSavedReport] = useState(null);
+  const [savedReportLoading, setSavedReportLoading] = useState(false);
+  const [savingReport, setSavingReport] = useState(false);
+  const [generatingChapter, setGeneratingChapter] = useState(null); // 현재 생성 중인 챕터 번호
+  const [sendingReport, setSendingReport] = useState(false); // 레포트 발송 중
+
   // 위치 번역 함수
   const translatePositionForBasis = (position) => {
     const positionMap = {
@@ -1095,6 +1102,13 @@ function OrderDetail() {
   useEffect(() => {
     fetchOrder();
   }, [id]);
+
+  // 주문 로드 후 저장된 레포트 조회
+  useEffect(() => {
+    if (order) {
+      fetchSavedReport();
+    }
+  }, [order?.id]);
 
   const fetchOrder = async () => {
     setLoading(true);
@@ -1536,6 +1550,290 @@ function OrderDetail() {
     setReportChapters(chapters);
     setSelectedChapter(0);
     setShowFullPreview(true);
+
+    // 저장된 레포트가 있는지 확인
+    fetchSavedReport();
+  };
+
+  // 저장된 레포트 조회
+  const fetchSavedReport = async () => {
+    setSavedReportLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/report_output`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.report_output) {
+        setSavedReport(data.report_output);
+
+        // 저장된 데이터로 챕터 상태 복원
+        if (data.report_output.chapter1_content) {
+          setChapter1Data({ content: data.report_output.chapter1_content });
+          setBasis1Data(data.report_output.chapter1_basis);
+        }
+        if (data.report_output.chapter2_content) {
+          setChapter2Data({ content: data.report_output.chapter2_content });
+          setBasis2Data(data.report_output.chapter2_basis);
+        }
+        if (data.report_output.chapter3_content) {
+          setChapter3Data({ content: data.report_output.chapter3_content });
+          setBasis3Data(data.report_output.chapter3_basis);
+        }
+        if (data.report_output.chapter4_content) {
+          setChapter4Data({ content: data.report_output.chapter4_content });
+          setBasis4Data(data.report_output.chapter4_basis);
+        }
+        if (data.report_output.chapter5_content) {
+          setChapter5Data({ content: data.report_output.chapter5_content });
+        }
+      }
+    } catch (err) {
+      console.error('저장된 레포트 조회 실패:', err);
+    } finally {
+      setSavedReportLoading(false);
+    }
+  };
+
+  // 전체 레포트 저장
+  const saveFullReport = async () => {
+    return saveFullReportWithData(chapter1Data, chapter2Data, chapter3Data, chapter4Data, chapter5Data);
+  };
+
+  // 전체 레포트 저장 (데이터 직접 전달)
+  const saveFullReportWithData = async (ch1Data, ch2Data, ch3Data, ch4Data, ch5Data) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_full_report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          chapter1_content: ch1Data?.content,
+          chapter1_basis: basis1Data,
+          chapter2_content: ch2Data?.content,
+          chapter2_basis: basis2Data,
+          chapter3_content: ch3Data?.content,
+          chapter3_basis: basis3Data,
+          chapter4_content: ch4Data?.content,
+          chapter4_basis: basis4Data,
+          chapter5_content: ch5Data?.content
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSavedReport(data.report_output);
+      } else {
+        throw new Error(data.error || '레포트 저장에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('레포트 저장 실패:', err);
+      throw err;
+    }
+  };
+
+  // 챕터 정보 (아이콘, 제목)
+  const chapterInfo = {
+    validating: { icon: '🔍', title: '사주 검증' },
+    1: { icon: '🧭', title: '나의 아이덴티티' },
+    2: { icon: '🏛️', title: '나의 사회적 역할' },
+    3: { icon: '📊', title: '대운 흐름 분석' },
+    4: { icon: '🔮', title: '현재 대운의 운세' },
+    5: { icon: '🌟', title: '올해의 운세' },
+    saving: { icon: '💾', title: '레포트 저장' }
+  };
+
+  // 전체 레포트 생성 (모든 챕터 순차 생성 후 저장)
+  const generateAllChapters = async (forceRegenerate = false) => {
+    setSavingReport(true);
+    setGeneratingChapter('validating');
+
+    // 사주 검증이 안 되어 있으면 먼저 검증 수행
+    if (!validationResult) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/validate_saju`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          }
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setValidationResult(data);
+        } else {
+          throw new Error(data.error || '사주 검증에 실패했습니다.');
+        }
+      } catch (err) {
+        alert(err.message);
+        setSavingReport(false);
+        setGeneratingChapter(null);
+        return;
+      }
+    }
+
+    // 임시 변수로 생성된 데이터 추적
+    let newChapter1Data = chapter1Data;
+    let newChapter2Data = chapter2Data;
+    let newChapter3Data = chapter3Data;
+    let newChapter4Data = chapter4Data;
+    let newChapter5Data = chapter5Data;
+
+    try {
+      // 챕터1 생성
+      setGeneratingChapter(1);
+      if (forceRegenerate || !chapter1Data?.content) {
+        setChapter1Loading(true);
+        const res1 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter1`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+        });
+        const data1 = await res1.json();
+        if (res1.ok && data1.success) {
+          setChapter1Data(data1.chapter);
+          newChapter1Data = data1.chapter;
+        }
+        setChapter1Loading(false);
+      }
+
+      // 챕터2 생성
+      setGeneratingChapter(2);
+      if (forceRegenerate || !chapter2Data?.content) {
+        setChapter2Loading(true);
+        const res2 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+        });
+        const data2 = await res2.json();
+        if (res2.ok && data2.success) {
+          setChapter2Data(data2.chapter);
+          newChapter2Data = data2.chapter;
+        }
+        setChapter2Loading(false);
+      }
+
+      // 챕터3 생성
+      setGeneratingChapter(3);
+      if (forceRegenerate || !chapter3Data?.content) {
+        setChapter3Loading(true);
+        const res3 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+        });
+        const data3 = await res3.json();
+        if (res3.ok && data3.success) {
+          setChapter3Data(data3.chapter);
+          newChapter3Data = data3.chapter;
+        }
+        setChapter3Loading(false);
+      }
+
+      // 챕터4 생성
+      setGeneratingChapter(4);
+      if (forceRegenerate || !chapter4Data?.content) {
+        setChapter4Loading(true);
+        const res4 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter4`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+        });
+        const data4 = await res4.json();
+        if (res4.ok && data4.success) {
+          setChapter4Data(data4.chapter);
+          newChapter4Data = data4.chapter;
+        }
+        setChapter4Loading(false);
+      }
+
+      // 챕터5 생성
+      setGeneratingChapter(5);
+      if (forceRegenerate || !chapter5Data?.content) {
+        setChapter5Loading(true);
+        const res5 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter5`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+        });
+        const data5 = await res5.json();
+        if (res5.ok && data5.success) {
+          setChapter5Data(data5.chapter);
+          newChapter5Data = data5.chapter;
+        }
+        setChapter5Loading(false);
+      }
+
+      // 전체 저장 (새로 생성된 데이터 사용)
+      setGeneratingChapter('saving');
+      await saveFullReportWithData(newChapter1Data, newChapter2Data, newChapter3Data, newChapter4Data, newChapter5Data);
+
+      // 주문 상태를 pending으로 변경
+      if (order.status !== 'pending' && order.status !== 'completed') {
+        await updateOrderStatus('pending');
+      }
+
+    } catch (err) {
+      console.error('전체 레포트 생성 실패:', err);
+      alert('레포트 생성 중 오류가 발생했습니다.');
+    } finally {
+      setSavingReport(false);
+      setGeneratingChapter(null);
+    }
+  };
+
+  // 레포트 미리보기 URL 열기 (관리자용)
+  const openReportPreview = () => {
+    if (savedReport?.secure_token) {
+      window.open(`/admin/preview/${savedReport.secure_token}`, '_blank');
+    } else {
+      alert('저장된 레포트가 없습니다. 먼저 레포트를 생성해주세요.');
+    }
+  };
+
+  // 레포트 발송 (이메일 + 상태 변경)
+  const sendReport = async () => {
+    if (!savedReport) {
+      alert('먼저 레포트를 생성해주세요.');
+      return;
+    }
+
+    if (!order.email) {
+      alert('주문에 이메일 정보가 없습니다.');
+      return;
+    }
+
+    if (!confirm(`유저에게 전송됩니다. 완료하시겠습니까?\n\n수신자: ${order.name} (${order.email})\n레포트 URL + PDF 첨부 이메일이 발송됩니다.`)) {
+      return;
+    }
+
+    setSendingReport(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/send_report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert('레포트가 성공적으로 발송되었습니다.');
+        setOrder(data.order); // 업데이트된 주문 정보 반영 (status: completed)
+      } else {
+        throw new Error(data.error || '레포트 발송에 실패했습니다.');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSendingReport(false);
+    }
   };
 
   // 모바일 프리뷰를 새 탭에서 열기
@@ -1911,23 +2209,6 @@ function OrderDetail() {
         {/* 액션 버튼 */}
         <div className="detail-actions">
           <button
-            className="btn btn-validate"
-            onClick={validateSaju}
-            disabled={validating}
-          >
-            {validating ? (
-              <>
-                <Loader size={18} className="spinning" />
-                검증 중...
-              </>
-            ) : (
-              <>
-                <Search size={18} />
-                사주 검증하기
-              </>
-            )}
-          </button>
-          <button
             className="btn btn-preview"
             onClick={openFullPreview}
             disabled={validating}
@@ -1940,39 +2221,152 @@ function OrderDetail() {
             ) : (
               <>
                 <FileText size={18} />
-                사주 검증 및 레포트 미리보기
+                사주 검증
               </>
             )}
           </button>
-          <button className="btn btn-primary">
-            <Send size={18} />
-            카카오 메시지 발송
-          </button>
-          <button
-            className="btn btn-pdf"
-            onClick={() => downloadAllChaptersPDF()}
-            disabled={pdfLoading.all}
-          >
-            {pdfLoading.all ? (
-              <>
-                <Loader size={18} className="spinning" />
-                PDF 생성 중...
-              </>
+          {savedReport && (
+            <button
+              className="btn btn-pdf"
+              onClick={() => downloadAllChaptersPDF()}
+              disabled={pdfLoading.all}
+            >
+              {pdfLoading.all ? (
+                <>
+                  <Loader size={18} className="spinning" />
+                  생성 중...
+                </>
+              ) : (
+                <>
+                  <Download size={18} />
+                  PDF 다운로드
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* 레포트 생성 및 미리보기 섹션 */}
+        <div className="report-generation-section">
+          <div className="section-header">
+            <Sparkles size={18} />
+            <h3>AI 레포트 생성</h3>
+          </div>
+          <div className="report-generation-content">
+            {savedReportLoading ? (
+              <div className="report-status loading">
+                <Loader size={16} className="spinning" />
+                <span>저장된 레포트 확인 중...</span>
+              </div>
+            ) : savedReport ? (
+              <div className="report-status saved">
+                <div className="status-info">
+                  <CheckCircle size={16} className="status-icon success" />
+                  <span>레포트가 생성되어 있습니다</span>
+                  <span className="status-date">
+                    (생성일: {new Date(savedReport.updated_at || savedReport.created_at).toLocaleDateString('ko-KR')})
+                  </span>
+                </div>
+                <div className="report-actions">
+                  <button
+                    className="btn btn-report-preview"
+                    onClick={openReportPreview}
+                  >
+                    <FileText size={16} />
+                    미리보기
+                  </button>
+                  <button
+                    className="btn btn-report-regenerate"
+                    onClick={() => generateAllChapters(true)}
+                    disabled={savingReport}
+                  >
+                    {savingReport ? <Loader size={16} className="spinning" /> : <Sparkles size={16} />}
+                    다시 생성
+                  </button>
+                  <button
+                    className="btn btn-copy-link"
+                    onClick={() => {
+                      const url = `${window.location.origin}/report/${savedReport.secure_token}`;
+                      navigator.clipboard.writeText(url);
+                      alert('레포트 링크가 복사되었습니다.');
+                    }}
+                  >
+                    📋 링크 복사
+                  </button>
+                  <button
+                    className="btn btn-complete"
+                    onClick={sendReport}
+                    disabled={sendingReport || order.status === 'completed'}
+                  >
+                    {sendingReport ? (
+                      <>
+                        <Loader size={16} className="spinning" />
+                        전송 중...
+                      </>
+                    ) : order.status === 'completed' ? (
+                      <>
+                        <CheckCircle size={16} />
+                        제작 완료됨
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        제작완료
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="preview-link">
+                  <span className="link-label">미리보기 URL:</span>
+                  <a
+                    href={`/admin/preview/${savedReport.secure_token}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link-url"
+                  >
+                    {`${window.location.origin}/admin/preview/${savedReport.secure_token}`}
+                  </a>
+                </div>
+                {order.status === 'completed' && (
+                  <div className="preview-link">
+                    <span className="link-label">고객용 URL:</span>
+                    <a
+                      href={`/report/${savedReport.secure_token}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link-url"
+                    >
+                      {`${window.location.origin}/report/${savedReport.secure_token}`}
+                    </a>
+                  </div>
+                )}
+              </div>
             ) : (
-              <>
-                <Download size={18} />
-                전체 리포트 PDF
-              </>
+              <div className="report-status not-generated">
+                <div className="status-info">
+                  <AlertCircle size={16} className="status-icon warning" />
+                  <span>아직 레포트가 생성되지 않았습니다</span>
+                </div>
+                <button
+                  className="btn btn-generate-report"
+                  onClick={() => generateAllChapters(false)}
+                  disabled={savingReport}
+                >
+                  {savingReport ? (
+                    <>
+                      <Loader size={16} className="spinning" />
+                      생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      레포트 생성하기
+                    </>
+                  )}
+                </button>
+              </div>
             )}
-          </button>
-          <button
-            className="btn btn-success"
-            onClick={() => updateOrderStatus('completed')}
-            disabled={updating || order.status === 'completed'}
-          >
-            <CheckCircle size={18} />
-            완료 처리
-          </button>
+          </div>
         </div>
 
       </div>
@@ -1998,6 +2392,65 @@ function OrderDetail() {
               ) : validationResult ? (
                 <SajuValidationDisplay data={validationResult} />
               ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 레포트 생성 진행 모달 */}
+      {generatingChapter && (
+        <div className="generation-overlay">
+          <div className="generation-modal">
+            <div className="generation-animation">
+              <div className="generation-circle">
+                <span className="generation-icon">{chapterInfo[generatingChapter]?.icon}</span>
+              </div>
+              <div className="generation-pulse"></div>
+              <div className="generation-pulse delay-1"></div>
+              <div className="generation-pulse delay-2"></div>
+            </div>
+            <div className="generation-text">
+              <h3>AI가 레포트를 생성하고 있습니다</h3>
+              <p className="generation-chapter-title">
+                {generatingChapter === 'validating'
+                  ? '사주 검증 중...'
+                  : generatingChapter === 'saving'
+                    ? '레포트 저장 중...'
+                    : `챕터 ${generatingChapter}: ${chapterInfo[generatingChapter]?.title}`}
+              </p>
+              <div className="generation-progress">
+                {/* 사주 검증 단계 */}
+                <div className={`progress-step ${
+                  generatingChapter === 'validating' ? 'active' :
+                  (generatingChapter === 'saving' || typeof generatingChapter === 'number') ? 'completed' : ''
+                }`}>
+                  <span className="step-icon">🔍</span>
+                </div>
+                {/* 챕터 1-5 */}
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <div
+                    key={num}
+                    className={`progress-step ${
+                      generatingChapter === 'saving' || (typeof generatingChapter === 'number' && num < generatingChapter)
+                        ? 'completed'
+                        : num === generatingChapter
+                          ? 'active'
+                          : ''
+                    }`}
+                  >
+                    <span className="step-icon">{chapterInfo[num]?.icon}</span>
+                  </div>
+                ))}
+                {/* 저장 단계 */}
+                <div className={`progress-step ${generatingChapter === 'saving' ? 'active' : ''}`}>
+                  <span className="step-icon">💾</span>
+                </div>
+              </div>
+            </div>
+            <div className="generation-dots">
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
           </div>
         </div>
@@ -2041,6 +2494,38 @@ function OrderDetail() {
               <div className="preview-section-header">
                 <FileText size={18} />
                 <h3>레포트 챕터</h3>
+                <div className="report-action-buttons">
+                  {savedReportLoading ? (
+                    <span className="loading-text"><Loader size={14} className="spinning" /> 로딩중...</span>
+                  ) : savedReport ? (
+                    <>
+                      <button
+                        className="btn btn-preview-report"
+                        onClick={openReportPreview}
+                      >
+                        <FileText size={14} />
+                        미리보기
+                      </button>
+                      <button
+                        className="btn btn-regenerate-report"
+                        onClick={() => generateAllChapters(true)}
+                        disabled={savingReport}
+                      >
+                        {savingReport ? <Loader size={14} className="spinning" /> : <Sparkles size={14} />}
+                        다시생성
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn btn-generate-all"
+                      onClick={generateAllChapters}
+                      disabled={savingReport || !validationResult}
+                    >
+                      {savingReport ? <Loader size={14} className="spinning" /> : <Sparkles size={14} />}
+                      전체 레포트 생성
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* 챕터 탭 */}

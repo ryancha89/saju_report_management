@@ -10,6 +10,7 @@ import Customers from './pages/Customers';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import MobilePreview from './pages/MobilePreview';
+import ReportPreview from './pages/ReportPreview';
 import LandingPage from './pages/LandingPage';
 import UserInfoPage from './pages/UserInfoPage';
 import ResultPage from './pages/ResultPage';
@@ -42,6 +43,9 @@ function App() {
           {/* 모바일 프리뷰 페이지 (인증 불필요) */}
           <Route path="/preview/:id" element={<MobilePreview />} />
 
+          {/* 레포트 공개 페이지 (secure token 기반, 인증 불필요) */}
+          <Route path="/report/:token" element={<ReportPreview />} />
+
           {/* 기존 경로 리다이렉트 */}
           <Route path="/orders" element={<Navigate to="/admin/orders" replace />} />
           <Route path="/orders/:id" element={<OrderDetailRedirect />} />
@@ -49,6 +53,16 @@ function App() {
           <Route path="/kakao" element={<Navigate to="/admin/kakao" replace />} />
           <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
           <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+
+          {/* 관리자 프리뷰 페이지 (보호됨, 레이아웃 없이) */}
+          <Route
+            path="/admin/preview/:token"
+            element={
+              <ProtectedRoute>
+                <ReportPreview isAdminPreview={true} />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 관리자 보호된 라우트 */}
           <Route
