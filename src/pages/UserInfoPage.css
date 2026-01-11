@@ -13,25 +13,18 @@
   right: 0;
   bottom: 0;
   background: #000000;
-  overflow: hidden;
 }
 
 /* Prevent white flash on scroll */
 html:has(.user-info-page),
 body:has(.user-info-page) {
   background: #000000;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
   overscroll-behavior-y: none;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* iOS Safari pull-to-refresh 방지 */
 .user-info-page {
   touch-action: manipulation;
-  -webkit-overflow-scrolling: auto;
   /* iOS safe area */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -65,20 +58,23 @@ body:has(.user-info-page) {
   display: flex;
   flex-direction: column;
   color: #ffffff;
-  overflow: hidden;
   background: #000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Header - 완전 고정 */
+/* Header - 상단 고정 */
 .user-info-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
 }
 
@@ -121,7 +117,7 @@ body:has(.user-info-page) {
   background: rgba(212, 175, 55, 0.6);
 }
 
-/* Main Content - 이 영역만 스크롤 */
+/* Main Content */
 .user-info-content {
   position: relative;
   z-index: 10;
@@ -129,10 +125,6 @@ body:has(.user-info-page) {
   display: flex;
   flex-direction: column;
   padding: 40px 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
 }
 
 .step-label {
@@ -204,6 +196,41 @@ body:has(.user-info-page) {
 .time-input::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
+}
+
+/* Name Input Row */
+.name-input-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.name-input-row .text-input {
+  flex: 1;
+}
+
+.confirm-btn {
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+.confirm-btn:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
 }
 
 /* Birthdate Input Row */
@@ -359,13 +386,13 @@ body:has(.user-info-page) {
 
 .gender-btn {
   flex: 1;
-  max-width: 150px;
-  padding: 20px 32px;
+  max-width: 120px;
+  padding: 14px 24px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 10px;
   color: #ffffff;
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;

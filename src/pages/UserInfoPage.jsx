@@ -52,28 +52,17 @@ function UserInfoPage() {
     initTracking();
   }, []);
 
-  // 배경색 및 스크롤 설정 (스크롤 시 흰색 방지 + 오버스크롤 방지)
+  // 배경색 설정
   useEffect(() => {
     const originalBg = document.body.style.backgroundColor;
     const originalHtmlBg = document.documentElement.style.backgroundColor;
-    const originalOverflow = document.body.style.overflow;
-    const originalPosition = document.body.style.position;
-    const originalHeight = document.body.style.height;
 
     document.body.style.backgroundColor = '#000000';
     document.documentElement.style.backgroundColor = '#000000';
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
 
     return () => {
       document.body.style.backgroundColor = originalBg;
       document.documentElement.style.backgroundColor = originalHtmlBg;
-      document.body.style.overflow = originalOverflow;
-      document.body.style.position = originalPosition;
-      document.body.style.height = originalHeight;
-      document.body.style.width = '';
     };
   }, []);
 
@@ -256,11 +245,11 @@ function UserInfoPage() {
                   clearTimeout(nameTimeoutRef.current);
                 }
 
-                // 입력 후 1.5초 동안 추가 입력 없으면 다음으로
-                if (newName.trim().length > 0) {
+                // 2자 이상 입력 후 0.5초 동안 추가 입력 없으면 다음으로
+                if (newName.trim().length >= 2) {
                   nameTimeoutRef.current = setTimeout(() => {
                     autoNext();
-                  }, 1500);
+                  }, 500);
                 }
               }}
               onKeyDown={(e) => {
@@ -273,6 +262,7 @@ function UserInfoPage() {
               }}
               placeholder="이름을 입력해주세요"
               className="text-input"
+              maxLength={5}
               autoFocus
             />
           </div>
