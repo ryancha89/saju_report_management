@@ -29,7 +29,9 @@ body:has(.user-info-page) {
   top: 0;
   left: 0;
   width: 100%;
-  height: calc(100% + 50px);
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   object-fit: cover;
   z-index: 0;
 }
@@ -39,7 +41,9 @@ body:has(.user-info-page) {
   top: 0;
   left: 0;
   width: 100%;
-  height: calc(100% + 50px);
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: rgba(0, 0, 0, 0.6);
   z-index: 1;
 }
