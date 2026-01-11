@@ -126,6 +126,7 @@ body:has(.user-info-page) {
   display: flex;
   flex-direction: column;
   padding: 40px 24px;
+  padding-bottom: 120px; /* Space for fixed footer on last step */
 }
 
 .step-label {
@@ -470,10 +471,16 @@ body:has(.user-info-page) {
 
 /* Footer */
 .user-info-footer {
-  position: relative;
-  z-index: 10;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 100;
   padding: 20px 24px 40px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 60%, transparent);
 }
 
 .next-btn {
@@ -656,4 +663,65 @@ body:has(.user-info-page) {
 .order-complete-home-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+
+/* 가상계좌 정보 */
+.vbank-info {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  animation: fadeIn 0.5s ease-out 0.4s both;
+}
+
+.vbank-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vbank-row:last-of-type {
+  border-bottom: none;
+}
+
+.vbank-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.vbank-value {
+  font-size: 1rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.vbank-value.account-number {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.vbank-value.price {
+  color: #d4af37;
+}
+
+.vbank-warning {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #fb923c;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* 가상계좌 아이콘 색상 */
+.order-complete-icon svg[class*="Building"] {
+  color: #fb923c;
 }

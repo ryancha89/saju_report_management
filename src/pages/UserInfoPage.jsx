@@ -1,12 +1,22 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Loader, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Loader, CheckCircle, Building2 } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking } from '../lib/tracking';
+import Payment from '../components/Payment';
 import './UserInfoPage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
+
+// 상품 정보
+const PRODUCT_INFO = {
+  life_journey: { id: 'life_journey', name: '2026 인생여정 리포트', price: 39000 },
+  new_year: { id: 'new_year', name: '2026 신년운세 리포트', price: 29000 },
+  love: { id: 'love', name: '연애운 리포트', price: 29000 },
+  wealth: { id: 'wealth', name: '재물운 리포트', price: 29000 },
+  career: { id: 'career', name: '직업운 리포트', price: 29000 },
+};
 
 const STEPS = [
   { id: 'name', label: '이름을 알려주세요', placeholder: '이름을 입력해주세요' },
@@ -15,6 +25,8 @@ const STEPS = [
   { id: 'birthPlace', label: '태어난 곳을 알려주세요', placeholder: '도시를 검색해주세요' },
   { id: 'gender', label: '성별을 알려주세요', placeholder: '' },
   { id: 'email', label: '리포트를 받을 이메일을 알려주세요', placeholder: '이메일을 입력해주세요' },
+  { id: 'phone', label: '연락처를 알려주세요', placeholder: '010-0000-0000' },
+  { id: 'payment', label: '결제를 진행해주세요', placeholder: '' },
 ];
 
 function UserInfoPage() {
@@ -25,11 +37,13 @@ function UserInfoPage() {
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null); // 결제 결과 (vbank 정보 등)
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
 
   // URL에서 product 파라미터 가져오기
   const productId = new URLSearchParams(location.search).get('product') || 'life_journey';
+  const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.life_journey;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -44,6 +58,8 @@ function UserInfoPage() {
     timeAdjustMinutes: null,
     gender: '',
     email: '',
+    phone: '',
+    phoneDisplay: '', // 화면 표시용 (010-0000-0000)
     calendarType: 'solar', // solar, lunar, lunarLeap
   });
 
@@ -116,6 +132,8 @@ function UserInfoPage() {
       case 3: return formData.birthPlace.length > 0;
       case 4: return formData.gender.length > 0;
       case 5: return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+      case 6: return formData.phone.replace(/\D/g, '').length >= 10; // 전화번호 10자리 이상
+      case 7: return true; // 결제 단계 - Payment 컴포넌트에서 처리
       default: return false;
     }
   };
@@ -156,76 +174,34 @@ function UserInfoPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+  // 결제 성공 핸들러
+  const handlePaymentSuccess = (result) => {
+    setPaymentResult(result);
+    setIsOrderComplete(true);
+  };
 
-    try {
-      const [year, month, day] = formData.birthDate.split('-').map(Number);
-      let hour = null;
-      let minute = null;
+  // 결제 실패 핸들러
+  const handlePaymentError = (errorMsg) => {
+    console.error('Payment error:', errorMsg);
+  };
 
-      if (!formData.birthTimeUnknown && formData.birthTime) {
-        [hour, minute] = formData.birthTime.split(':').map(Number);
-      }
-
-      // 추적 데이터 가져오기
-      const trackingData = getTrackingForAPI();
-
-      const orderData = {
-        // 상품 정보
-        product_id: productId,
-        // 고객 정보
-        name: formData.name,
-        email: formData.email,
-        // 사주 정보
-        birth_year: year,
-        birth_month: month,
-        birth_day: day,
-        gender: formData.gender,
-        calendar_type: formData.calendarType,
-        time_known: !formData.birthTimeUnknown,
-        birth_hour: hour,
-        birth_minute: minute,
-        birth_place: formData.birthPlace || null,
-        birth_lat: formData.birthLat,
-        birth_lon: formData.birthLon,
-        time_adjustment: formData.timeAdjustment,
-        time_adjust_minutes: formData.timeAdjustMinutes,
-        // 마케팅 추적 데이터
-        tracking: trackingData,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/v1/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`,
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      // 응답 텍스트 먼저 확인
-      const responseText = await response.text();
-
-      if (!responseText) {
-        throw new Error('서버에서 빈 응답을 받았습니다.');
-      }
-
-      const result = JSON.parse(responseText);
-
-      if (result.success) {
-        // 주문 완료 화면 표시
-        setIsOrderComplete(true);
-      } else {
-        const errorMsg = result.errors?.join(', ') || result.error || '주문 처리 중 오류가 발생했습니다.';
-        alert(errorMsg);
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      alert(error.message || '서버 연결에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Payment 컴포넌트에 전달할 사용자 정보
+  const getUserInfoForPayment = () => {
+    return {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      birthDate: formData.birthDate,
+      birthTime: formData.birthTime,
+      timeUnknown: formData.birthTimeUnknown,
+      gender: formData.gender,
+      calendarType: formData.calendarType,
+      birthPlace: formData.birthPlace,
+      birthLat: formData.birthLat,
+      birthLon: formData.birthLon,
+      timeAdjustment: formData.timeAdjustment,
+      timeAdjustMinutes: formData.timeAdjustMinutes,
+    };
   };
 
   const renderStepContent = () => {
@@ -483,10 +459,28 @@ function UserInfoPage() {
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => {
+                const newEmail = e.target.value;
+                setFormData({ ...formData, email: newEmail });
+
+                // 기존 타이머 클리어
+                if (nameTimeoutRef.current) {
+                  clearTimeout(nameTimeoutRef.current);
+                }
+
+                // 유효한 이메일 입력 후 0.8초 후 자동 이동
+                if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+                  nameTimeoutRef.current = setTimeout(() => {
+                    autoNext();
+                  }, 800);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-                  handleSubmit();
+                  if (nameTimeoutRef.current) {
+                    clearTimeout(nameTimeoutRef.current);
+                  }
+                  autoNext();
                 }
               }}
               placeholder="이메일을 입력해주세요"
@@ -496,6 +490,62 @@ function UserInfoPage() {
           </div>
         );
 
+      case 6: // 전화번호
+        return (
+          <div className="input-group">
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={formData.phoneDisplay}
+              onChange={(e) => {
+                // 숫자만 추출
+                const numbers = e.target.value.replace(/\D/g, '');
+
+                // 자동 포맷팅 (010-0000-0000)
+                let formatted = '';
+                if (numbers.length <= 3) {
+                  formatted = numbers;
+                } else if (numbers.length <= 7) {
+                  formatted = `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+                } else {
+                  formatted = `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+                }
+
+                setFormData({
+                  ...formData,
+                  phoneDisplay: formatted,
+                  phone: numbers
+                });
+
+                // 11자리 입력 완료 시 자동으로 다음
+                if (numbers.length === 11) {
+                  setTimeout(() => autoNext(), 300);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && formData.phone.length >= 10) {
+                  autoNext();
+                }
+              }}
+              placeholder="010-0000-0000"
+              className="text-input"
+              maxLength={13}
+              autoFocus
+            />
+          </div>
+        );
+
+      case 7: // 결제
+        return (
+          <Payment
+            productInfo={productInfo}
+            userInfo={getUserInfoForPayment()}
+            trackingData={getTrackingForAPI()}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentError={handlePaymentError}
+          />
+        );
+
       default:
         return null;
     }
@@ -503,6 +553,8 @@ function UserInfoPage() {
 
   // 주문 완료 화면
   if (isOrderComplete) {
+    const isVbank = paymentResult?.method === 'vbank';
+
     return (
       <div className="user-info-page">
         <div className="user-info-wrapper">
@@ -521,14 +573,45 @@ function UserInfoPage() {
 
           <div className="order-complete-content">
             <div className="order-complete-icon">
-              <CheckCircle size={80} />
+              {isVbank ? <Building2 size={80} /> : <CheckCircle size={80} />}
             </div>
-            <h2 className="order-complete-title">주문이 완료되었습니다</h2>
+            <h2 className="order-complete-title">
+              {isVbank ? '가상계좌가 발급되었습니다' : '결제가 완료되었습니다'}
+            </h2>
             <p className="order-complete-message">
-              레포트 제작 후<br />
-              이메일로 레포트가 발송될 예정입니다.
+              {isVbank ? (
+                <>입금 확인 후<br />이메일로 레포트가 발송될 예정입니다.</>
+              ) : (
+                <>레포트 제작 후<br />이메일로 레포트가 발송될 예정입니다.</>
+              )}
             </p>
-            <p className="order-complete-wait">잠시만 기다려주세요</p>
+
+            {isVbank && paymentResult?.vbankInfo && (
+              <div className="vbank-info">
+                <div className="vbank-row">
+                  <span className="vbank-label">입금 은행</span>
+                  <span className="vbank-value">{paymentResult.vbankInfo.bankName}</span>
+                </div>
+                <div className="vbank-row">
+                  <span className="vbank-label">계좌 번호</span>
+                  <span className="vbank-value account-number">{paymentResult.vbankInfo.accountNumber}</span>
+                </div>
+                <div className="vbank-row">
+                  <span className="vbank-label">예금주</span>
+                  <span className="vbank-value">{paymentResult.vbankInfo.accountHolder}</span>
+                </div>
+                <div className="vbank-row">
+                  <span className="vbank-label">입금 금액</span>
+                  <span className="vbank-value price">{productInfo.price.toLocaleString()}원</span>
+                </div>
+                <div className="vbank-warning">
+                  입금 기한 내에 입금해주세요. 미입금 시 주문이 자동 취소됩니다.
+                </div>
+              </div>
+            )}
+
+            {!isVbank && <p className="order-complete-wait">잠시만 기다려주세요</p>}
+
             <div className="order-complete-email">
               <span>발송 이메일</span>
               <strong>{formData.email}</strong>
@@ -579,7 +662,9 @@ function UserInfoPage() {
 
         {/* 메인 콘텐츠 */}
         <main className="user-info-content">
-          <div className="step-label">{STEPS[currentStep].label}</div>
+          {currentStep !== 7 && (
+            <div className="step-label">{STEPS[currentStep].label}</div>
+          )}
 
           {renderStepContent()}
 
@@ -619,25 +704,22 @@ function UserInfoPage() {
                 <span className="value">{formData.gender === 'male' ? '남성' : '여성'}</span>
               </div>
             )}
+            {currentStep > 5 && formData.email && (
+              <div className="completed-item" onClick={() => setCurrentStep(5)}>
+                <span className="label">이메일</span>
+                <span className="value">{formData.email}</span>
+              </div>
+            )}
+            {currentStep > 6 && formData.phone && (
+              <div className="completed-item" onClick={() => setCurrentStep(6)}>
+                <span className="label">연락처</span>
+                <span className="value">{formData.phoneDisplay}</span>
+              </div>
+            )}
           </div>
         </main>
 
-        {/* 하단 버튼 - 마지막 단계에서만 표시 */}
-        {currentStep === STEPS.length - 1 && (
-          <footer className="user-info-footer">
-            <button
-              className="next-btn"
-              onClick={handleSubmit}
-              disabled={!canProceed() || isSubmitting}
-            >
-              {isSubmitting ? (
-                <Loader size={20} className="spinning" />
-              ) : (
-                '사주 분석하기'
-              )}
-            </button>
-          </footer>
-        )}
+{/* 결제 단계는 Payment 컴포넌트에서 자체 버튼 처리 */}
       </div>
     </div>
   );
