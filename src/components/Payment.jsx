@@ -19,10 +19,6 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
       : 'https://api.fortunetorch.com/api/v1/payment_histories/portone_webhook';
 
   const handlePayment = () => {
-    addToast('현재 서비스 준비중입니다', 'info', 2500);
-    return;
-
-    // 아래 결제 로직은 서비스 준비 완료 후 활성화
     if (!window.IMP) {
       setError('결제 모듈을 불러올 수 없습니다. 페이지를 새로고침해주세요.');
       return;

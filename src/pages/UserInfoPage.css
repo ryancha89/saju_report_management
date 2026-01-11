@@ -3,16 +3,11 @@
 .user-info-page {
   min-height: 100vh;
   min-height: 100dvh;
-  height: 100vh;
-  height: 100dvh;
   display: flex;
   justify-content: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   background: #000000;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Prevent white flash on scroll */
@@ -22,9 +17,8 @@ body:has(.user-info-page) {
   overscroll-behavior-y: none;
 }
 
-/* iOS Safari pull-to-refresh 방지 */
+/* iOS Safari safe area */
 .user-info-page {
-  touch-action: manipulation;
   /* iOS safe area */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -54,15 +48,12 @@ body:has(.user-info-page) {
   position: relative;
   max-width: 480px;
   width: 100%;
-  min-height: 100%;
-  min-height: 110vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   color: #ffffff;
   background: #000;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* Header - 상단 고정 */
@@ -73,7 +64,7 @@ body:has(.user-info-page) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
+  padding: 12px 20px;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
@@ -125,15 +116,15 @@ body:has(.user-info-page) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 40px 24px;
-  padding-bottom: 120px; /* Space for fixed footer on last step */
+  padding: 16px 24px;
+  padding-bottom: 90px; /* Space for fixed footer */
 }
 
 .step-label {
   font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   text-align: left;
   animation: fadeIn 0.3s ease-out;
 }
@@ -189,9 +180,12 @@ body:has(.user-info-page) {
 .text-input:focus,
 .date-input:focus,
 .time-input:focus {
-  border-color: #d4af37;
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.6);
+  background: rgba(212, 175, 55, 0.08);
+  box-shadow:
+    0 0 0 3px rgba(212, 175, 55, 0.15),
+    0 4px 20px rgba(212, 175, 55, 0.1);
+  outline: none;
 }
 
 .date-input::-webkit-calendar-picker-indicator,
@@ -478,8 +472,8 @@ body:has(.user-info-page) {
   width: 100%;
   max-width: 480px;
   z-index: 100;
-  padding: 20px 24px 40px;
-  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  padding: 16px 24px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 60%, transparent);
 }
 
