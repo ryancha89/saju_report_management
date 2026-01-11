@@ -256,14 +256,11 @@ function UserInfoPage() {
                   clearTimeout(nameTimeoutRef.current);
                 }
 
-                // 3자 이상이면 즉시 다음으로
-                if (newName.trim().length >= 3) {
-                  autoNext();
-                } else if (newName.trim().length > 0) {
-                  // 1자 이상이면 1초 후 다음으로
+                // 입력 후 1.5초 동안 추가 입력 없으면 다음으로
+                if (newName.trim().length > 0) {
                   nameTimeoutRef.current = setTimeout(() => {
                     autoNext();
-                  }, 1000);
+                  }, 1500);
                 }
               }}
               onKeyDown={(e) => {

@@ -496,32 +496,43 @@ body:has(.user-info-page) {
     font-size: 1.3rem;
   }
 
+  /* 생년월일 - 한 줄에 유지 */
   .birthdate-input-row {
-    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .birthdate-input-row .text-input {
-    width: 100%;
-    flex: none;
+    flex: 1;
+    min-width: 0;
+    padding: 14px 12px;
+    font-size: 1rem;
   }
 
   .calendar-btn {
-    padding: 12px 14px;
-    font-size: 0.95rem;
-  }
-
-  .calendar-btn.leap-btn {
-    padding: 12px 12px;
+    padding: 14px 10px;
     font-size: 0.85rem;
   }
 
+  .calendar-btn.leap-btn {
+    padding: 14px 8px;
+    font-size: 0.8rem;
+  }
+
+  /* 태어난 시간 - 한 줄에 유지 */
   .time-input-row {
-    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .time-text-input {
-    width: 100%;
-    flex: none;
+    flex: 1;
+    min-width: 0;
+    padding: 14px 12px;
+    font-size: 1rem;
+  }
+
+  .time-unknown-btn {
+    padding: 14px 16px;
+    font-size: 0.9rem;
   }
 }
 
