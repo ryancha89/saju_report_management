@@ -25,7 +25,7 @@ body:has(.user-info-page) {
 }
 
 .user-info-wrapper .background-video {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -35,7 +35,7 @@ body:has(.user-info-page) {
 }
 
 .user-info-wrapper .overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;

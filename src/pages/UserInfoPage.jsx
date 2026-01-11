@@ -126,7 +126,7 @@ function UserInfoPage() {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return formData.name.trim().length > 0;
+      case 0: return formData.name.trim().length >= 3;
       case 1: return formData.birthDate.length === 10;
       case 2: return formData.birthTimeUnknown || formData.birthTime.length === 5;
       case 3: return formData.birthPlace.length > 0;
@@ -216,23 +216,13 @@ function UserInfoPage() {
                 const newName = e.target.value;
                 setFormData({ ...formData, name: newName });
 
-                // 기존 타이머 클리어
-                if (nameTimeoutRef.current) {
-                  clearTimeout(nameTimeoutRef.current);
-                }
-
-                // 2자 이상 입력 후 0.5초 동안 추가 입력 없으면 다음으로
-                if (newName.trim().length >= 2) {
-                  nameTimeoutRef.current = setTimeout(() => {
-                    autoNext();
-                  }, 500);
+                // 3자 입력되면 바로 다음으로
+                if (newName.trim().length >= 3) {
+                  setTimeout(() => autoNext(), 100);
                 }
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && formData.name.trim().length > 0) {
-                  if (nameTimeoutRef.current) {
-                    clearTimeout(nameTimeoutRef.current);
-                  }
+                if (e.key === 'Enter' && formData.name.trim().length >= 3) {
                   autoNext();
                 }
               }}
