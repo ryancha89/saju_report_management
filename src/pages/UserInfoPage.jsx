@@ -52,6 +52,31 @@ function UserInfoPage() {
     initTracking();
   }, []);
 
+  // 배경색 및 스크롤 설정 (스크롤 시 흰색 방지 + 오버스크롤 방지)
+  useEffect(() => {
+    const originalBg = document.body.style.backgroundColor;
+    const originalHtmlBg = document.documentElement.style.backgroundColor;
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalHeight = document.body.style.height;
+
+    document.body.style.backgroundColor = '#000000';
+    document.documentElement.style.backgroundColor = '#000000';
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+
+    return () => {
+      document.body.style.backgroundColor = originalBg;
+      document.documentElement.style.backgroundColor = originalHtmlBg;
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.height = originalHeight;
+      document.body.style.width = '';
+    };
+  }, []);
+
   // 타이머 정리
   useEffect(() => {
     return () => {
@@ -292,6 +317,11 @@ function UserInfoPage() {
                     birthDate: apiFormat
                   });
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && formData.birthDate.length === 10) {
+                    autoNext();
+                  }
+                }}
                 placeholder="2000.01.01"
                 className="text-input"
                 maxLength={10}
@@ -354,6 +384,11 @@ function UserInfoPage() {
                   // 4자리 입력 완료 시 자동으로 다음
                   if (numbers.length === 4) {
                     setTimeout(() => autoNext(), 300);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && formData.birthTime.length === 5) {
+                    autoNext();
                   }
                 }}
                 placeholder="15:30"

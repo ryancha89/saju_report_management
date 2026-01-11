@@ -3,31 +3,50 @@
 /* Base Layout */
 .landing-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, #2d2d3a 0%, #252535 50%, #1e1e2a 100%);
   display: flex;
   justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Prevent overscroll */
+html:has(.landing-page),
+body:has(.landing-page) {
+  background: linear-gradient(135deg, #2d2d3a 0%, #252535 50%, #1e1e2a 100%);
+  overscroll-behavior: none;
 }
 
 .landing-wrapper {
   max-width: 480px;
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #050508;
   color: #e8e8e8;
   position: relative;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Header */
+/* Header - 고정 */
 .landing-header {
   padding: 24px 20px 16px;
   text-align: center;
-  background: rgba(15, 15, 26, 0.9);
+  background: rgba(15, 15, 26, 0.95);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
+  flex-shrink: 0;
+}
+
+/* Scrollable content area */
+.landing-scroll-content {
+  flex: 1;
 }
 
 .logo-container {

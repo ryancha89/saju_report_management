@@ -17,6 +17,19 @@ function LandingPage() {
     }
   }, []);
 
+  // 배경색 설정
+  useEffect(() => {
+    const originalBg = document.body.style.backgroundColor;
+
+    document.body.style.backgroundColor = '#2d2d3a';
+    document.documentElement.style.backgroundColor = '#2d2d3a';
+
+    return () => {
+      document.body.style.backgroundColor = originalBg;
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, []);
+
   // 시작하기 클릭 - UTM 파라미터 유지 + 상품 타입 추가
   const handleStartClick = (productId) => {
     const params = new URLSearchParams(location.search);
@@ -53,26 +66,28 @@ function LandingPage() {
           <p className="header-tagline">당신의 운명을 밝히는 빛</p>
         </header>
 
-        {/* Hero Section */}
-        <section className="hero-section">
-          <div className="hero-content">
-            <h2 className="hero-title">
-              <span className="gradient-text">사주명리학</span>으로<br />
-              인생의 방향을 찾다
-            </h2>
-            <p className="hero-description">
-              수천 년의 동양 지혜와 현대 AI 기술이 만나<br />
-              당신만을 위한 맞춤 운세 리포트를 제공합니다
-            </p>
-          </div>
+        {/* Scrollable Content */}
+        <div className="landing-scroll-content">
+          {/* Hero Section */}
+          <section className="hero-section">
+            <div className="hero-content">
+              <h2 className="hero-title">
+                <span className="gradient-text">사주명리학</span>으로<br />
+                인생의 방향을 찾다
+              </h2>
+              <p className="hero-description">
+                수천 년의 동양 지혜와 현대 AI 기술이 만나<br />
+                당신만을 위한 맞춤 운세 리포트를 제공합니다
+              </p>
+            </div>
 
-          {/* Floating Elements */}
-          <div className="floating-elements">
-            <div className="floating-orb orb-1"></div>
-            <div className="floating-orb orb-2"></div>
-            <div className="floating-orb orb-3"></div>
-          </div>
-        </section>
+            {/* Floating Elements */}
+            <div className="floating-elements">
+              <div className="floating-orb orb-1"></div>
+              <div className="floating-orb orb-2"></div>
+              <div className="floating-orb orb-3"></div>
+            </div>
+          </section>
 
         {/* Report Cards */}
         <section className="reports-section">
@@ -184,6 +199,7 @@ function LandingPage() {
             Copyright ⓒ Fortune Torch. All rights reserved.
           </p>
         </footer>
+        </div>
       </div>
     </div>
   );
