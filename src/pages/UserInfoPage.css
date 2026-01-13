@@ -470,6 +470,44 @@ body:has(.user-info-page) {
   font-weight: 600;
 }
 
+/* 수정 중 완료 버튼 - 결제 버튼과 동일한 스타일 */
+.next-step-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 24px;
+  margin-top: 24px;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #d4af37 0%, #c9a227 100%);
+  color: #1a1a2e;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+}
+
+.next-step-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, #e0bc45 0%, #d4af37 100%);
+}
+
+.next-step-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.next-step-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Footer */
 .user-info-footer {
   position: fixed;

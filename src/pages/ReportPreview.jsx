@@ -114,7 +114,7 @@ function ReportPreview({ isAdminPreview = false }) {
 
   const chapterTitles = {
     1: '나의 아이덴티티',
-    2: '나의 사회적 역할',
+    2: '나의 잠재력과 사회적 역할',
     3: '대운 흐름 분석',
     4: '현재 대운의 운세',
     5: '올해의 운세'

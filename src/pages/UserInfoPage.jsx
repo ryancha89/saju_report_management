@@ -33,6 +33,8 @@ function UserInfoPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
+  const [highestStep, setHighestStep] = useState(0); // 가장 높이 진행한 단계
+  const [isEditing, setIsEditing] = useState(false); // 이전 단계 수정 중인지
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
@@ -120,8 +122,15 @@ function UserInfoPage() {
     setFormData(prev => ({ ...prev, birthPlace: city.name }));
     setCitySearch(city.name);
     setShowCityDropdown(false);
-    // 도시 선택 시 자동으로 다음
-    autoNext();
+    // 상태 업데이트 후 처리를 위해 setTimeout 사용
+    setTimeout(() => {
+      if (isEditing) {
+        setCurrentStep(highestStep);
+        setIsEditing(false);
+      } else {
+        autoNext();
+      }
+    }, 50);
   };
 
   const canProceed = () => {
@@ -147,11 +156,17 @@ function UserInfoPage() {
       isTransitioning.current = true;
       setTimeout(() => {
         setCurrentStep(prev => {
+          let nextStep;
           // 시간 모름 선택 시 태어난 곳(step 3) 건너뛰기
           if (skipBirthPlace && prev === 2) {
-            return 4; // step 3을 건너뛰고 step 4(성별)로
+            nextStep = 4; // step 3을 건너뛰고 step 4(성별)로
+          } else {
+            nextStep = prev + 1;
           }
-          return prev + 1;
+          // 최고 단계 업데이트
+          setHighestStep(h => Math.max(h, nextStep));
+          setIsEditing(false);
+          return nextStep;
         });
         // 전환 완료 후 플래그 해제
         setTimeout(() => {
@@ -161,14 +176,58 @@ function UserInfoPage() {
     }
   };
 
+  // 이전 단계로 돌아가서 수정 시작
+  const goToStep = (step) => {
+    if (nameTimeoutRef.current) {
+      clearTimeout(nameTimeoutRef.current);
+    }
+    setCurrentStep(step);
+    setIsEditing(step < highestStep);
+  };
+
+  // 수정 완료하고 가장 높은 단계로 돌아가기
+  const finishEditing = () => {
+    if (canProceed()) {
+      setCurrentStep(highestStep);
+      setIsEditing(false);
+    }
+  };
+
+  // 다음 단계로 명시적 이동 (버튼 클릭 시)
+  const goToNextStep = () => {
+    if (canProceed()) {
+      if (isEditing) {
+        // 수정 중이면 최고 단계로 복귀
+        finishEditing();
+      } else {
+        autoNext();
+      }
+    }
+  };
+
   const handleBack = () => {
+    if (nameTimeoutRef.current) {
+      clearTimeout(nameTimeoutRef.current);
+    }
+
+    // 수정 중이면 최고 단계로 복귀
+    if (isEditing) {
+      setCurrentStep(highestStep);
+      setIsEditing(false);
+      return;
+    }
+
     if (currentStep > 0) {
+      let prevStep;
       // 시간 모름 상태에서 뒤로가기 시 step 3 건너뛰기
       if (currentStep === 4 && formData.birthTimeUnknown) {
-        setCurrentStep(2);
+        prevStep = 2;
       } else {
-        setCurrentStep(currentStep - 1);
+        prevStep = currentStep - 1;
       }
+      setCurrentStep(prevStep);
+      // 뒤로가면 highestStep도 현재 위치로 조정
+      setHighestStep(prevStep);
     } else {
       navigate('/');
     }
@@ -221,8 +280,9 @@ function UserInfoPage() {
                   clearTimeout(nameTimeoutRef.current);
                 }
 
+                // 수정 중이 아닐 때만 자동 다음 이동
                 // 3자 이상 입력 후 1.5초 동안 추가 입력 없으면 다음으로
-                if (newName.trim().length >= 3) {
+                if (!isEditing && newName.trim().length >= 3) {
                   nameTimeoutRef.current = setTimeout(() => {
                     autoNext();
                   }, 1500);
@@ -233,7 +293,12 @@ function UserInfoPage() {
                   if (nameTimeoutRef.current) {
                     clearTimeout(nameTimeoutRef.current);
                   }
-                  autoNext();
+                  // 수정 중이면 완료, 아니면 다음으로
+                  if (isEditing) {
+                    finishEditing();
+                  } else {
+                    autoNext();
+                  }
                 }
               }}
               placeholder="이름을 입력해주세요"
@@ -270,8 +335,10 @@ function UserInfoPage() {
                   let apiFormat = '';
                   if (numbers.length === 8) {
                     apiFormat = `${numbers.slice(0, 4)}-${numbers.slice(4, 6)}-${numbers.slice(6, 8)}`;
-                    // 8자리 입력 완료 시 자동으로 다음
-                    setTimeout(() => autoNext(), 300);
+                    // 수정 중이 아닐 때만 8자리 입력 완료 시 자동으로 다음
+                    if (!isEditing) {
+                      setTimeout(() => autoNext(), 300);
+                    }
                   }
 
                   setFormData({
@@ -282,7 +349,11 @@ function UserInfoPage() {
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && formData.birthDate.length === 10) {
-                    autoNext();
+                    if (isEditing) {
+                      finishEditing();
+                    } else {
+                      autoNext();
+                    }
                   }
                 }}
                 placeholder="2000.01.01"
@@ -344,14 +415,18 @@ function UserInfoPage() {
 
                   setFormData({ ...formData, birthTime: formatted });
 
-                  // 4자리 입력 완료 시 자동으로 다음
-                  if (numbers.length === 4) {
+                  // 수정 중이 아닐 때만 4자리 입력 완료 시 자동으로 다음
+                  if (!isEditing && numbers.length === 4) {
                     setTimeout(() => autoNext(), 300);
                   }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && formData.birthTime.length === 5) {
-                    autoNext();
+                    if (isEditing) {
+                      finishEditing();
+                    } else {
+                      autoNext();
+                    }
                   }
                 }}
                 placeholder="15:30"
@@ -376,9 +451,16 @@ function UserInfoPage() {
                     timeAdjustment: newValue ? null : formData.timeAdjustment,
                     timeAdjustMinutes: newValue ? null : formData.timeAdjustMinutes,
                   });
-                  // "시간 모름" 클릭 시 태어난 곳 건너뛰고 성별로
+                  // "시간 모름" 클릭 시 처리
                   if (newValue) {
-                    autoNext(true);
+                    setTimeout(() => {
+                      if (isEditing) {
+                        setCurrentStep(highestStep);
+                        setIsEditing(false);
+                      } else {
+                        autoNext(true); // 태어난 곳 건너뛰고 성별로
+                      }
+                    }, 50);
                   }
                 }}
               >
@@ -435,7 +517,15 @@ function UserInfoPage() {
               className={`gender-btn ${formData.gender === 'male' ? 'active' : ''}`}
               onClick={() => {
                 setFormData({ ...formData, gender: 'male' });
-                autoNext();
+                // 상태 업데이트 후 처리를 위해 setTimeout 사용
+                setTimeout(() => {
+                  if (isEditing) {
+                    setCurrentStep(highestStep);
+                    setIsEditing(false);
+                  } else {
+                    autoNext();
+                  }
+                }, 50);
               }}
             >
               남성
@@ -445,7 +535,15 @@ function UserInfoPage() {
               className={`gender-btn ${formData.gender === 'female' ? 'active' : ''}`}
               onClick={() => {
                 setFormData({ ...formData, gender: 'female' });
-                autoNext();
+                // 상태 업데이트 후 처리를 위해 setTimeout 사용
+                setTimeout(() => {
+                  if (isEditing) {
+                    setCurrentStep(highestStep);
+                    setIsEditing(false);
+                  } else {
+                    autoNext();
+                  }
+                }, 50);
               }}
             >
               여성
@@ -468,8 +566,8 @@ function UserInfoPage() {
                   clearTimeout(nameTimeoutRef.current);
                 }
 
-                // 유효한 이메일 입력 후 0.8초 후 자동 이동
-                if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+                // 수정 중이 아닐 때만 유효한 이메일 입력 후 0.8초 후 자동 이동
+                if (!isEditing && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
                   nameTimeoutRef.current = setTimeout(() => {
                     autoNext();
                   }, 800);
@@ -480,7 +578,11 @@ function UserInfoPage() {
                   if (nameTimeoutRef.current) {
                     clearTimeout(nameTimeoutRef.current);
                   }
-                  autoNext();
+                  if (isEditing) {
+                    finishEditing();
+                  } else {
+                    autoNext();
+                  }
                 }
               }}
               placeholder="이메일을 입력해주세요"
@@ -517,14 +619,18 @@ function UserInfoPage() {
                   phone: numbers
                 });
 
-                // 11자리 입력 완료 시 자동으로 다음
-                if (numbers.length === 11) {
+                // 수정 중이 아닐 때만 11자리 입력 완료 시 자동으로 다음
+                if (!isEditing && numbers.length === 11) {
                   setTimeout(() => autoNext(), 300);
                 }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && formData.phone.length >= 10) {
-                  autoNext();
+                  if (isEditing) {
+                    finishEditing();
+                  } else {
+                    autoNext();
+                  }
                 }
               }}
               placeholder="010-0000-0000"
@@ -668,50 +774,82 @@ function UserInfoPage() {
 
           {renderStepContent()}
 
-          {/* 완료된 단계 표시 */}
+          {/* 수정 중일 때 다음/완료 버튼 */}
+          {isEditing && currentStep !== 7 && (
+            <button
+              className="next-step-btn"
+              onClick={goToNextStep}
+              disabled={!canProceed()}
+            >
+              완료
+            </button>
+          )}
+
+          {/* 완료된 단계 표시 (현재 단계 제외, highestStep 기준) */}
           <div className="completed-steps">
-            {currentStep > 0 && formData.name && (
-              <div className="completed-item" onClick={() => setCurrentStep(0)}>
+            {highestStep > 0 && currentStep !== 0 && formData.name && (
+              <div
+                className={`completed-item ${currentStep === 0 ? 'editing' : ''}`}
+                onClick={() => goToStep(0)}
+              >
                 <span className="label">이름</span>
                 <span className="value">{formData.name}</span>
               </div>
             )}
-            {currentStep > 1 && formData.birthDate && (
-              <div className="completed-item" onClick={() => setCurrentStep(1)}>
+            {highestStep > 1 && currentStep !== 1 && formData.birthDate && (
+              <div
+                className={`completed-item ${currentStep === 1 ? 'editing' : ''}`}
+                onClick={() => goToStep(1)}
+              >
                 <span className="label">생년월일</span>
                 <span className="value">
                   {formData.birthDate} ({formData.calendarType === 'solar' ? '양력' : formData.calendarType === 'lunar' ? '음력' : '음력윤달'})
                 </span>
               </div>
             )}
-            {currentStep > 2 && (
-              <div className="completed-item" onClick={() => setCurrentStep(2)}>
+            {highestStep > 2 && currentStep !== 2 && (
+              <div
+                className={`completed-item ${currentStep === 2 ? 'editing' : ''}`}
+                onClick={() => goToStep(2)}
+              >
                 <span className="label">태어난 시간</span>
                 <span className="value">
                   {formData.birthTimeUnknown ? '모름' : formData.birthTime}
                 </span>
               </div>
             )}
-            {currentStep > 3 && formData.birthPlace && (
-              <div className="completed-item" onClick={() => setCurrentStep(3)}>
+            {highestStep > 3 && currentStep !== 3 && formData.birthPlace && (
+              <div
+                className={`completed-item ${currentStep === 3 ? 'editing' : ''}`}
+                onClick={() => goToStep(3)}
+              >
                 <span className="label">태어난 곳</span>
                 <span className="value">{formData.birthPlace}</span>
               </div>
             )}
-            {currentStep > 4 && formData.gender && (
-              <div className="completed-item" onClick={() => setCurrentStep(4)}>
+            {highestStep > 4 && currentStep !== 4 && formData.gender && (
+              <div
+                className={`completed-item ${currentStep === 4 ? 'editing' : ''}`}
+                onClick={() => goToStep(4)}
+              >
                 <span className="label">성별</span>
                 <span className="value">{formData.gender === 'male' ? '남성' : '여성'}</span>
               </div>
             )}
-            {currentStep > 5 && formData.email && (
-              <div className="completed-item" onClick={() => setCurrentStep(5)}>
+            {highestStep > 5 && currentStep !== 5 && formData.email && (
+              <div
+                className={`completed-item ${currentStep === 5 ? 'editing' : ''}`}
+                onClick={() => goToStep(5)}
+              >
                 <span className="label">이메일</span>
                 <span className="value">{formData.email}</span>
               </div>
             )}
-            {currentStep > 6 && formData.phone && (
-              <div className="completed-item" onClick={() => setCurrentStep(6)}>
+            {highestStep > 6 && currentStep !== 6 && formData.phone && (
+              <div
+                className={`completed-item ${currentStep === 6 ? 'editing' : ''}`}
+                onClick={() => goToStep(6)}
+              >
                 <span className="label">연락처</span>
                 <span className="value">{formData.phoneDisplay}</span>
               </div>

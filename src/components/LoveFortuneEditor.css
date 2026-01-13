@@ -1,0 +1,704 @@
+/* LoveFortuneEditor 스타일 */
+
+.love-fortune-editor {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.love-fortune-editor-empty,
+.love-fortune-editor-loading {
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.love-fortune-editor-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(253, 242, 248, 0.97);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.love-fortune-editor-loading-overlay .loading-content {
+  text-align: center;
+}
+
+.love-fortune-editor-loading-overlay .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #fce7f3;
+  border-top-color: #ec4899;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+.love-fortune-editor-loading-overlay .loading-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #be185d;
+  margin-bottom: 8px;
+}
+
+.love-fortune-editor-loading-overlay .loading-subtext {
+  font-size: 0.9rem;
+  color: #db2777;
+}
+
+.love-fortune-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  border-bottom: 1px solid #f9a8d4;
+}
+
+.love-fortune-editor-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #be185d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.love-fortune-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-regenerate-all.love-btn,
+.btn-regenerate-year.love-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-regenerate-all.love-btn:hover,
+.btn-regenerate-year.love-btn:hover {
+  background: linear-gradient(135deg, #db2777 0%, #be185d 100%);
+  transform: translateY(-1px);
+}
+
+.btn-regenerate-all.love-btn:disabled,
+.btn-regenerate-year.love-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 기본 분석 섹션 */
+.base-love-analysis-section {
+  margin: 16px;
+  border: 1px solid #f9a8d4;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fff 100%);
+  overflow: hidden;
+}
+
+.base-love-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(236, 72, 153, 0.1);
+  border-bottom: 1px solid #f9a8d4;
+}
+
+.base-love-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #be185d;
+}
+
+.base-love-content {
+  padding: 16px;
+}
+
+.base-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.base-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #f3e8ff;
+}
+
+.base-info-item .info-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.base-info-item .info-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #be185d;
+}
+
+/* 연도별 연애운 */
+.love-fortune-editor-body {
+  padding: 16px;
+}
+
+.yearly-love-fortune-section {
+  margin-top: 8px;
+}
+
+.yearly-love-fortune-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f9a8d4;
+}
+
+/* 단일 연도 편집기 */
+.year-love-fortune-editor {
+  margin-bottom: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.year-love-fortune-editor:hover {
+  border-color: #f9a8d4;
+}
+
+.year-love-fortune-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.year-love-fortune-header:hover {
+  background: #fdf2f8;
+}
+
+.year-love-fortune-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.year-index-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ec4899;
+  background: #fdf2f8;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.year-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.ganji-label {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.fortune-level-badge.love-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.year-love-fortune-toggle {
+  color: #9ca3af;
+}
+
+/* 연도별 본문 */
+.year-love-fortune-body {
+  padding: 16px;
+  background: #fafafa;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 일지-세운 정보 */
+.love-info-container {
+  margin-bottom: 16px;
+}
+
+.love-info-row {
+  background: white;
+  border-radius: 8px;
+  padding: 12px 16px;
+  border: 1px solid #f9a8d4;
+}
+
+.love-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.love-type-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.love-chars {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* 4가지 분석 박스 */
+.love-analysis-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.love-analysis-box {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.love-analysis-box .analysis-header {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.love-analysis-box .analysis-type {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.love-analysis-box .analysis-label {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.love-analysis-box .analysis-content {
+  padding: 12px;
+}
+
+/* 일지 성패 박스 */
+.love-analysis-box.day-earth-box {
+  border-left: 4px solid #ec4899;
+}
+
+.love-analysis-box.day-earth-box .analysis-header {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fff 100%);
+}
+
+.love-analysis-box.day-earth-box .analysis-type {
+  color: #be185d;
+}
+
+/* 조후 박스 */
+.love-analysis-box.johu-box {
+  border-left: 4px solid #f97316;
+}
+
+.love-analysis-box.johu-box .analysis-header {
+  background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+}
+
+.love-analysis-box.johu-box .analysis-type {
+  color: #c2410c;
+}
+
+.johu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.johu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.johu-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  min-width: 45px;
+}
+
+.johu-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.johu-level {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+/* 강약 박스 */
+.love-analysis-box.strength-box {
+  border-left: 4px solid #8b5cf6;
+}
+
+.love-analysis-box.strength-box .analysis-header {
+  background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%);
+}
+
+.love-analysis-box.strength-box .analysis-type {
+  color: #6d28d9;
+}
+
+.strength-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.strength-level {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #6d28d9;
+}
+
+.strength-score {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* 합형충파해 박스 */
+.love-analysis-box.relations-box {
+  border-left: 4px solid #10b981;
+}
+
+.love-analysis-box.relations-box .analysis-header {
+  background: linear-gradient(135deg, #ecfdf5 0%, #fff 100%);
+}
+
+.love-analysis-box.relations-box .analysis-type {
+  color: #047857;
+}
+
+.relations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.relation-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.relation-type {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: white;
+}
+
+.relation-item.relation-good .relation-type {
+  background: #10b981;
+}
+
+.relation-item.relation-bad .relation-type {
+  background: #ef4444;
+}
+
+.relation-item.relation-warning .relation-type {
+  background: #f97316;
+}
+
+.relation-item.relation-caution .relation-type {
+  background: #eab308;
+}
+
+.relation-desc {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+/* 공통 분석 스타일 */
+.outcome-item {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.outcome-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.analysis-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.row-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  min-width: 40px;
+}
+
+.row-value {
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.code-value {
+  font-weight: 600;
+  color: #be185d;
+}
+
+.result-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: white;
+}
+
+.result-badge.result-success {
+  background: #10b981;
+}
+
+.result-badge.result-fail {
+  background: #ef4444;
+}
+
+.result-badge.result-mixed-success {
+  background: #84cc16;
+}
+
+.result-badge.result-mixed-fail {
+  background: #f97316;
+}
+
+.analysis-reason {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.analysis-empty {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  text-align: center;
+  padding: 12px;
+}
+
+/* 매니저 수정 */
+.manager-edit-section.love-edit {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #f9a8d4;
+}
+
+.edit-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #be185d;
+  margin-bottom: 12px;
+}
+
+.edit-category.love-category {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.fortune-level-select.love-select {
+  padding: 8px 12px;
+  border: 1px solid #f9a8d4;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  color: #374151;
+}
+
+.fortune-level-select.love-select:focus {
+  outline: none;
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.edit-input {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+/* 생성된 콘텐츠 */
+.generated-content-section.love-content {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fff 100%);
+  border: 1px solid #f9a8d4;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.generated-content-section .content-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #be185d;
+  margin-bottom: 12px;
+}
+
+.generated-content-section .generated-content {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #374151;
+}
+
+/* 재생성 버튼 */
+.year-love-fortune-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 로딩 스피너 */
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #fce7f3;
+  border-top-color: #ec4899;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fce7f3;
+  border-top-color: #ec4899;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+.section-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+}
+
+.section-loading-text {
+  font-size: 0.9rem;
+  color: #be185d;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .love-analysis-section {
+    grid-template-columns: 1fr;
+  }
+
+  .base-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .year-love-fortune-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .year-love-fortune-title {
+    flex-wrap: wrap;
+  }
+}

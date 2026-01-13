@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
+import FortuneEditor from '../components/FortuneEditor';
+import CareerEditor from '../components/CareerEditor';
+import LoveFortuneEditor from '../components/LoveFortuneEditor';
 import './OrderDetail.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -339,7 +342,7 @@ function SajuValidationDisplay({ data }) {
             <div className="kv-row"><span className="kv-key">코드:</span><span className="kv-value">{safeString(outcome.code)}</span></div>
           )}
         </div>
-        {(outcome.first_roles || outcome.second_roles || outcome.third_roles) && (
+        {(outcome.first_roles || outcome.second_roles || outcome.third_roles || outcome.fourth_roles) && (
           <div className="outcome-roles-section">
             {outcome.first_roles && (
               <div className="role-row">
@@ -357,6 +360,12 @@ function SajuValidationDisplay({ data }) {
               <div className="role-row">
                 <span className="role-label">3차 역할:</span>
                 {renderRoles(outcome.third_roles)}
+              </div>
+            )}
+            {outcome.fourth_roles && (
+              <div className="role-row">
+                <span className="role-label">4차 역할:</span>
+                {renderRoles(outcome.fourth_roles)}
               </div>
             )}
           </div>
@@ -821,10 +830,10 @@ function SajuValidationDisplay({ data }) {
                         </div>
                       )}
 
-                      {/* 일지 성패 */}
+                      {/* 일지 성패 (배우자궁/연애운) */}
                       {yearLuckResult.earth_day_outcome?.filter(Boolean).length > 0 && (
-                        <div className="outcome-sub-section">
-                          <div className="outcome-sub-title">일지</div>
+                        <div className="outcome-sub-section day-earth-section">
+                          <div className="outcome-sub-title day-earth-title">일지 성패 (배우자궁)</div>
                           <div className="outcome-list">
                             {yearLuckResult.earth_day_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
                           </div>
@@ -952,15 +961,17 @@ function OrderDetail() {
   const [chapter3Loading, setChapter3Loading] = useState(false);
   const [chapter3Error, setChapter3Error] = useState(null);
 
-  // 챕터4 상태 (현재 대운 운세)
+  // 챕터4 상태 (재물운 5년)
   const [chapter4Data, setChapter4Data] = useState(null);
   const [chapter4Loading, setChapter4Loading] = useState(false);
   const [chapter4Error, setChapter4Error] = useState(null);
+  const [fortuneEditorData, setFortuneEditorData] = useState([]);  // 재물운 편집 데이터
+  const [fortuneBaseFortune, setFortuneBaseFortune] = useState(null);  // 기본 재물운 설명
+  const [careerEditorData, setCareerEditorData] = useState([]);  // 직업운 편집 데이터
+  const [careerBaseCareer, setCareerBaseCareer] = useState(null);  // 기본 직업운 설명
 
-  // 챕터5 상태 (올해의 운세)
-  const [chapter5Data, setChapter5Data] = useState(null);
-  const [chapter5Loading, setChapter5Loading] = useState(false);
-  const [chapter5Error, setChapter5Error] = useState(null);
+  // 챕터6 상태 (연애운/배우자운) - LoveFortuneEditor에서 관리
+  const [loveFortuneData, setLoveFortuneData] = useState(null);
 
   // 명리학적 근거 상태 (각 챕터별)
   const [basis1Data, setBasis1Data] = useState(null);
@@ -1093,6 +1104,9 @@ function OrderDetail() {
           )}
           {outcome.third_roles && (
             <div className="kv-row"><span className="kv-key">3차 역할:</span><span className="kv-value">{renderRolesForBasis(outcome.third_roles)}</span></div>
+          )}
+          {outcome.fourth_roles && (
+            <div className="kv-row"><span className="kv-key">4차 역할:</span><span className="kv-value">{renderRolesForBasis(outcome.fourth_roles)}</span></div>
           )}
         </div>
       </div>
@@ -1410,113 +1424,88 @@ function OrderDetail() {
     }
   };
 
-  // 챕터5 생성 API 호출 (올해의 운세)
-  const fetchChapter5 = async () => {
-    setChapter5Loading(true);
-    setChapter5Error(null);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter5`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '챕터5 생성에 실패했습니다.');
-      }
-
-      setChapter5Data(data.chapter);
-    } catch (err) {
-      setChapter5Error(err.message);
-    } finally {
-      setChapter5Loading(false);
-    }
-  };
-
-  // 레포트 챕터 설정
+  // 레포트 챕터 설정 - 번호와 라벨 포함
   const getReportChapters = (reportType) => {
     const currentYear = new Date().getFullYear();
-    // 공통 챕터1 - 일주 기반 성격 분석
-    const chapter1 = { id: 'chapter1', title: '나의 아이덴티티', icon: '🧭' };
-    // 공통 챕터2 - 월주 및 격국 기반 사회적 역할 분석
-    const chapter2 = { id: 'chapter2', title: '나의 사회적 역할', icon: '🏛️' };
-    // 공통 챕터3 - 대운 흐름 그래프
-    const chapter3 = { id: 'chapter3', title: '대운 흐름 분석', icon: '📊' };
-    // 공통 챕터4 - 현재 대운 운세 분석
-    const chapter4 = { id: 'chapter4', title: '현재 대운의 운세', icon: '🔮' };
-    // 공통 챕터5 - 올해의 운세 분석
-    const chapter5 = { id: 'chapter5', title: `${currentYear}년 올해의 운세`, icon: '🌟' };
+    // 공통 챕터 정의 (번호, 라벨 포함)
+    const baseChapter = { id: 'saju_info', number: 0, label: '기본정보', title: '사주정보', icon: '📋', category: 'info' };
+    const chapter1 = { id: 'chapter1', number: 1, label: '아이덴티티', title: '나의 아이덴티티', icon: '🧭', category: 'analysis' };
+    const chapter2 = { id: 'chapter2', number: 2, label: '잠재력', title: '나의 잠재력과 사회적 역할', icon: '🏛️', category: 'analysis' };
+    const chapter3 = { id: 'chapter3', number: 3, label: '대운흐름', title: '대운 흐름 분석', icon: '📊', category: 'luck' };
+    const chapter4 = { id: 'chapter4', number: 4, label: '재물운', title: '재물운 (향후 5년)', icon: '💰', category: 'luck' };
+    const chapter5 = { id: 'chapter5', number: 5, label: '직업운', title: '직업운/사회운 (향후 5년)', icon: '💼', category: 'luck' };
+    const chapter6 = { id: 'chapter6', number: 6, label: '연애운', title: '연애운/배우자운 (향후 5년)', icon: '💕', category: 'luck' };
 
     switch (reportType) {
       case 'new_year':
         return [
-          { id: 'saju_info', title: '사주정보', icon: '📋' },
+          baseChapter,
           chapter1,
           chapter2,
           chapter3,
           chapter4,
           chapter5,
-          { id: 'year_meaning', title: `${currentYear}년의 의미`, icon: '🎯' },
-          { id: 'seasonal', title: '계절별 운세', icon: '🌸' },
-          { id: 'total', title: `${currentYear}년 총운`, icon: '⭐' },
-          { id: 'fortune', title: `${currentYear}년 재물운`, icon: '💰' },
-          { id: 'career', title: `${currentYear}년 직장/사업운`, icon: '💼' },
-          { id: 'love', title: `${currentYear}년 연애운`, icon: '💕' },
-          { id: 'interpersonal', title: `${currentYear}년 대인관계운`, icon: '🤝' },
-          { id: 'monthly', title: `${currentYear}년 월운`, icon: '📅' },
+          chapter6,
+          { id: 'year_meaning', number: 7, label: '해의의미', title: `${currentYear}년의 의미`, icon: '🎯', category: 'yearly' },
+          { id: 'seasonal', number: 8, label: '계절운세', title: '계절별 운세', icon: '🌸', category: 'yearly' },
+          { id: 'total', number: 9, label: '총운', title: `${currentYear}년 총운`, icon: '⭐', category: 'yearly' },
+          { id: 'fortune', number: 10, label: '재물', title: `${currentYear}년 재물운`, icon: '💰', category: 'detail' },
+          { id: 'career', number: 11, label: '직장/사업', title: `${currentYear}년 직장/사업운`, icon: '💼', category: 'detail' },
+          { id: 'love', number: 12, label: '연애', title: `${currentYear}년 연애운`, icon: '💕', category: 'detail' },
+          { id: 'interpersonal', number: 13, label: '대인관계', title: `${currentYear}년 대인관계운`, icon: '🤝', category: 'detail' },
+          { id: 'monthly', number: 14, label: '월운', title: `${currentYear}년 월운`, icon: '📅', category: 'detail' },
         ];
       case 'love':
         return [
-          { id: 'saju_info', title: '사주정보', icon: '📋' },
+          baseChapter,
           chapter1,
           chapter2,
           chapter3,
           chapter4,
           chapter5,
-          { id: 'love_style', title: '연애 스타일', icon: '💕' },
-          { id: 'ideal_type', title: '이상형 분석', icon: '👤' },
-          { id: 'love_luck', title: '연애운 분석', icon: '💘' },
-          { id: 'compatibility', title: '궁합 포인트', icon: '💑' },
+          chapter6,
+          { id: 'love_style', number: 7, label: '연애스타일', title: '연애 스타일', icon: '💕', category: 'detail' },
+          { id: 'ideal_type', number: 8, label: '이상형', title: '이상형 분석', icon: '👤', category: 'detail' },
+          { id: 'love_luck', number: 9, label: '연애운', title: '연애운 분석', icon: '💘', category: 'detail' },
+          { id: 'compatibility', number: 10, label: '궁합', title: '궁합 포인트', icon: '💑', category: 'detail' },
         ];
       case 'wealth':
         return [
-          { id: 'saju_info', title: '사주정보', icon: '📋' },
+          baseChapter,
           chapter1,
           chapter2,
           chapter3,
           chapter4,
           chapter5,
-          { id: 'wealth_type', title: '재물 유형', icon: '💎' },
-          { id: 'fortune_luck', title: '재물운 분석', icon: '💰' },
-          { id: 'investment', title: '투자 성향', icon: '📈' },
-          { id: 'advice', title: '재물 조언', icon: '💡' },
+          chapter6,
+          { id: 'wealth_type', number: 7, label: '재물유형', title: '재물 유형', icon: '💎', category: 'detail' },
+          { id: 'fortune_luck', number: 8, label: '재물운', title: '재물운 분석', icon: '💰', category: 'detail' },
+          { id: 'investment', number: 9, label: '투자', title: '투자 성향', icon: '📈', category: 'detail' },
+          { id: 'advice', number: 10, label: '조언', title: '재물 조언', icon: '💡', category: 'detail' },
         ];
       case 'career':
         return [
-          { id: 'saju_info', title: '사주정보', icon: '📋' },
+          baseChapter,
           chapter1,
           chapter2,
           chapter3,
           chapter4,
           chapter5,
-          { id: 'career_type', title: '직업 적성', icon: '🎯' },
-          { id: 'career_luck', title: '직업운 분석', icon: '💼' },
-          { id: 'suitable_jobs', title: '적합 직종', icon: '📋' },
-          { id: 'advice', title: '커리어 조언', icon: '💡' },
+          chapter6,
+          { id: 'career_type', number: 7, label: '직업적성', title: '직업 적성', icon: '🎯', category: 'detail' },
+          { id: 'career_luck', number: 8, label: '직업운상세', title: '직업운 분석', icon: '💼', category: 'detail' },
+          { id: 'suitable_jobs', number: 9, label: '적합직종', title: '적합 직종', icon: '📋', category: 'detail' },
+          { id: 'advice', number: 10, label: '조언', title: '커리어 조언', icon: '💡', category: 'detail' },
         ];
       default:
         return [
-          { id: 'saju_info', title: '사주정보', icon: '📋' },
+          baseChapter,
           chapter1,
           chapter2,
           chapter3,
           chapter4,
           chapter5,
+          chapter6,
         ];
     }
   };
@@ -1588,8 +1577,28 @@ function OrderDetail() {
           setChapter4Data({ content: data.report_output.chapter4_content });
           setBasis4Data(data.report_output.chapter4_basis);
         }
-        if (data.report_output.chapter5_content) {
-          setChapter5Data({ content: data.report_output.chapter5_content });
+        if (data.report_output.chapter6_content) {
+          setLoveFortuneData({ content: data.report_output.chapter6_content });
+        }
+        // 재물운 데이터 복원
+        if (data.report_output.fortune_years) {
+          const fortuneData = data.report_output.fortune_years;
+          if (fortuneData.yearlyFortunes) {
+            setFortuneEditorData(fortuneData.yearlyFortunes);
+          }
+          if (fortuneData.baseFortune) {
+            setFortuneBaseFortune(fortuneData.baseFortune);
+          }
+        }
+        // 직업운 데이터 복원
+        if (data.report_output.career_years) {
+          const careerData = data.report_output.career_years;
+          if (careerData.yearlyCareers) {
+            setCareerEditorData(careerData.yearlyCareers);
+          }
+          if (careerData.baseCareer) {
+            setCareerBaseCareer(careerData.baseCareer);
+          }
         }
       }
     } catch (err) {
@@ -1601,11 +1610,11 @@ function OrderDetail() {
 
   // 전체 레포트 저장
   const saveFullReport = async () => {
-    return saveFullReportWithData(chapter1Data, chapter2Data, chapter3Data, chapter4Data, chapter5Data);
+    return saveFullReportWithData(chapter1Data, chapter2Data, chapter3Data, chapter4Data, loveFortuneData);
   };
 
   // 전체 레포트 저장 (데이터 직접 전달)
-  const saveFullReportWithData = async (ch1Data, ch2Data, ch3Data, ch4Data, ch5Data) => {
+  const saveFullReportWithData = async (ch1Data, ch2Data, ch3Data, ch4Data, ch6LoveData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_full_report`, {
         method: 'POST',
@@ -1622,7 +1631,7 @@ function OrderDetail() {
           chapter3_basis: basis3Data,
           chapter4_content: ch4Data?.content,
           chapter4_basis: basis4Data,
-          chapter5_content: ch5Data?.content
+          chapter6_content: ch6LoveData?.content
         })
       });
 
@@ -1643,10 +1652,11 @@ function OrderDetail() {
   const chapterInfo = {
     validating: { icon: '🔍', title: '사주 검증' },
     1: { icon: '🧭', title: '나의 아이덴티티' },
-    2: { icon: '🏛️', title: '나의 사회적 역할' },
+    2: { icon: '🏛️', title: '나의 잠재력과 사회적 역할' },
     3: { icon: '📊', title: '대운 흐름 분석' },
     4: { icon: '🔮', title: '현재 대운의 운세' },
-    5: { icon: '🌟', title: '올해의 운세' },
+    5: { icon: '💼', title: '직업운/사회운' },
+    6: { icon: '🌟', title: '올해의 운세' },
     saving: { icon: '💾', title: '레포트 저장' }
   };
 
@@ -1684,7 +1694,7 @@ function OrderDetail() {
     let newChapter2Data = chapter2Data;
     let newChapter3Data = chapter3Data;
     let newChapter4Data = chapter4Data;
-    let newChapter5Data = chapter5Data;
+    let newChapter6Data = loveFortuneData;
 
     try {
       // 챕터1 생성
@@ -1751,25 +1761,11 @@ function OrderDetail() {
         setChapter4Loading(false);
       }
 
-      // 챕터5 생성
-      setGeneratingChapter(5);
-      if (forceRegenerate || !chapter5Data?.content) {
-        setChapter5Loading(true);
-        const res5 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter5`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data5 = await res5.json();
-        if (res5.ok && data5.success) {
-          setChapter5Data(data5.chapter);
-          newChapter5Data = data5.chapter;
-        }
-        setChapter5Loading(false);
-      }
+      // 챕터6 (연애운)은 LoveFortuneEditor에서 관리됨 - 자동 생성 제외
 
       // 전체 저장 (새로 생성된 데이터 사용)
       setGeneratingChapter('saving');
-      await saveFullReportWithData(newChapter1Data, newChapter2Data, newChapter3Data, newChapter4Data, newChapter5Data);
+      await saveFullReportWithData(newChapter1Data, newChapter2Data, newChapter3Data, newChapter4Data, newChapter6Data);
 
       // 주문 상태를 pending으로 변경
       if (order.status !== 'pending' && order.status !== 'completed') {
@@ -2528,18 +2524,23 @@ function OrderDetail() {
                 </div>
               </div>
 
-              {/* 챕터 탭 */}
-              <div className="chapter-tabs">
-                {reportChapters.map((chapter, idx) => (
-                  <button
-                    key={chapter.id}
-                    className={`chapter-tab ${selectedChapter === idx ? 'active' : ''}`}
-                    onClick={() => setSelectedChapter(idx)}
-                  >
-                    <span className="chapter-icon">{chapter.icon}</span>
-                    <span className="chapter-title">{chapter.title}</span>
-                  </button>
-                ))}
+              {/* 챕터 탭 - 카테고리별 그룹화 */}
+              <div className="chapter-tabs-container">
+                <div className="chapter-tabs">
+                  {reportChapters.map((chapter, idx) => (
+                    <button
+                      key={chapter.id}
+                      className={`chapter-tab ${selectedChapter === idx ? 'active' : ''} category-${chapter.category || 'default'}`}
+                      onClick={() => setSelectedChapter(idx)}
+                      title={chapter.title}
+                    >
+                      <span className="chapter-number">
+                        {chapter.number === 0 ? '📋' : (chapter.number ?? chapter.icon ?? idx)}
+                      </span>
+                      <span className="chapter-label">{chapter.label || chapter.title}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* 챕터 내용 */}
@@ -2547,8 +2548,16 @@ function OrderDetail() {
                 {reportChapters[selectedChapter] && (
                   <div className="chapter-display">
                     <div className="chapter-header">
-                      <span className="chapter-icon-large">{reportChapters[selectedChapter].icon}</span>
-                      <h4>{reportChapters[selectedChapter].title}</h4>
+                      <div className="chapter-header-badge">
+                        {reportChapters[selectedChapter].number === 0 || reportChapters[selectedChapter].number === undefined
+                          ? <span className="header-icon">{reportChapters[selectedChapter].icon}</span>
+                          : <span className="header-number">Chapter {reportChapters[selectedChapter].number}</span>
+                        }
+                      </div>
+                      <div className="chapter-header-text">
+                        <span className="header-label">{reportChapters[selectedChapter].label || ''}</span>
+                        <h4>{reportChapters[selectedChapter].title}</h4>
+                      </div>
                     </div>
                     <div className="chapter-body">
                       {reportChapters[selectedChapter].id === 'saju_info' && validationResult ? (
@@ -3618,7 +3627,7 @@ function OrderDetail() {
                           )}
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter4' ? (
-                        <div className="chapter4-content">
+                        <div className="chapter4-content fortune-chapter">
                           {chapter4Error && (
                             <div className="chapter-error">
                               <AlertCircle size={20} />
@@ -3626,496 +3635,54 @@ function OrderDetail() {
                             </div>
                           )}
 
-                          {!chapter4Data && !chapter4Loading && !chapter4Error && (
+                          {/* 재물운 편집기 - 사주 검증이 완료된 경우 표시 */}
+                          {validationResult ? (
+                            <FortuneEditor
+                              orderId={id}
+                              validationResult={validationResult}
+                              initialData={fortuneEditorData}
+                              initialBaseFortune={fortuneBaseFortune}
+                              onChange={(data) => {
+                                // 데이터 변경 시 부모 상태 업데이트 (챕터 전환 시 유지용)
+                                if (data.yearlyFortunes) {
+                                  setFortuneEditorData(data.yearlyFortunes);
+                                }
+                                if (data.baseFortune) {
+                                  setFortuneBaseFortune(data.baseFortune);
+                                }
+                              }}
+                            />
+                          ) : (
                             <div className="chapter4-generate">
                               <p className="chapter4-description">
-                                현재 대운의 운세를 분석합니다.
+                                향후 5년간의 재물운을 분석합니다.
                               </p>
                               <p className="chapter4-subdescription">
-                                격국 성패 분석 결과를 바탕으로 현재 10년 대운의 상세 운세를 AI가 분석합니다.
+                                격국 성패 분석 결과를 바탕으로 AI가 상세 재물운을 생성합니다. 먼저 사주 검증을 실행해주세요.
                               </p>
 
-                              {/* 명리학적 근거 조회 영역 */}
-                              {!basis4Data && !basis4Loading && (
-                                <div className="basis-preview-section">
-                                  <button
-                                    className="btn btn-basis-preview"
-                                    onClick={fetchBasis4}
-                                    disabled={basis4Loading}
-                                  >
-                                    <FileText size={18} />
-                                    명리학적 근거 살펴보기
-                                  </button>
-                                  {basis4Error && (
-                                    <p className="basis-error">{basis4Error}</p>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* 명리학적 근거 로딩 */}
-                              {basis4Loading && (
-                                <div className="basis-loading">
-                                  <Loader size={24} className="spinning" />
-                                  <p>명리학적 근거를 조회하고 있습니다...</p>
-                                </div>
-                              )}
-
-                              {/* 명리학적 근거 표시 */}
-                              {basis4Data && (
-                                <div className="basis-preview-result">
-                                  <div className="basis-preview-box">
-                                    <div className="basis-header">
-                                      <span className="basis-icon">🔮</span>
-                                      <h5>사주명리학적 분석 근거</h5>
-                                    </div>
-                                    <div className="basis-content">
-                                      <div className="basis-item">
-                                        <span className="basis-label">분석 기준</span>
-                                        <span className="basis-value">{basis4Data.type}</span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">현재 대운</span>
-                                        <span className="basis-value decade-ganji">
-                                          {basis4Data.decade_ganji}
-                                          <span className="decade-detail">
-                                            (천간: {basis4Data.decade_sky}({basis4Data.decade_sky_sipsin}),
-                                            지지: {basis4Data.decade_earth}({basis4Data.decade_earth_sipsin}))
-                                          </span>
-                                        </span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">대운 기간</span>
-                                        <span className="basis-value">만 {basis4Data.current_decade?.start_age}~{basis4Data.current_decade?.end_age}세</span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">천간격국</span>
-                                        <span className="basis-value geju-type">{basis4Data.sky_type || '없음'}</span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">지지격국</span>
-                                        <span className="basis-value geju-type">{basis4Data.earth_type || '없음'}</span>
-                                      </div>
-                                      <p className="basis-description">
-                                        {basis4Data.description}
-                                      </p>
-                                    </div>
-
-                                    {/* 십이운성 정보 */}
-                                    {basis4Data.twelve_star_meaning && (
-                                      <div className="twelve-star-preview">
-                                        <div className="twelve-star-header">
-                                          <span className="twelve-star-icon">🌟</span>
-                                          <h6>대운 십이운성: {basis4Data.twelve_star_meaning.name}</h6>
-                                        </div>
-                                        <div className="twelve-star-info">
-                                          <div className="info-row">
-                                            <span className="info-label">생애 단계</span>
-                                            <span className="info-value">{basis4Data.twelve_star_meaning.life_stage}</span>
-                                          </div>
-                                          <div className="info-row">
-                                            <span className="info-label">키워드</span>
-                                            <span className="info-value">{basis4Data.twelve_star_meaning.keywords}</span>
-                                          </div>
-                                          <p className="twelve-star-meaning-text">{basis4Data.twelve_star_meaning.meaning}</p>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* 성패 분석 결과 */}
-                                    {basis4Data.decade_analysis && (
-                                      <div className="decade-analysis-preview">
-                                        <div className="decade-analysis-header">
-                                          <span className="analysis-icon">⚖️</span>
-                                          <h6>대운 성패 분석</h6>
-                                        </div>
-                                        <div className="analysis-content">
-                                          {/* 천간 성패 */}
-                                          <div className="analysis-section">
-                                            <div className="analysis-section-header">
-                                              <span className="section-label sky">천간 ({basis4Data.decade_sky})</span>
-                                            </div>
-                                            {basis4Data.decade_analysis.sky_result?.result?.decade_luck_sky_outcome?.length > 0 ? (
-                                              <div className="outcome-list">
-                                                {basis4Data.decade_analysis.sky_result.result.decade_luck_sky_outcome.map((outcome, idx) =>
-                                                  renderOutcomeItemForBasis(outcome, idx)
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <div className="no-outcome">성패 없음</div>
-                                            )}
-                                          </div>
-                                          {/* 지지 성패 */}
-                                          <div className="analysis-section">
-                                            <div className="analysis-section-header">
-                                              <span className="section-label earth">지지 ({basis4Data.decade_earth})</span>
-                                            </div>
-                                            {basis4Data.decade_analysis.earth_result?.result?.decade_luck_earth_outcome?.length > 0 ? (
-                                              <div className="outcome-list">
-                                                {basis4Data.decade_analysis.earth_result.result.decade_luck_earth_outcome.map((outcome, idx) =>
-                                                  renderOutcomeItemForBasis(outcome, idx)
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <div className="no-outcome">성패 없음</div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* 삼합 정보 */}
-                                    {basis4Data.samhap && (
-                                      <div className="samhap-preview">
-                                        <div className="samhap-header">
-                                          <span className="samhap-icon">🔗</span>
-                                          <h6>삼합 정보: {basis4Data.samhap.title}</h6>
-                                        </div>
-                                        <div className="samhap-content">
-                                          <p>구성: {basis4Data.samhap.chars?.join(' - ')}</p>
-                                          <p>오행: {basis4Data.samhap.element}</p>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* AI 생성 버튼 */}
-                                  <div className="generate-after-basis">
-                                    <p className="generate-prompt">위 명리학적 근거를 바탕으로 AI가 현재 대운 운세 리포트를 생성합니다.</p>
-                                    <button
-                                      className="btn-generate-chapter4"
-                                      onClick={generateChapter4}
-                                    >
-                                      <Sparkles size={18} />
-                                      AI 리포트 생성하기
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
+                              <button
+                                className="btn btn-validate-first"
+                                onClick={() => {
+                                  // 사주 검증 버튼으로 스크롤
+                                  const validateBtn = document.querySelector('.btn-validate');
+                                  if (validateBtn) validateBtn.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                              >
+                                사주 검증하러 가기
+                              </button>
                             </div>
                           )}
 
-                          {chapter4Loading && (
-                            <div className="chapter-loading">
-                              <div className="loading-spinner-wrapper">
-                                <Loader className="spinner" size={32} />
+                          {/* 저장된 재물운 데이터가 있을 때 PDF/미리보기 버튼 표시 */}
+                          {chapter4Data && chapter4Data.fortune_years && (
+                            <div className="chapter4-saved-actions">
+                              <div className="saved-status">
+                                <span className="status-icon">✅</span>
+                                <span className="status-text">
+                                  {Object.keys(chapter4Data.fortune_years).length}년치 재물운이 저장되었습니다.
+                                </span>
                               </div>
-                              <p>현재 대운 운세 리포트를 생성하고 있습니다...</p>
-                              <p className="loading-note">대운과 격국의 성패를 분석하고 있습니다. 잠시만 기다려주세요.</p>
-                            </div>
-                          )}
-
-                          {chapter4Data && (
-                            <div className="chapter4-result">
-                              {/* 명리학적 근거 박스 */}
-                              <div className="chapter4-basis-box">
-                                <div className="basis-header">
-                                  <span className="basis-icon">🔮</span>
-                                  <h5>사주명리학적 분석 근거</h5>
-                                </div>
-                                <div className="basis-content">
-                                  <div className="basis-item">
-                                    <span className="basis-label">분석 기준</span>
-                                    <span className="basis-value">{chapter4Data.basis?.type}</span>
-                                  </div>
-                                  <div className="basis-item">
-                                    <span className="basis-label">현재 대운</span>
-                                    <span className="basis-value decade-ganji">
-                                      {chapter4Data.basis?.decade_ganji}
-                                      <span className="decade-detail">
-                                        (천간: {chapter4Data.basis?.decade_sky}({chapter4Data.basis?.decade_sky_sipsin}),
-                                        지지: {chapter4Data.basis?.decade_earth}({chapter4Data.basis?.decade_earth_sipsin}))
-                                      </span>
-                                    </span>
-                                  </div>
-                                  <div className="basis-item">
-                                    <span className="basis-label">대운 기간</span>
-                                    <span className="basis-value">
-                                      만 {chapter4Data.basis?.current_decade?.start_age}세 ~ {chapter4Data.basis?.current_decade?.end_age}세
-                                      <span className="current-age">(현재 만 {chapter4Data.basis?.current_decade?.current_age}세)</span>
-                                    </span>
-                                  </div>
-                                  <div className="basis-item">
-                                    <span className="basis-label">격국</span>
-                                    <span className="basis-value">
-                                      천간: {chapter4Data.basis?.sky_type || '없음'} / 지지: {chapter4Data.basis?.earth_type || '없음'}
-                                    </span>
-                                  </div>
-                                  {/* 십이운성 정보 */}
-                                  {chapter4Data.basis?.twelve_star && (
-                                    <div className="basis-item twelve-star-item">
-                                      <span className="basis-label">대운 십이운성</span>
-                                      <span className="basis-value twelve-star-value">
-                                        {chapter4Data.basis?.twelve_star_meaning?.name || chapter4Data.basis?.twelve_star}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <p className="basis-description">
-                                    {chapter4Data.basis?.description}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* 십이운성 해석 박스 */}
-                              {chapter4Data.basis?.twelve_star_meaning && (
-                                <div className="chapter4-twelve-star-box">
-                                  <div className="twelve-star-header">
-                                    <span className="twelve-star-icon">🌟</span>
-                                    <h5>대운 십이운성: {chapter4Data.basis?.twelve_star_meaning?.name}</h5>
-                                  </div>
-                                  <div className="twelve-star-content">
-                                    <div className="twelve-star-info-row">
-                                      <span className="info-label">생애 단계</span>
-                                      <span className="info-value">{chapter4Data.basis?.twelve_star_meaning?.life_stage}</span>
-                                    </div>
-                                    <div className="twelve-star-info-row">
-                                      <span className="info-label">키워드</span>
-                                      <span className="info-value keywords">{chapter4Data.basis?.twelve_star_meaning?.keywords}</span>
-                                    </div>
-                                    <div className="twelve-star-meaning">
-                                      <p>{chapter4Data.basis?.twelve_star_meaning?.meaning}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 삼합 정보 박스 */}
-                              {chapter4Data.basis?.samhap && (
-                                <div className={`chapter4-samhap-box ${
-                                  chapter4Data.basis?.samhap?.result?.includes('成') && !chapter4Data.basis?.samhap?.result?.includes('敗') ? 'result-success' :
-                                  chapter4Data.basis?.samhap?.result?.includes('敗') && !chapter4Data.basis?.samhap?.result?.includes('成') ? 'result-failure' : 'result-mixed'
-                                }`}>
-                                  <div className="samhap-header">
-                                    <span className="samhap-icon">🔺</span>
-                                    <h5>삼합(三合) 형성: {chapter4Data.basis?.samhap?.key}</h5>
-                                    <span className={`samhap-element-badge ${
-                                      chapter4Data.basis?.samhap?.element?.includes('목') ? 'wood' :
-                                      chapter4Data.basis?.samhap?.element?.includes('화') ? 'fire' :
-                                      chapter4Data.basis?.samhap?.element?.includes('금') ? 'metal' : 'water'
-                                    }`}>
-                                      {chapter4Data.basis?.samhap?.element === '목(木)' ? '木局' :
-                                       chapter4Data.basis?.samhap?.element === '화(火)' ? '火局' :
-                                       chapter4Data.basis?.samhap?.element === '금(金)' ? '金局' : '水局'}
-                                    </span>
-                                    {/* 성패 결과 배지 */}
-                                    {chapter4Data.basis?.samhap?.result && (
-                                      <span className={`samhap-result-badge ${
-                                        chapter4Data.basis?.samhap?.result?.includes('成') && !chapter4Data.basis?.samhap?.result?.includes('敗') ? 'success' :
-                                        chapter4Data.basis?.samhap?.result?.includes('敗') && !chapter4Data.basis?.samhap?.result?.includes('成') ? 'failure' : 'mixed'
-                                      }`}>
-                                        {chapter4Data.basis?.samhap?.result}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="samhap-content">
-                                    <div className="samhap-chars">
-                                      <span className="chars-label">구성</span>
-                                      <div className="chars-display">
-                                        {chapter4Data.basis?.samhap?.chars?.map((char, idx) => (
-                                          <span key={idx} className="char-badge">{char}</span>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    {/* 성패에 따른 길흉 분석 */}
-                                    {(() => {
-                                      const result = chapter4Data.basis?.samhap?.result || '';
-                                      const title = chapter4Data.basis?.samhap?.title || '';
-                                      // 십신 추출 (예: "인오술(寅午戌)- 화운동(식상)" → "식상")
-                                      const sipsinMatch = title.match(/\(([비겁식상재성관성인성]+)\)/);
-                                      const sipsin = sipsinMatch ? sipsinMatch[1] : null;
-
-                                      // 성패 결과에 따른 분석
-                                      const resultInfo = {
-                                        '成': {
-                                          nature: 'success',
-                                          label: '성(成) - 길(吉)',
-                                          description: '이 삼합은 본인에게 도움이 되는 기운입니다. 해당 오행의 에너지가 강해져 긍정적인 변화와 기회가 찾아옵니다.',
-                                          icon: '🌟'
-                                        },
-                                        '敗': {
-                                          nature: 'failure',
-                                          label: '패(敗) - 흉(凶)',
-                                          description: '이 삼합은 본인에게 부담이 되는 기운입니다. 해당 오행의 과도한 에너지로 인해 주의가 필요한 시기입니다.',
-                                          icon: '⚠️'
-                                        },
-                                        '成中有敗': {
-                                          nature: 'mixed',
-                                          label: '성중유패(成中有敗)',
-                                          description: '기본적으로 좋은 기운이지만, 일부 영역에서는 주의가 필요합니다. 긍정적인 면을 살리면서 약점을 보완하세요.',
-                                          icon: '⚖️'
-                                        },
-                                        '敗中有成': {
-                                          nature: 'mixed',
-                                          label: '패중유성(敗中有成)',
-                                          description: '기본적으로 조심해야 할 시기이나, 일부 영역에서 기회가 있습니다. 강점을 집중적으로 활용하세요.',
-                                          icon: '⚖️'
-                                        },
-                                        '成敗共存': {
-                                          nature: 'mixed',
-                                          label: '성패공존(成敗共存)',
-                                          description: '좋은 면과 나쁜 면이 공존합니다. 상황에 따라 유연하게 대처하며, 기회와 위험을 잘 판단해야 합니다.',
-                                          icon: '🔄'
-                                        }
-                                      };
-
-                                      const rInfo = resultInfo[result] || null;
-
-                                      // 십신별 길흉 및 설명
-                                      const sipsinInfo = {
-                                        '비겁': {
-                                          nature: 'neutral',
-                                          label: '비겁(比劫)',
-                                          positive: '자기 주도성, 독립심, 추진력, 경쟁력이 강화됩니다.',
-                                          negative: '고집, 독단, 경쟁 과열, 재물 손실 가능성이 있습니다.',
-                                          advice: '협력과 독립 사이의 균형이 중요합니다. 독불장군 식 행동은 자제하세요.'
-                                        },
-                                        '식상': {
-                                          nature: 'positive',
-                                          label: '식상(食傷)',
-                                          positive: '표현력, 창의력, 재능 발휘, 활동력이 강화됩니다.',
-                                          negative: '말실수, 충동적 행동, 건강 소모가 우려됩니다.',
-                                          advice: '창작, 강연, 사업 등에 유리하나 언행을 조심하세요.'
-                                        },
-                                        '재성': {
-                                          nature: 'positive',
-                                          label: '재성(財星)',
-                                          positive: '재물 운, 사업 기회, 현실적 이득이 증가합니다.',
-                                          negative: '과욕, 무리한 투자, 건강 무시 가능성이 있습니다.',
-                                          advice: '돈을 벌 기회가 많으나 무리한 확장은 금물입니다.'
-                                        },
-                                        '관성': {
-                                          nature: 'mixed',
-                                          label: '관성(官星)',
-                                          positive: '사회적 지위, 명예, 책임감, 조직력이 강화됩니다.',
-                                          negative: '압박, 스트레스, 법적 문제, 건강 악화 가능성이 있습니다.',
-                                          advice: '승진/인정의 기회이나 과도한 책임에 주의하세요.'
-                                        },
-                                        '인성': {
-                                          nature: 'positive',
-                                          label: '인성(印星)',
-                                          positive: '학습, 자격증, 문서운, 정신적 성장이 강화됩니다.',
-                                          negative: '게으름, 현실 회피, 실행력 부족 가능성이 있습니다.',
-                                          advice: '공부와 자기계발에 좋으나 실천력을 유지하세요.'
-                                        }
-                                      };
-
-                                      const info = sipsin ? sipsinInfo[sipsin] : null;
-
-                                      return (
-                                        <>
-                                          {/* 성패 결과 분석 (가장 중요) */}
-                                          {rInfo && (
-                                            <div className={`samhap-result-analysis ${rInfo.nature}`}>
-                                              <div className="result-header">
-                                                <span className="result-icon">{rInfo.icon}</span>
-                                                <span className="result-label">{rInfo.label}</span>
-                                              </div>
-                                              <p className="result-description">{rInfo.description}</p>
-                                            </div>
-                                          )}
-
-                                          {chapter4Data.basis?.samhap?.title && (
-                                            <div className="samhap-title-info">
-                                              <span className="title-label">십신 작용</span>
-                                              <span className="title-value">{chapter4Data.basis?.samhap?.title}</span>
-                                            </div>
-                                          )}
-
-                                          {info && (
-                                            <div className="samhap-sipsin-analysis">
-                                              <div className="sipsin-header">
-                                                <span className="sipsin-label">{info.label}의 특성</span>
-                                              </div>
-                                              <div className="sipsin-effects">
-                                                <div className="effect-row positive">
-                                                  <span className="effect-icon">✅</span>
-                                                  <span className="effect-text">{info.positive}</span>
-                                                </div>
-                                                <div className="effect-row negative">
-                                                  <span className="effect-icon">⚠️</span>
-                                                  <span className="effect-text">{info.negative}</span>
-                                                </div>
-                                                <div className="effect-row advice">
-                                                  <span className="effect-icon">💡</span>
-                                                  <span className="effect-text">{info.advice}</span>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          <div className="samhap-notice">
-                                            <span className="notice-icon">📌</span>
-                                            <span className="notice-text">
-                                              삼합이 형성되면 해당 오행의 기운이 크게 강화되어 인생의 큰 전환점이 됩니다.
-                                              위 분석 리포트에서 구체적인 영향과 대처 방안을 확인하세요.
-                                            </span>
-                                          </div>
-                                        </>
-                                      );
-                                    })()}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 성패 분석 결과 박스 */}
-                              {(chapter4Data.decade_analysis?.sky_result || chapter4Data.decade_analysis?.earth_result) && (
-                                <div className="chapter4-analysis-box">
-                                  <div className="analysis-header">
-                                    <span className="analysis-icon">⚖️</span>
-                                    <h5>격국 성패 분석 결과</h5>
-                                  </div>
-                                  <div className="analysis-content">
-                                    {chapter4Data.decade_analysis?.sky_result && (
-                                      <div className="analysis-section">
-                                        <span className="analysis-label">천간 성패</span>
-                                        <div className="analysis-results">
-                                          {Object.entries(chapter4Data.decade_analysis.sky_result?.result || {}).map(([key, values]) =>
-                                            Array.isArray(values) && values.map((v, idx) => (
-                                              <span key={`sky-${key}-${idx}`} className={`result-badge ${v.result?.includes('成') ? 'success' : 'warning'}`}>
-                                                {v.result}: {v.code}
-                                              </span>
-                                            ))
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {chapter4Data.decade_analysis?.earth_result && (
-                                      <div className="analysis-section">
-                                        <span className="analysis-label">지지 성패</span>
-                                        <div className="analysis-results">
-                                          {Object.entries(chapter4Data.decade_analysis.earth_result?.result || {}).map(([key, values]) =>
-                                            Array.isArray(values) && values.map((v, idx) => (
-                                              <span key={`earth-${key}-${idx}`} className={`result-badge ${v.result?.includes('成') ? 'success' : 'warning'}`}>
-                                                {v.result}: {v.code}
-                                              </span>
-                                            ))
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 리포트 본문 (마크다운) */}
-                              <div className="chapter4-report-content">
-                                <div
-                                  className="markdown-content"
-                                  dangerouslySetInnerHTML={{
-                                    __html: chapter4Data.content
-                                      ?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                      ?.replace(/\n\n/g, '</p><p>')
-                                      ?.replace(/\n/g, '<br/>')
-                                      ?.replace(/^/, '<p>')
-                                      ?.replace(/$/, '</p>')
-                                      ?.replace(/### (.*?)(<br\/>|<\/p>)/g, '<h3>$1</h3>')
-                                      ?.replace(/## (.*?)(<br\/>|<\/p>)/g, '<h2>$1</h2>')
-                                      ?.replace(/# (.*?)(<br\/>|<\/p>)/g, '<h1>$1</h1>')
-                                  }}
-                                />
-                              </div>
-
-                              {/* 재생성 및 미리보기 버튼 */}
                               <div className="chapter4-regenerate">
                                 <button
                                   className="btn btn-preview"
@@ -4132,241 +3699,32 @@ function OrderDetail() {
                                   {pdfLoading[4] ? <Loader size={14} className="spinning" /> : <Download size={14} />}
                                   PDF 다운로드
                                 </button>
-                                <button
-                                  className="btn btn-regenerate"
-                                  onClick={generateChapter4}
-                                  disabled={chapter4Loading}
-                                >
-                                  <Loader size={14} />
-                                  다시 생성하기
-                                </button>
                               </div>
                             </div>
                           )}
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter5' ? (
-                        <div className="chapter5-content">
-                          {chapter5Error && (
-                            <div className="chapter-error">
-                              <AlertCircle size={20} />
-                              <span>{chapter5Error}</span>
-                            </div>
-                          )}
-
-                          {!chapter5Data && !chapter5Loading && !chapter5Error && (
-                            <div className="chapter5-generate">
-                              <p className="chapter5-description">
-                                올해의 세운(歲運)과 격국의 성패를 분석하여 올해의 운세를 AI가 상세히 분석합니다.
-                              </p>
-                              <p className="chapter5-subdescription">
-                                현재 대운의 기운과 올해의 기운이 어떻게 상호작용하는지 분석합니다.
-                              </p>
-                              <button
-                                className="btn btn-generate-chapter5"
-                                onClick={fetchChapter5}
-                                disabled={chapter5Loading}
-                              >
-                                {chapter5Loading ? (
-                                  <>
-                                    <Loader className="spinning" size={16} />
-                                    생성 중...
-                                  </>
-                                ) : (
-                                  '챕터5 리포트 생성'
-                                )}
-                              </button>
-                            </div>
-                          )}
-
-                          {chapter5Loading && (
-                            <div className="chapter5-loading">
-                              <Loader className="spinning" size={32} />
-                              <p>올해의 운세를 분석 중입니다...</p>
-                              <p className="loading-sub">AI가 세운 성패를 분석하고 있습니다.</p>
-                            </div>
-                          )}
-
-                          {chapter5Data && (
-                            <div className="chapter5-result">
-                              {/* 분석 기반 정보 */}
-                              <div className="chapter5-basis">
-                                <h5>분석 기반</h5>
-                                <div className="basis-info">
-                                  <div className="basis-item">
-                                    <span className="basis-label">분석 유형</span>
-                                    <span className="basis-value">{chapter5Data.basis?.type}</span>
-                                  </div>
-                                  <div className="basis-item">
-                                    <span className="basis-label">올해 세운</span>
-                                    <span className="basis-value highlight">
-                                      {chapter5Data.basis?.year_ganji}
-                                      <span className="ganji-detail">
-                                        (천간: {chapter5Data.basis?.year_sky}({chapter5Data.basis?.year_sky_sipsin}),
-                                        지지: {chapter5Data.basis?.year_earth}({chapter5Data.basis?.year_earth_sipsin}))
-                                      </span>
-                                    </span>
-                                  </div>
-                                  <div className="basis-item">
-                                    <span className="basis-label">현재 대운</span>
-                                    <span className="basis-value">
-                                      {chapter5Data.basis?.current_decade?.ganji}
-                                      <span className="decade-age">
-                                        (만 {chapter5Data.basis?.current_decade?.start_age}세 ~ {chapter5Data.basis?.current_decade?.end_age}세)
-                                      </span>
-                                    </span>
-                                  </div>
-                                  <div className="basis-item">
-                                    <span className="basis-label">격국</span>
-                                    <span className="basis-value">
-                                      천간: {chapter5Data.basis?.sky_type || '없음'} / 지지: {chapter5Data.basis?.earth_type || '없음'}
-                                    </span>
-                                  </div>
-                                  {chapter5Data.basis?.twelve_star && (
-                                    <div className="basis-item">
-                                      <span className="basis-label">세운 십이운성</span>
-                                      <span className="basis-value highlight">
-                                        {chapter5Data.basis?.twelve_star_meaning?.name || chapter5Data.basis?.twelve_star}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <div className="basis-item full">
-                                    {chapter5Data.basis?.description}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* 십이운성 해석 */}
-                              {chapter5Data.basis?.twelve_star_meaning && (
-                                <div className="chapter5-twelve-star">
-                                  <div className="twelve-star-content">
-                                    <h5>세운 십이운성: {chapter5Data.basis?.twelve_star_meaning?.name}</h5>
-                                    <div className="twelve-star-info">
-                                      <div className="info-row">
-                                        <span className="info-label">올해의 에너지 단계</span>
-                                        <span className="info-value">{chapter5Data.basis?.twelve_star_meaning?.life_stage}</span>
-                                      </div>
-                                      <div className="info-row">
-                                        <span className="info-label">키워드</span>
-                                        <span className="info-value keywords">{chapter5Data.basis?.twelve_star_meaning?.keywords}</span>
-                                      </div>
-                                      <div className="info-row meaning">
-                                        <p>{chapter5Data.basis?.twelve_star_meaning?.meaning}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 성패 분석 결과 */}
-                              {(chapter5Data.year_analysis?.sky_result || chapter5Data.year_analysis?.earth_result) && (
-                                <div className="chapter5-analysis">
-                                  <h5>올해 성패 분석 결과</h5>
-                                  <div className="analysis-grid">
-                                    {chapter5Data.year_analysis?.sky_result && (
-                                      <div className="analysis-item sky">
-                                        <div className="analysis-label">천간 성패 ({chapter5Data.basis?.year_sky})</div>
-                                        {(() => {
-                                          const result = chapter5Data.year_analysis.sky_result?.result || {};
-                                          const allOutcomes = [
-                                            ...(result.year_luck_sky_outcome || []).flat(),
-                                            ...(result.year_luck_decade_luck_sky_outcome || []).flat(),
-                                            ...(result.year_luck_year_sky_outcome || []).flat(),
-                                            ...(result.year_luck_month_sky_outcome || []).flat(),
-                                            ...(result.year_luck_time_sky_outcome || []).flat(),
-                                          ].filter(Boolean);
-
-                                          return allOutcomes.length > 0 ? (
-                                            allOutcomes.map((v, idx) => (
-                                              <div key={idx} className={`analysis-value ${v?.result === '成' || v?.result === '성' ? 'success' : v?.result === '敗' || v?.result === '패' ? 'fail' : v?.result?.includes('성중유패') || v?.result?.includes('成中有敗') ? 'mixed-fail' : v?.result?.includes('패중유성') || v?.result?.includes('敗中有成') ? 'mixed-success' : ''}`}>
-                                                <strong>{v?.result}</strong>
-                                                {v?.code && <span>: {v.code}</span>}
-                                                {v?.reason && <span className="outcome-reason"> ({v.reason})</span>}
-                                              </div>
-                                            ))
-                                          ) : (
-                                            <div className="no-outcome">성패 결과 없음</div>
-                                          );
-                                        })()}
-                                      </div>
-                                    )}
-                                    {chapter5Data.year_analysis?.earth_result && (
-                                      <div className="analysis-item earth">
-                                        <div className="analysis-label">지지 성패 ({chapter5Data.basis?.year_earth})</div>
-                                        {(() => {
-                                          const result = chapter5Data.year_analysis.earth_result?.result || {};
-                                          const allOutcomes = [
-                                            ...(result.year_luck_earth_outcome || []).flat(),
-                                            ...(result.year_luck_decade_earth_outcome || []).flat(),
-                                            ...(result.year_luck_year_earth_outcome || []).flat(),
-                                            ...(result.year_luck_month_earth_outcome || []).flat(),
-                                            ...(result.year_luck_day_earth_outcome || []).flat(),
-                                            ...(result.year_luck_time_earth_outcome || []).flat(),
-                                          ].filter(Boolean);
-
-                                          return allOutcomes.length > 0 ? (
-                                            allOutcomes.map((v, idx) => (
-                                              <div key={idx} className={`analysis-value ${v?.result === '成' || v?.result === '성' ? 'success' : v?.result === '敗' || v?.result === '패' ? 'fail' : v?.result?.includes('성중유패') || v?.result?.includes('成中有敗') ? 'mixed-fail' : v?.result?.includes('패중유성') || v?.result?.includes('敗中有成') ? 'mixed-success' : ''}`}>
-                                                <strong>{v?.result}</strong>
-                                                {v?.code && <span>: {v.code}</span>}
-                                                {v?.reason && <span className="outcome-reason"> ({v.reason})</span>}
-                                              </div>
-                                            ))
-                                          ) : (
-                                            <div className="no-outcome">성패 결과 없음</div>
-                                          );
-                                        })()}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* 리포트 본문 (마크다운) */}
-                              <div className="chapter5-report-content">
-                                <div
-                                  className="markdown-content"
-                                  dangerouslySetInnerHTML={{
-                                    __html: chapter5Data.content
-                                      ?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                      ?.replace(/\n\n/g, '</p><p>')
-                                      ?.replace(/\n/g, '<br/>')
-                                      ?.replace(/^/, '<p>')
-                                      ?.replace(/$/, '</p>')
-                                      ?.replace(/### (.*?)(<br\/>|<\/p>)/g, '<h3>$1</h3>')
-                                      ?.replace(/## (.*?)(<br\/>|<\/p>)/g, '<h2>$1</h2>')
-                                      ?.replace(/# (.*?)(<br\/>|<\/p>)/g, '<h1>$1</h1>')
-                                  }}
-                                />
-                              </div>
-
-                              {/* 재생성 및 미리보기 버튼 */}
-                              <div className="chapter5-regenerate">
-                                <button
-                                  className="btn btn-preview"
-                                  onClick={() => openMobilePreview(5)}
-                                >
-                                  <FileText size={14} />
-                                  모바일 미리보기
-                                </button>
-                                <button
-                                  className="btn btn-pdf"
-                                  onClick={() => downloadChapterPDF(5, chapter5Data)}
-                                  disabled={pdfLoading[5]}
-                                >
-                                  {pdfLoading[5] ? <Loader size={14} className="spinning" /> : <Download size={14} />}
-                                  PDF 다운로드
-                                </button>
-                                <button
-                                  className="btn btn-regenerate"
-                                  onClick={fetchChapter5}
-                                  disabled={chapter5Loading}
-                                >
-                                  <Loader size={14} />
-                                  다시 생성하기
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                        <div className="chapter5-content career-chapter">
+                          {/* 직업운/사회운 - CareerEditor 사용 */}
+                          <CareerEditor
+                            orderId={id}
+                            validationResult={validationResult}
+                            initialData={careerEditorData}
+                            initialBaseCareer={careerBaseCareer}
+                            onChange={(data) => {
+                              setCareerEditorData(data.yearlyCareers || []);
+                              setCareerBaseCareer(data.baseCareer || null);
+                            }}
+                          />
+                        </div>
+                      ) : reportChapters[selectedChapter].id === 'chapter6' ? (
+                        <div className="chapter6-content">
+                          <LoveFortuneEditor
+                            orderId={order.id}
+                            validationResult={validationResult}
+                            initialData={loveFortuneData}
+                            onChange={(data) => setLoveFortuneData(data)}
+                          />
                         </div>
                       ) : (
                         <div className="chapter-placeholder">

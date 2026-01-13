@@ -1078,6 +1078,23 @@
   display: inline-block;
 }
 
+/* 일지 성패 (배우자궁) 강조 스타일 */
+.outcome-sub-section.day-earth-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  border: 1px solid #f9a8d4;
+  border-radius: 8px;
+  border-top: none;
+}
+
+.outcome-sub-title.day-earth-title {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  color: white;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+}
+
 /* 역할 표시 스타일 */
 .roles-list {
   display: flex;
@@ -1953,40 +1970,118 @@
   }
 }
 
-/* Chapter Tabs */
+/* Chapter Tabs - 개선된 디자인 */
+.chapter-tabs-container {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 16px;
+  border-bottom: 2px solid #d4af37;
+}
+
 .chapter-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 16px 20px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  justify-content: flex-start;
 }
 
 .chapter-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
+  color: #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.chapter-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.25s ease;
 }
 
 .chapter-tab:hover {
-  border-color: #6366f1;
-  background: #f5f3ff;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(212, 175, 55, 0.5);
+  transform: translateY(-1px);
 }
 
 .chapter-tab.active {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  color: #1e293b;
   border-color: transparent;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
 }
 
+.chapter-tab.active::before {
+  background: transparent;
+}
+
+/* 카테고리별 스타일 */
+.chapter-tab.category-info {
+  border-left: 3px solid #3b82f6;
+}
+
+.chapter-tab.category-analysis {
+  border-left: 3px solid #8b5cf6;
+}
+
+.chapter-tab.category-luck {
+  border-left: 3px solid #22c55e;
+}
+
+.chapter-tab.category-yearly {
+  border-left: 3px solid #f59e0b;
+}
+
+.chapter-tab.category-detail {
+  border-left: 3px solid #ec4899;
+}
+
+.chapter-tab.active.category-info,
+.chapter-tab.active.category-analysis,
+.chapter-tab.active.category-luck,
+.chapter-tab.active.category-yearly,
+.chapter-tab.active.category-detail {
+  border-left-color: transparent;
+}
+
+.chapter-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.chapter-tab.active .chapter-number {
+  background: rgba(0, 0, 0, 0.15);
+  color: #1e293b;
+}
+
+.chapter-label {
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+/* 레거시 호환 */
 .chapter-icon {
   font-size: 1rem;
 }
@@ -2007,26 +2102,69 @@
   border-radius: 16px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .chapter-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-bottom: 1px solid #e2e8f0;
+  gap: 16px;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-bottom: 3px solid #d4af37;
 }
 
+.chapter-header-badge {
+  flex-shrink: 0;
+}
+
+.chapter-header-badge .header-icon {
+  font-size: 2.5rem;
+}
+
+.chapter-header-badge .header-number {
+  display: inline-block;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.chapter-header-text {
+  flex: 1;
+}
+
+.chapter-header-text .header-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #d4af37;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.chapter-header-text h4 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* 레거시 호환 */
 .chapter-icon-large {
   font-size: 2rem;
 }
 
-.chapter-header h4 {
+.chapter-header h4:only-child {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #ffffff;
 }
 
 .chapter-body {
@@ -4654,6 +4792,54 @@
   padding-top: 8px;
 }
 
+/* 사주 검증하러 가기 버튼 */
+.btn-validate-first {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.btn-validate-first:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 저장된 재물운 상태 표시 */
+.chapter4-saved-actions {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+
+.saved-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.saved-status .status-icon {
+  font-size: 1.2rem;
+}
+
+.saved-status .status-text {
+  color: #166534;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
 /* 대운 흐름 그래프 반응형 */
 @media (max-width: 1024px) {
   .decade-flow-container {
@@ -5086,6 +5272,331 @@
   }
 
   .chapter5-twelve-star .info-label {
+    min-width: auto;
+  }
+}
+
+/* 챕터6 스타일 (올해의 운세) - chapter5 스타일과 동일 */
+.chapter6-content {
+  padding: 20px;
+}
+
+.chapter6-generate {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.chapter6-description {
+  font-size: 16px;
+  color: #475569;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.chapter6-subdescription {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.btn-generate-chapter6 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-generate-chapter6:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+}
+
+.chapter6-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #f59e0b;
+}
+
+.chapter6-loading p {
+  margin-top: 16px;
+  font-size: 16px;
+  color: #475569;
+}
+
+.chapter6-loading .loading-sub {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 8px;
+}
+
+.chapter6-result {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chapter6-basis {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+}
+
+.chapter6-basis h5 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chapter6-basis h5::before {
+  content: '🌟';
+}
+
+.chapter6-basis .basis-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.chapter6-basis .basis-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chapter6-basis .basis-item.full {
+  grid-column: 1 / -1;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #78350f;
+  line-height: 1.6;
+}
+
+.chapter6-basis .basis-label {
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.chapter6-basis .basis-value {
+  font-size: 14px;
+  color: #451a03;
+  font-weight: 500;
+}
+
+.chapter6-basis .basis-value.highlight {
+  font-size: 18px;
+  font-weight: 700;
+  color: #d97706;
+}
+
+.chapter6-basis .ganji-detail,
+.chapter6-basis .decade-age {
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.chapter6-twelve-star {
+  background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
+  border: 2px solid #d946ef;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(217, 70, 239, 0.15);
+}
+
+.chapter6-twelve-star h5 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #86198f;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chapter6-twelve-star h5::before {
+  content: '✨';
+}
+
+.chapter6-twelve-star .twelve-star-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chapter6-twelve-star .info-row {
+  display: flex;
+  gap: 12px;
+}
+
+.chapter6-twelve-star .info-label {
+  font-size: 13px;
+  color: #a21caf;
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.chapter6-twelve-star .info-value {
+  font-size: 14px;
+  color: #581c87;
+}
+
+.chapter6-twelve-star .info-value.keywords {
+  color: #c026d3;
+  font-weight: 500;
+}
+
+.chapter6-twelve-star .info-row.meaning {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.chapter6-twelve-star .info-row.meaning p {
+  font-size: 14px;
+  color: #701a75;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.chapter6-analysis {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #22c55e;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.chapter6-analysis h5 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chapter6-analysis h5::before {
+  content: '📊';
+}
+
+.chapter6-analysis .analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.chapter6-analysis .analysis-item {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.chapter6-analysis .analysis-item.sky {
+  border-left: 4px solid #ef4444;
+}
+
+.chapter6-analysis .analysis-item.earth {
+  border-left: 4px solid #3b82f6;
+}
+
+.chapter6-analysis .analysis-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  margin-bottom: 8px;
+}
+
+.chapter6-analysis .analysis-value {
+  font-size: 13px;
+  color: #15803d;
+  padding: 4px 8px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.chapter6-analysis .analysis-value.success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #166534;
+}
+
+.chapter6-analysis .analysis-value.fail {
+  background: rgba(239, 68, 68, 0.2);
+  color: #b91c1c;
+}
+
+.chapter6-analysis .analysis-value.mixed-fail {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.chapter6-analysis .analysis-value.mixed-success {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.chapter6-analysis .no-outcome {
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.chapter6-analysis .outcome-reason {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.chapter6-report-content {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.chapter6-regenerate {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .chapter6-basis .basis-info {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter6-analysis .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter6-twelve-star .info-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .chapter6-twelve-star .info-label {
     min-width: auto;
   }
 }
