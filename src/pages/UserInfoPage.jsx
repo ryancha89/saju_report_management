@@ -135,13 +135,13 @@ function UserInfoPage() {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return formData.name.trim().length >= 3;
+      case 0: return formData.name.trim().length >= 2;
       case 1: return formData.birthDate.length === 10;
       case 2: return formData.birthTimeUnknown || formData.birthTime.length === 5;
       case 3: return formData.birthPlace.length > 0;
       case 4: return formData.gender.length > 0;
       case 5: return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-      case 6: return formData.phone.replace(/\D/g, '').length >= 10; // 전화번호 10자리 이상
+      case 6: return formData.phone.replace(/\D/g, '').length === 11; // 전화번호 11자리
       case 7: return true; // 결제 단계 - Payment 컴포넌트에서 처리
       default: return false;
     }
@@ -272,31 +272,14 @@ function UserInfoPage() {
               type="text"
               value={formData.name}
               onChange={(e) => {
-                const newName = e.target.value;
-                setFormData({ ...formData, name: newName });
-
-                // 기존 타이머 클리어
-                if (nameTimeoutRef.current) {
-                  clearTimeout(nameTimeoutRef.current);
-                }
-
-                // 수정 중이 아닐 때만 자동 다음 이동
-                // 3자 이상 입력 후 1.5초 동안 추가 입력 없으면 다음으로
-                if (!isEditing && newName.trim().length >= 3) {
-                  nameTimeoutRef.current = setTimeout(() => {
-                    autoNext();
-                  }, 1500);
-                }
+                setFormData({ ...formData, name: e.target.value });
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && formData.name.trim().length >= 3) {
-                  if (nameTimeoutRef.current) {
-                    clearTimeout(nameTimeoutRef.current);
-                  }
+                if (e.key === 'Enter' && formData.name.trim().length >= 2) {
                   // 수정 중이면 완료, 아니면 다음으로
                   if (isEditing) {
                     finishEditing();
-                  } else {
+                  } else if (canProceed()) {
                     autoNext();
                   }
                 }
@@ -558,26 +541,10 @@ function UserInfoPage() {
               type="email"
               value={formData.email}
               onChange={(e) => {
-                const newEmail = e.target.value;
-                setFormData({ ...formData, email: newEmail });
-
-                // 기존 타이머 클리어
-                if (nameTimeoutRef.current) {
-                  clearTimeout(nameTimeoutRef.current);
-                }
-
-                // 수정 중이 아닐 때만 유효한 이메일 입력 후 0.8초 후 자동 이동
-                if (!isEditing && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-                  nameTimeoutRef.current = setTimeout(() => {
-                    autoNext();
-                  }, 800);
-                }
+                setFormData({ ...formData, email: e.target.value });
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-                  if (nameTimeoutRef.current) {
-                    clearTimeout(nameTimeoutRef.current);
-                  }
                   if (isEditing) {
                     finishEditing();
                   } else {
@@ -774,14 +741,21 @@ function UserInfoPage() {
 
           {renderStepContent()}
 
-          {/* 수정 중일 때 다음/완료 버튼 */}
-          {isEditing && currentStep !== 7 && (
+          {/* 다음/완료 버튼 */}
+          {currentStep !== 7 && (
+            // 이름 단계: 2글자 이상이면 버튼 표시
+            // 이메일 단계: 유효한 이메일이면 버튼 표시
+            // 다른 단계: 수정 중일 때만 버튼 표시
+            (currentStep === 0 && formData.name.trim().length >= 2) ||
+            (currentStep === 5 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) ||
+            (currentStep !== 0 && currentStep !== 5 && isEditing)
+          ) && (
             <button
               className="next-step-btn"
               onClick={goToNextStep}
               disabled={!canProceed()}
             >
-              완료
+              {isEditing ? '완료' : '다음'}
             </button>
           )}
 
