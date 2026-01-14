@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import FortuneEditor from '../components/FortuneEditor';
 import CareerEditor from '../components/CareerEditor';
 import LoveFortuneEditor from '../components/LoveFortuneEditor';
+import FiveYearFortuneEditor from '../components/FiveYearFortuneEditor';
+import CoachingEditor from '../components/CoachingEditor';
 import './OrderDetail.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -961,7 +963,10 @@ function OrderDetail() {
   const [chapter3Loading, setChapter3Loading] = useState(false);
   const [chapter3Error, setChapter3Error] = useState(null);
 
-  // 챕터4 상태 (재물운 5년)
+  // 챕터4 상태 (5년운세 - 격국/억부/조후/합형충파해)
+  const [fiveYearFortuneData, setFiveYearFortuneData] = useState(null);
+
+  // 챕터5 상태 (재물운 5년)
   const [chapter4Data, setChapter4Data] = useState(null);
   const [chapter4Loading, setChapter4Loading] = useState(false);
   const [chapter4Error, setChapter4Error] = useState(null);
@@ -970,8 +975,19 @@ function OrderDetail() {
   const [careerEditorData, setCareerEditorData] = useState([]);  // 직업운 편집 데이터
   const [careerBaseCareer, setCareerBaseCareer] = useState(null);  // 기본 직업운 설명
 
-  // 챕터6 상태 (연애운/배우자운) - LoveFortuneEditor에서 관리
+  // 챕터7 상태 (연애운/배우자운) - LoveFortuneEditor에서 관리
   const [loveFortuneData, setLoveFortuneData] = useState(null);
+
+  // 챕터8 상태 (상담사 코칭) - CoachingEditor에서 관리
+  const [coachingData, setCoachingData] = useState(null);
+
+  // 챕터4, 5, 6, 7, 8 편집기 refs (전체 생성용)
+  const fiveYearFortuneEditorRef = useRef(null);
+  const fortuneEditorRef = useRef(null);
+  const careerEditorRef = useRef(null);
+  const loveFortuneEditorRef = useRef(null);
+  const coachingEditorRef = useRef(null);
+  const [regeneratingAllChapters, setRegeneratingAllChapters] = useState(false);
 
   // 명리학적 근거 상태 (각 챕터별)
   const [basis1Data, setBasis1Data] = useState(null);
@@ -1389,10 +1405,26 @@ function OrderDetail() {
       }
 
       setChapter3Data(data.chapter);
+      return data.chapter;
     } catch (err) {
       setChapter3Error(err.message);
+      throw err;
     } finally {
       setChapter3Loading(false);
+    }
+  };
+
+  // 챕터3 생성 및 자동 저장
+  const generateChapter3WithAutoSave = async () => {
+    try {
+      const ch3Data = await generateChapter3();
+
+      // 자동 저장
+      if (ch3Data) {
+        await saveFullReportWithData(chapter1Data, chapter2Data, ch3Data, chapter4Data, loveFortuneData);
+      }
+    } catch (err) {
+      console.error('챕터3 생성 및 저장 실패:', err);
     }
   };
 
@@ -1424,6 +1456,59 @@ function OrderDetail() {
     }
   };
 
+  // 챕터 4, 5, 6 전체 생성 (재물운, 직업운, 연애운)
+  const handleRegenerateAllChapters = async () => {
+    if (!validationResult) {
+      alert('먼저 사주 검증을 실행해주세요.');
+      return;
+    }
+
+    setRegeneratingAllChapters(true);
+    try {
+      const results = [];
+
+      // 재물운 (챕터 4)
+      if (fortuneEditorRef.current?.regenerateAll) {
+        try {
+          await fortuneEditorRef.current.regenerateAll();
+          results.push('재물운 ✓');
+        } catch (err) {
+          results.push('재물운 ✗');
+          console.error('재물운 생성 실패:', err);
+        }
+      }
+
+      // 직업운 (챕터 5)
+      if (careerEditorRef.current?.regenerateAll) {
+        try {
+          await careerEditorRef.current.regenerateAll();
+          results.push('직업운 ✓');
+        } catch (err) {
+          results.push('직업운 ✗');
+          console.error('직업운 생성 실패:', err);
+        }
+      }
+
+      // 연애운 (챕터 6)
+      if (loveFortuneEditorRef.current?.regenerateAll) {
+        try {
+          await loveFortuneEditorRef.current.regenerateAll();
+          results.push('연애운 ✓');
+        } catch (err) {
+          results.push('연애운 ✗');
+          console.error('연애운 생성 실패:', err);
+        }
+      }
+
+      alert(`전체 생성 완료!\n${results.join('\n')}`);
+    } catch (err) {
+      console.error('전체 생성 실패:', err);
+      alert(`전체 생성 실패: ${err.message}`);
+    } finally {
+      setRegeneratingAllChapters(false);
+    }
+  };
+
   // 레포트 챕터 설정 - 번호와 라벨 포함
   const getReportChapters = (reportType) => {
     const currentYear = new Date().getFullYear();
@@ -1432,9 +1517,11 @@ function OrderDetail() {
     const chapter1 = { id: 'chapter1', number: 1, label: '아이덴티티', title: '나의 아이덴티티', icon: '🧭', category: 'analysis' };
     const chapter2 = { id: 'chapter2', number: 2, label: '잠재력', title: '나의 잠재력과 사회적 역할', icon: '🏛️', category: 'analysis' };
     const chapter3 = { id: 'chapter3', number: 3, label: '대운흐름', title: '대운 흐름 분석', icon: '📊', category: 'luck' };
-    const chapter4 = { id: 'chapter4', number: 4, label: '재물운', title: '재물운 (향후 5년)', icon: '💰', category: 'luck' };
-    const chapter5 = { id: 'chapter5', number: 5, label: '직업운', title: '직업운/사회운 (향후 5년)', icon: '💼', category: 'luck' };
-    const chapter6 = { id: 'chapter6', number: 6, label: '연애운', title: '연애운/배우자운 (향후 5년)', icon: '💕', category: 'luck' };
+    const chapter4 = { id: 'chapter4', number: 4, label: '5년운세', title: '향후 5년간의 운세', icon: '🔮', category: 'luck' };
+    const chapter5 = { id: 'chapter5', number: 5, label: '재물운', title: '재물운 (향후 5년)', icon: '💰', category: 'luck' };
+    const chapter6 = { id: 'chapter6', number: 6, label: '직업운', title: '직업운/사회운 (향후 5년)', icon: '💼', category: 'luck' };
+    const chapter7 = { id: 'chapter7', number: 7, label: '연애운', title: '연애운/배우자운 (향후 5년)', icon: '💕', category: 'luck' };
+    const chapter8 = { id: 'chapter8', number: 8, label: '코칭', title: '상담사의 코칭', icon: '💬', category: 'coaching' };
 
     switch (reportType) {
       case 'new_year':
@@ -1446,14 +1533,16 @@ function OrderDetail() {
           chapter4,
           chapter5,
           chapter6,
-          { id: 'year_meaning', number: 7, label: '해의의미', title: `${currentYear}년의 의미`, icon: '🎯', category: 'yearly' },
-          { id: 'seasonal', number: 8, label: '계절운세', title: '계절별 운세', icon: '🌸', category: 'yearly' },
-          { id: 'total', number: 9, label: '총운', title: `${currentYear}년 총운`, icon: '⭐', category: 'yearly' },
-          { id: 'fortune', number: 10, label: '재물', title: `${currentYear}년 재물운`, icon: '💰', category: 'detail' },
-          { id: 'career', number: 11, label: '직장/사업', title: `${currentYear}년 직장/사업운`, icon: '💼', category: 'detail' },
-          { id: 'love', number: 12, label: '연애', title: `${currentYear}년 연애운`, icon: '💕', category: 'detail' },
-          { id: 'interpersonal', number: 13, label: '대인관계', title: `${currentYear}년 대인관계운`, icon: '🤝', category: 'detail' },
-          { id: 'monthly', number: 14, label: '월운', title: `${currentYear}년 월운`, icon: '📅', category: 'detail' },
+          chapter7,
+          chapter8,
+          { id: 'year_meaning', number: 9, label: '해의의미', title: `${currentYear}년의 의미`, icon: '🎯', category: 'yearly' },
+          { id: 'seasonal', number: 10, label: '계절운세', title: '계절별 운세', icon: '🌸', category: 'yearly' },
+          { id: 'total', number: 11, label: '총운', title: `${currentYear}년 총운`, icon: '⭐', category: 'yearly' },
+          { id: 'fortune', number: 12, label: '재물', title: `${currentYear}년 재물운`, icon: '💰', category: 'detail' },
+          { id: 'career', number: 13, label: '직장/사업', title: `${currentYear}년 직장/사업운`, icon: '💼', category: 'detail' },
+          { id: 'love', number: 14, label: '연애', title: `${currentYear}년 연애운`, icon: '💕', category: 'detail' },
+          { id: 'interpersonal', number: 15, label: '대인관계', title: `${currentYear}년 대인관계운`, icon: '🤝', category: 'detail' },
+          { id: 'monthly', number: 16, label: '월운', title: `${currentYear}년 월운`, icon: '📅', category: 'detail' },
         ];
       case 'love':
         return [
@@ -1464,10 +1553,12 @@ function OrderDetail() {
           chapter4,
           chapter5,
           chapter6,
-          { id: 'love_style', number: 7, label: '연애스타일', title: '연애 스타일', icon: '💕', category: 'detail' },
-          { id: 'ideal_type', number: 8, label: '이상형', title: '이상형 분석', icon: '👤', category: 'detail' },
-          { id: 'love_luck', number: 9, label: '연애운', title: '연애운 분석', icon: '💘', category: 'detail' },
-          { id: 'compatibility', number: 10, label: '궁합', title: '궁합 포인트', icon: '💑', category: 'detail' },
+          chapter7,
+          chapter8,
+          { id: 'love_style', number: 9, label: '연애스타일', title: '연애 스타일', icon: '💕', category: 'detail' },
+          { id: 'ideal_type', number: 10, label: '이상형', title: '이상형 분석', icon: '👤', category: 'detail' },
+          { id: 'love_luck', number: 11, label: '연애운', title: '연애운 분석', icon: '💘', category: 'detail' },
+          { id: 'compatibility', number: 12, label: '궁합', title: '궁합 포인트', icon: '💑', category: 'detail' },
         ];
       case 'wealth':
         return [
@@ -1478,10 +1569,12 @@ function OrderDetail() {
           chapter4,
           chapter5,
           chapter6,
-          { id: 'wealth_type', number: 7, label: '재물유형', title: '재물 유형', icon: '💎', category: 'detail' },
-          { id: 'fortune_luck', number: 8, label: '재물운', title: '재물운 분석', icon: '💰', category: 'detail' },
-          { id: 'investment', number: 9, label: '투자', title: '투자 성향', icon: '📈', category: 'detail' },
-          { id: 'advice', number: 10, label: '조언', title: '재물 조언', icon: '💡', category: 'detail' },
+          chapter7,
+          chapter8,
+          { id: 'wealth_type', number: 9, label: '재물유형', title: '재물 유형', icon: '💎', category: 'detail' },
+          { id: 'fortune_luck', number: 10, label: '재물운', title: '재물운 분석', icon: '💰', category: 'detail' },
+          { id: 'investment', number: 11, label: '투자', title: '투자 성향', icon: '📈', category: 'detail' },
+          { id: 'advice', number: 12, label: '조언', title: '재물 조언', icon: '💡', category: 'detail' },
         ];
       case 'career':
         return [
@@ -1492,10 +1585,12 @@ function OrderDetail() {
           chapter4,
           chapter5,
           chapter6,
-          { id: 'career_type', number: 7, label: '직업적성', title: '직업 적성', icon: '🎯', category: 'detail' },
-          { id: 'career_luck', number: 8, label: '직업운상세', title: '직업운 분석', icon: '💼', category: 'detail' },
-          { id: 'suitable_jobs', number: 9, label: '적합직종', title: '적합 직종', icon: '📋', category: 'detail' },
-          { id: 'advice', number: 10, label: '조언', title: '커리어 조언', icon: '💡', category: 'detail' },
+          chapter7,
+          chapter8,
+          { id: 'career_type', number: 9, label: '직업적성', title: '직업 적성', icon: '🎯', category: 'detail' },
+          { id: 'career_luck', number: 10, label: '직업운상세', title: '직업운 분석', icon: '💼', category: 'detail' },
+          { id: 'suitable_jobs', number: 11, label: '적합직종', title: '적합 직종', icon: '📋', category: 'detail' },
+          { id: 'advice', number: 12, label: '조언', title: '커리어 조언', icon: '💡', category: 'detail' },
         ];
       default:
         return [
@@ -1506,6 +1601,8 @@ function OrderDetail() {
           chapter4,
           chapter5,
           chapter6,
+          chapter7,
+          chapter8,
         ];
     }
   };
@@ -1569,8 +1666,11 @@ function OrderDetail() {
           setChapter2Data({ content: data.report_output.chapter2_content });
           setBasis2Data(data.report_output.chapter2_basis);
         }
-        if (data.report_output.chapter3_content) {
-          setChapter3Data({ content: data.report_output.chapter3_content });
+        if (data.report_output.chapter3_content || data.report_output.chapter3_decade_flow) {
+          setChapter3Data({
+            content: data.report_output.chapter3_content,
+            decade_flow: data.report_output.chapter3_decade_flow
+          });
           setBasis3Data(data.report_output.chapter3_basis);
         }
         if (data.report_output.chapter4_content) {
@@ -1629,6 +1729,7 @@ function OrderDetail() {
           chapter2_basis: basis2Data,
           chapter3_content: ch3Data?.content,
           chapter3_basis: basis3Data,
+          chapter3_decade_flow: ch3Data?.decade_flow,
           chapter4_content: ch4Data?.content,
           chapter4_basis: basis4Data,
           chapter6_content: ch6LoveData?.content
@@ -1654,9 +1755,9 @@ function OrderDetail() {
     1: { icon: '🧭', title: '나의 아이덴티티' },
     2: { icon: '🏛️', title: '나의 잠재력과 사회적 역할' },
     3: { icon: '📊', title: '대운 흐름 분석' },
-    4: { icon: '🔮', title: '현재 대운의 운세' },
-    5: { icon: '💼', title: '직업운/사회운' },
-    6: { icon: '🌟', title: '올해의 운세' },
+    4: { icon: '💰', title: '재물운 (향후 5년)' },
+    5: { icon: '💼', title: '직업운/사회운 (향후 5년)' },
+    6: { icon: '💕', title: '연애운/배우자운 (향후 5년)' },
     saving: { icon: '💾', title: '레포트 저장' }
   };
 
@@ -1745,23 +1846,35 @@ function OrderDetail() {
         setChapter3Loading(false);
       }
 
-      // 챕터4 생성
+      // 챕터4 (재물운) - FortuneEditor의 regenerateAll 호출
       setGeneratingChapter(4);
-      if (forceRegenerate || !chapter4Data?.content) {
-        setChapter4Loading(true);
-        const res4 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter4`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data4 = await res4.json();
-        if (res4.ok && data4.success) {
-          setChapter4Data(data4.chapter);
-          newChapter4Data = data4.chapter;
+      if (fortuneEditorRef.current?.regenerateAll) {
+        try {
+          await fortuneEditorRef.current.regenerateAll();
+        } catch (err) {
+          console.error('재물운 생성 실패:', err);
         }
-        setChapter4Loading(false);
       }
 
-      // 챕터6 (연애운)은 LoveFortuneEditor에서 관리됨 - 자동 생성 제외
+      // 챕터5 (직업운) - CareerEditor의 regenerateAll 호출
+      setGeneratingChapter(5);
+      if (careerEditorRef.current?.regenerateAll) {
+        try {
+          await careerEditorRef.current.regenerateAll();
+        } catch (err) {
+          console.error('직업운 생성 실패:', err);
+        }
+      }
+
+      // 챕터6 (연애운) - LoveFortuneEditor의 regenerateAll 호출
+      setGeneratingChapter(6);
+      if (loveFortuneEditorRef.current?.regenerateAll) {
+        try {
+          await loveFortuneEditorRef.current.regenerateAll();
+        } catch (err) {
+          console.error('연애운 생성 실패:', err);
+        }
+      }
 
       // 전체 저장 (새로 생성된 데이터 사용)
       setGeneratingChapter('saving');
@@ -3253,102 +3366,20 @@ function OrderDetail() {
                                 전체 대운의 흐름을 시각화합니다.
                               </p>
                               <p className="chapter3-subdescription">
-                                첫 대운부터 마지막 대운까지 천간/지지의 성패를 그래프로 분석합니다.
+                                첫 대운부터 마지막 대운까지 천간/지지의 성패를 AI가 분석합니다.
                               </p>
 
-                              {/* 명리학적 근거 조회 영역 */}
-                              {!basis3Data && !basis3Loading && (
-                                <div className="basis-preview-section">
-                                  <button
-                                    className="btn btn-basis-preview"
-                                    onClick={fetchBasis3}
-                                    disabled={basis3Loading}
-                                  >
-                                    <FileText size={18} />
-                                    명리학적 근거 살펴보기
-                                  </button>
-                                  {basis3Error && (
-                                    <p className="basis-error">{basis3Error}</p>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* 명리학적 근거 로딩 */}
-                              {basis3Loading && (
-                                <div className="basis-loading">
-                                  <Loader size={24} className="spinning" />
-                                  <p>명리학적 근거를 조회하고 있습니다...</p>
-                                </div>
-                              )}
-
-                              {/* 명리학적 근거 표시 */}
-                              {basis3Data && (
-                                <div className="basis-preview-result">
-                                  <div className="basis-preview-box">
-                                    <div className="basis-header">
-                                      <span className="basis-icon">📈</span>
-                                      <h5>사주명리학적 분석 근거</h5>
-                                    </div>
-                                    <div className="basis-content">
-                                      <div className="basis-item">
-                                        <span className="basis-label">분석 기준</span>
-                                        <span className="basis-value">{basis3Data.type}</span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">일간</span>
-                                        <span className="basis-value">{basis3Data.ilgan}</span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">천간격국</span>
-                                        <span className="basis-value geju-type">{basis3Data.sky_type || '없음'}</span>
-                                      </div>
-                                      <div className="basis-item">
-                                        <span className="basis-label">지지격국</span>
-                                        <span className="basis-value geju-type">{basis3Data.earth_type || '없음'}</span>
-                                      </div>
-                                      <p className="basis-description">
-                                        {basis3Data.description}
-                                      </p>
-                                    </div>
-
-                                    {/* 대운 흐름 미리보기 */}
-                                    {basis3Data.decade_flow && (
-                                      <div className="decade-preview">
-                                        <div className="decade-preview-header">
-                                          <span className="decade-icon">🔮</span>
-                                          <h6>대운 흐름 ({basis3Data.decade_flow.length}개 대운)</h6>
-                                        </div>
-                                        <div className="decade-preview-list">
-                                          {basis3Data.decade_flow.map((decade, idx) => (
-                                            <div key={idx} className={`decade-preview-item ${decade.is_current ? 'current' : ''}`}>
-                                              <span className="decade-age">{decade.start_age}세</span>
-                                              <span className="decade-ganji">{decade.ganji}</span>
-                                              <span className={`decade-result sky ${decade.sky_result?.includes('成') || decade.sky_result === '성' ? 'success' : decade.sky_result?.includes('敗') || decade.sky_result === '패' ? 'failure' : 'neutral'}`}>
-                                                {decade.sky}
-                                              </span>
-                                              <span className={`decade-result earth ${decade.earth_result?.includes('成') || decade.earth_result === '성' ? 'success' : decade.earth_result?.includes('敗') || decade.earth_result === '패' ? 'failure' : 'neutral'}`}>
-                                                {decade.earth}
-                                              </span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* AI 생성 버튼 */}
-                                  <div className="generate-after-basis">
-                                    <p className="generate-prompt">위 명리학적 근거를 바탕으로 AI가 각 대운별 상세 해설을 생성합니다.</p>
-                                    <button
-                                      className="btn-generate-chapter3"
-                                      onClick={generateChapter3}
-                                    >
-                                      <Sparkles size={18} />
-                                      AI 대운 분석 생성하기
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
+                              {/* AI 생성 버튼 - 바로 표시 */}
+                              <div className="generate-direct">
+                                <button
+                                  className="btn-generate-chapter3"
+                                  onClick={generateChapter3WithAutoSave}
+                                  disabled={chapter3Loading}
+                                >
+                                  <Sparkles size={18} />
+                                  AI 대운 분석 생성하기
+                                </button>
+                              </div>
                             </div>
                           )}
 
@@ -3627,7 +3658,37 @@ function OrderDetail() {
                           )}
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter4' ? (
-                        <div className="chapter4-content fortune-chapter">
+                        <div className="chapter4-content five-year-fortune">
+                          {validationResult ? (
+                            <FiveYearFortuneEditor
+                              ref={fiveYearFortuneEditorRef}
+                              orderId={id}
+                              validationResult={validationResult}
+                              initialData={fiveYearFortuneData}
+                              onChange={(data) => setFiveYearFortuneData(data)}
+                            />
+                          ) : (
+                            <div className="chapter4-generate">
+                              <p className="chapter4-description">
+                                향후 5년간의 운세 흐름을 분석합니다.
+                              </p>
+                              <p className="chapter4-subdescription">
+                                격국 성패, 억부, 조후, 합형충파해를 종합 분석합니다. 먼저 사주 검증을 실행해주세요.
+                              </p>
+                              <button
+                                className="btn btn-validate-first"
+                                onClick={() => {
+                                  const validateBtn = document.querySelector('.btn-validate');
+                                  if (validateBtn) validateBtn.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                              >
+                                사주 검증하러 가기
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : reportChapters[selectedChapter].id === 'chapter5' ? (
+                        <div className="chapter5-content fortune-chapter">
                           {chapter4Error && (
                             <div className="chapter-error">
                               <AlertCircle size={20} />
@@ -3638,12 +3699,12 @@ function OrderDetail() {
                           {/* 재물운 편집기 - 사주 검증이 완료된 경우 표시 */}
                           {validationResult ? (
                             <FortuneEditor
+                              ref={fortuneEditorRef}
                               orderId={id}
                               validationResult={validationResult}
                               initialData={fortuneEditorData}
                               initialBaseFortune={fortuneBaseFortune}
                               onChange={(data) => {
-                                // 데이터 변경 시 부모 상태 업데이트 (챕터 전환 시 유지용)
                                 if (data.yearlyFortunes) {
                                   setFortuneEditorData(data.yearlyFortunes);
                                 }
@@ -3653,18 +3714,16 @@ function OrderDetail() {
                               }}
                             />
                           ) : (
-                            <div className="chapter4-generate">
-                              <p className="chapter4-description">
+                            <div className="chapter5-generate">
+                              <p className="chapter5-description">
                                 향후 5년간의 재물운을 분석합니다.
                               </p>
-                              <p className="chapter4-subdescription">
+                              <p className="chapter5-subdescription">
                                 격국 성패 분석 결과를 바탕으로 AI가 상세 재물운을 생성합니다. 먼저 사주 검증을 실행해주세요.
                               </p>
-
                               <button
                                 className="btn btn-validate-first"
                                 onClick={() => {
-                                  // 사주 검증 버튼으로 스크롤
                                   const validateBtn = document.querySelector('.btn-validate');
                                   if (validateBtn) validateBtn.scrollIntoView({ behavior: 'smooth' });
                                 }}
@@ -3676,37 +3735,38 @@ function OrderDetail() {
 
                           {/* 저장된 재물운 데이터가 있을 때 PDF/미리보기 버튼 표시 */}
                           {chapter4Data && chapter4Data.fortune_years && (
-                            <div className="chapter4-saved-actions">
+                            <div className="chapter5-saved-actions">
                               <div className="saved-status">
                                 <span className="status-icon">✅</span>
                                 <span className="status-text">
                                   {Object.keys(chapter4Data.fortune_years).length}년치 재물운이 저장되었습니다.
                                 </span>
                               </div>
-                              <div className="chapter4-regenerate">
+                              <div className="chapter5-regenerate">
                                 <button
                                   className="btn btn-preview"
-                                  onClick={() => openMobilePreview(4)}
+                                  onClick={() => openMobilePreview(5)}
                                 >
                                   <FileText size={14} />
                                   모바일 미리보기
                                 </button>
                                 <button
                                   className="btn btn-pdf"
-                                  onClick={() => downloadChapterPDF(4, chapter4Data)}
-                                  disabled={pdfLoading[4]}
+                                  onClick={() => downloadChapterPDF(5, chapter4Data)}
+                                  disabled={pdfLoading[5]}
                                 >
-                                  {pdfLoading[4] ? <Loader size={14} className="spinning" /> : <Download size={14} />}
+                                  {pdfLoading[5] ? <Loader size={14} className="spinning" /> : <Download size={14} />}
                                   PDF 다운로드
                                 </button>
                               </div>
                             </div>
                           )}
                         </div>
-                      ) : reportChapters[selectedChapter].id === 'chapter5' ? (
-                        <div className="chapter5-content career-chapter">
+                      ) : reportChapters[selectedChapter].id === 'chapter6' ? (
+                        <div className="chapter6-content career-chapter">
                           {/* 직업운/사회운 - CareerEditor 사용 */}
                           <CareerEditor
+                            ref={careerEditorRef}
                             orderId={id}
                             validationResult={validationResult}
                             initialData={careerEditorData}
@@ -3717,13 +3777,24 @@ function OrderDetail() {
                             }}
                           />
                         </div>
-                      ) : reportChapters[selectedChapter].id === 'chapter6' ? (
-                        <div className="chapter6-content">
+                      ) : reportChapters[selectedChapter].id === 'chapter7' ? (
+                        <div className="chapter7-content">
                           <LoveFortuneEditor
+                            ref={loveFortuneEditorRef}
                             orderId={order.id}
                             validationResult={validationResult}
                             initialData={loveFortuneData}
                             onChange={(data) => setLoveFortuneData(data)}
+                          />
+                        </div>
+                      ) : reportChapters[selectedChapter].id === 'chapter8' ? (
+                        <div className="chapter8-content">
+                          <CoachingEditor
+                            ref={coachingEditorRef}
+                            orderId={order.id}
+                            validationResult={validationResult}
+                            initialData={coachingData}
+                            onChange={(data) => setCoachingData(data)}
                           />
                         </div>
                       ) : (

@@ -1,0 +1,635 @@
+.five-year-fortune-editor {
+  padding: 16px;
+}
+
+.five-year-fortune-editor.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.five-year-fortune-editor .loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+}
+
+.five-year-fortune-editor .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.five-year-fortune-header-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.five-year-fortune-header-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #166534;
+  margin: 0 0 8px 0;
+}
+
+.five-year-fortune-header-section .section-description {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+}
+
+.five-year-fortune-header-section .btn-regenerate-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.five-year-fortune-header-section .btn-regenerate-all:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.five-year-fortune-header-section .btn-regenerate-all:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 연도별 에디터 */
+.year-five-year-editor {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.year-five-year-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.year-five-year-header:hover {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.year-five-year-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.year-index-label {
+  background: #166534;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.year-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ganji-label {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.fortune-level-badge.five-year-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.year-five-year-toggle {
+  color: #6b7280;
+}
+
+.year-five-year-body {
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 대운 정보 */
+.five-year-decade-info {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.decade-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.decade-badge {
+  background: #7c3aed;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.decade-ganji-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.decade-age-range {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.current-age {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 분석 섹션 */
+.five-year-analysis-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.five-year-analysis-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.five-year-analysis-box .analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.five-year-analysis-box .analysis-type {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.five-year-analysis-box .analysis-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.five-year-analysis-box .analysis-content {
+  padding: 12px;
+}
+
+/* 격국 성패 박스 */
+.gyeokguk-box {
+  border-color: #c7d2fe;
+}
+
+.gyeokguk-box .analysis-header {
+  background: #eef2ff;
+}
+
+.gyeokguk-box .analysis-type {
+  color: #4338ca;
+}
+
+.outcome-group {
+  margin-bottom: 12px;
+}
+
+.outcome-group:last-child {
+  margin-bottom: 0;
+}
+
+.outcome-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.outcome-item {
+  padding-left: 12px;
+}
+
+/* 억부 박스 */
+.ukbu-box {
+  border-color: #fcd34d;
+}
+
+.ukbu-box .analysis-header {
+  background: #fefce8;
+}
+
+.ukbu-box .analysis-type {
+  color: #a16207;
+}
+
+.strength-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.strength-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.strength-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.strength-level {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.strength-score {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* 조후 박스 */
+.johu-box {
+  border-color: #a5f3fc;
+}
+
+.johu-box .analysis-header {
+  background: #ecfeff;
+}
+
+.johu-box .analysis-type {
+  color: #0e7490;
+}
+
+.johu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.johu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.johu-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.johu-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.johu-level {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+/* 합형충파해 박스 */
+.relations-box {
+  border-color: #fca5a5;
+}
+
+.relations-box .analysis-header {
+  background: #fef2f2;
+}
+
+.relations-box .analysis-type {
+  color: #b91c1c;
+}
+
+.relations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.relation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.relation-type {
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 40px;
+}
+
+.relation-chars {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.relation-desc {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.relation-item.relation-good {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+}
+
+.relation-item.relation-good .relation-type {
+  color: #166534;
+}
+
+.relation-item.relation-bad {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.relation-item.relation-bad .relation-type {
+  color: #b91c1c;
+}
+
+.relation-item.relation-warning {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+}
+
+.relation-item.relation-warning .relation-type {
+  color: #b45309;
+}
+
+.relation-item.relation-caution {
+  background: #fff7ed;
+  border-left: 3px solid #f97316;
+}
+
+.relation-item.relation-caution .relation-type {
+  color: #c2410c;
+}
+
+/* 공통 분석 스타일 */
+.analysis-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.row-label {
+  font-size: 12px;
+  color: #9ca3af;
+  min-width: 40px;
+}
+
+.row-value {
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.code-value {
+  font-family: monospace;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.result-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.result-badge.result-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.result-badge.result-fail {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.result-badge.result-mixed-success {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.result-badge.result-mixed-fail {
+  background: #fed7aa;
+  color: #c2410c;
+}
+
+.analysis-reason {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+.analysis-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* 매니저 수정 섹션 */
+.manager-edit-section.five-year-edit {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.edit-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  margin-bottom: 12px;
+}
+
+.edit-category.five-year-category {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-label {
+  font-size: 13px;
+  color: #374151;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.fortune-level-select.five-year-select {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  cursor: pointer;
+}
+
+.edit-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
+/* 생성된 콘텐츠 */
+.generated-content-section.five-year-content {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.generated-content-section .content-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  margin-bottom: 10px;
+}
+
+.generated-content-section .generated-content {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+}
+
+.generated-content-section .section-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+}
+
+.generated-content-section .loading-spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.section-loading-text {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* 재생성 버튼 */
+.year-five-year-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-regenerate-year.five-year-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #22c55e;
+  color: #16a34a;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-regenerate-year.five-year-btn:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+
+.btn-regenerate-year.five-year-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}

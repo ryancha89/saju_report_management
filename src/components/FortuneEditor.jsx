@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import './FortuneEditor.css';
 
@@ -667,13 +667,13 @@ function YearFortuneEditor({
 }
 
 // 메인 재물운 편집 컴포넌트
-export default function FortuneEditor({
+const FortuneEditor = forwardRef(function FortuneEditor({
   orderId,
   validationResult,
   initialData,
   initialBaseFortune,
   onChange
-}) {
+}, ref) {
   const currentYear = new Date().getFullYear();
   const [fortuneData, setFortuneData] = useState([]);
   const [baseFortune, setBaseFortune] = useState(initialBaseFortune || {
@@ -695,6 +695,12 @@ export default function FortuneEditor({
   const zodiacYear = validationResult?.saju_data?.zodiac_year || '';
   const daySky = zodiacDay.charAt(0);  // 일간
   const yearEarth = zodiacYear.charAt(1);  // 년지
+
+  // 부모 컴포넌트에서 호출 가능한 메서드 노출
+  useImperativeHandle(ref, () => ({
+    regenerateAll: handleRegenerateAll,
+    isRegenerating: () => regeneratingAll
+  }));
 
   // 5년치 재물운 데이터 초기화
   useEffect(() => {
@@ -1437,4 +1443,6 @@ export default function FortuneEditor({
       </div>
     </div>
   );
-}
+});
+
+export default FortuneEditor;

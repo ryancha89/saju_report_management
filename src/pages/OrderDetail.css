@@ -1975,6 +1975,10 @@
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   padding: 16px;
   border-bottom: 2px solid #d4af37;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .chapter-tabs {
@@ -1982,6 +1986,36 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-start;
+  flex: 1;
+}
+
+/* 챕터 4-6 전체 생성 버튼 */
+.btn-regenerate-456 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+  border: 1px solid #a855f7;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-regenerate-456:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.btn-regenerate-456:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .chapter-tab {
@@ -2099,7 +2133,6 @@
 
 .chapter-display {
   background: #fff;
-  border-radius: 16px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -6131,6 +6164,18 @@
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 16px;
   border: 2px dashed #93c5fd;
+}
+
+/* 직접 생성 버튼 영역 (명리학적 근거 스킵) */
+.generate-direct {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.generate-direct .btn-generate-chapter3 {
+  padding: 14px 32px;
+  font-size: 1rem;
 }
 
 .generate-after-basis .generate-prompt {

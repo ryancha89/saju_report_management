@@ -1,0 +1,448 @@
+/* CoachingEditor.css - 상담사 코칭 에디터 스타일 */
+
+.coaching-editor {
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.coaching-editor.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.coaching-editor .loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+}
+
+.coaching-editor .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 헤더 섹션 */
+.coaching-header-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.coaching-header-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.coaching-header-section .section-title svg {
+  color: #8b5cf6;
+}
+
+.coaching-header-section .section-description {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.coaching-header-section .header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* 버튼 스타일 */
+.coaching-editor .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coaching-editor .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.coaching-editor .btn-regenerate-all {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+}
+
+.coaching-editor .btn-regenerate-all:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  transform: translateY(-1px);
+}
+
+.coaching-editor .btn-add {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.coaching-editor .btn-add:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.coaching-editor .btn-save-all {
+  background: #10b981;
+  color: white;
+}
+
+.coaching-editor .btn-save-all:hover:not(:disabled) {
+  background: #059669;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* 코칭 항목 리스트 */
+.coaching-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 개별 코칭 항목 */
+.coaching-item {
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.coaching-item:hover {
+  border-color: #c4b5fd;
+}
+
+.coaching-item.expanded {
+  border-color: #a78bfa;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+}
+
+/* 항목 헤더 */
+.coaching-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.coaching-item-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.coaching-item-title .item-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.coaching-item-title .topic-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.coaching-item-title .topic-edit-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.coaching-item-title .topic-edit-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.coaching-item-title .ai-badge {
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* 항목 액션 버튼 */
+.coaching-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.coaching-item-actions .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coaching-item-actions .btn-icon:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.coaching-item-actions .btn-icon.btn-danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.coaching-item-actions .toggle-icon {
+  display: flex;
+  align-items: center;
+  color: #9ca3af;
+  margin-left: 8px;
+}
+
+/* 항목 바디 */
+.coaching-item-body {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 보기 모드 */
+.coaching-item-body .view-mode .coaching-content {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.8;
+}
+
+.coaching-item-body .view-mode .coaching-content p {
+  margin: 0 0 8px 0;
+}
+
+.coaching-item-body .view-mode .coaching-content p:last-child {
+  margin-bottom: 0;
+}
+
+.coaching-item-body .view-mode .empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 30px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.coaching-item-body .view-mode .empty-content svg {
+  opacity: 0.5;
+}
+
+/* 편집 모드 */
+.coaching-item-body .edit-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.coaching-item-body .edit-mode .edit-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.coaching-item-body .edit-mode .content-edit-textarea,
+.coaching-item-body .edit-mode .draft-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.coaching-item-body .edit-mode .content-edit-textarea:focus,
+.coaching-item-body .edit-mode .draft-textarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.coaching-item-body .edit-mode .content-edit-textarea {
+  min-height: 120px;
+}
+
+.coaching-item-body .edit-mode .draft-textarea {
+  min-height: 80px;
+  background: #faf5ff;
+  border-color: #e9d5ff;
+}
+
+/* AI 도움 섹션 */
+.coaching-item-body .ai-assist-section {
+  padding: 12px;
+  background: #faf5ff;
+  border: 1px dashed #c4b5fd;
+  border-radius: 8px;
+}
+
+.coaching-item-body .ai-assist-section .edit-label {
+  color: #7c3aed;
+}
+
+.coaching-item-body .btn-ai-assist {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coaching-item-body .btn-ai-assist:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  transform: translateY(-1px);
+}
+
+.coaching-item-body .btn-ai-assist:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 편집 액션 버튼 */
+.coaching-item-body .edit-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.coaching-item-body .btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coaching-item-body .btn-save:hover {
+  background: #059669;
+}
+
+.coaching-item-body .btn-cancel {
+  padding: 10px 18px;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coaching-item-body .btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+/* 빈 상태 */
+.coaching-editor .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 20px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.coaching-editor .empty-state svg {
+  opacity: 0.3;
+}
+
+.coaching-editor .empty-state p {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .coaching-header-section .header-actions {
+    flex-direction: column;
+  }
+
+  .coaching-header-section .header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .coaching-item-title {
+    flex-wrap: wrap;
+  }
+
+  .coaching-item-title .topic-edit-input {
+    width: 100%;
+  }
+}

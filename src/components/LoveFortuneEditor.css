@@ -57,6 +57,86 @@
   color: #db2777;
 }
 
+/* 현재 대운 섹션 */
+.current-decade-section.love-decade {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fff1f2 100%);
+  border-bottom: 1px solid #fecdd3;
+}
+
+.current-decade-section.love-decade .decade-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.current-decade-section.love-decade .decade-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #be185d;
+}
+
+.current-decade-section.love-decade .decade-ganji {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #9f1239;
+  padding: 4px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #fda4af;
+}
+
+.current-decade-section.love-decade .decade-age {
+  font-size: 0.85rem;
+  color: #be185d;
+}
+
+/* 연도별 대운 정보 */
+.love-decade-info {
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #f0abfc;
+}
+
+.love-decade-info .decade-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.love-decade-info .decade-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.love-decade-info .decade-ganji-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.love-decade-info .decade-age-range {
+  font-size: 0.8rem;
+  color: #9333ea;
+}
+
+.love-decade-info .current-age {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: #ec4899;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
 .love-fortune-editor-header {
   display: flex;
   justify-content: space-between;

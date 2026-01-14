@@ -85,15 +85,6 @@
   overflow-y: auto;
 }
 
-/* User Info Card */
-.user-info-card {
-  text-align: center;
-  padding: 24px;
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 16px;
-}
-
 .user-name {
   display: flex;
   align-items: center;

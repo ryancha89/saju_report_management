@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, Sparkles, Briefcase } from 'lucide-react';
 import './CareerEditor.css';
 
@@ -610,13 +610,13 @@ function YearCareerEditor({
 }
 
 // 메인 직업운 편집 컴포넌트
-export default function CareerEditor({
+const CareerEditor = forwardRef(function CareerEditor({
   orderId,
   validationResult,
   initialData,
   initialBaseCareer,
   onChange
-}) {
+}, ref) {
   const currentYear = new Date().getFullYear();
   const [careerData, setCareerData] = useState([]);
   const [baseCareer, setBaseCareer] = useState(initialBaseCareer || {
@@ -636,6 +636,12 @@ export default function CareerEditor({
   const zodiacYear = validationResult?.saju_data?.zodiac_year || '';
   const daySky = zodiacDay.charAt(0);
   const yearEarth = zodiacYear.charAt(1);
+
+  // 부모 컴포넌트에서 호출 가능한 메서드 노출
+  useImperativeHandle(ref, () => ({
+    regenerateAll: handleRegenerateAll,
+    isRegenerating: () => regeneratingAll
+  }));
 
   // 5년치 직업운 데이터 초기화
   useEffect(() => {
@@ -1305,4 +1311,6 @@ export default function CareerEditor({
       </div>
     </div>
   );
-}
+});
+
+export default CareerEditor;

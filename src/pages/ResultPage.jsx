@@ -74,20 +74,6 @@ function ResultPage() {
 
         {/* 메인 콘텐츠 */}
         <main className="result-content">
-          {/* 사용자 정보 */}
-          <div className="user-info-card">
-            <div className="user-name">
-              <Sparkles size={20} className="sparkle-icon" />
-              <span>{order_info?.name || userFormData?.name}님의 사주</span>
-            </div>
-            <div className="user-details">
-              <span>{order_info?.birth_date || userFormData?.birthDate}</span>
-              <span className="divider">|</span>
-              <span>{order_info?.gender === 'male' ? '남성' : '여성'}</span>
-              <span className="divider">|</span>
-              <span>{order_info?.calendar_type === 'solar' ? '양력' : '음력'}</span>
-            </div>
-          </div>
 
           {/* 사주 팔자 표 */}
           <div className="saju-table-card">

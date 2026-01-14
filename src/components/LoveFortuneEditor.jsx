@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, Sparkles, Heart } from 'lucide-react';
 import './LoveFortuneEditor.css';
 
@@ -77,7 +77,7 @@ function YearLoveFortuneEditor({
   };
 
   const getRelationClass = (type) => {
-    if (type === '육합') return 'relation-good';
+    if (type === '육합' || type === '반합') return 'relation-good';
     if (type === '충') return 'relation-bad';
     if (type === '형') return 'relation-warning';
     if (type === '파' || type === '해') return 'relation-caution';
@@ -110,6 +110,18 @@ function YearLoveFortuneEditor({
 
       {isExpanded && (
         <div className="year-love-fortune-body">
+          {/* 대운 정보 */}
+          {yearData.decade && (
+            <div className="love-decade-info">
+              <div className="decade-row">
+                <span className="decade-badge">대운</span>
+                <span className="decade-ganji-value">{yearData.decade.ganji}</span>
+                <span className="decade-age-range">({yearData.decade.start_age}~{yearData.decade.end_age}세)</span>
+                {yearData.age_at_year && <span className="current-age">{yearData.age_at_year}세</span>}
+              </div>
+            </div>
+          )}
+
           {/* 일지-세운 관계 정보 */}
           <div className="love-info-container">
             <div className="love-info-row">
@@ -319,12 +331,12 @@ function YearLoveFortuneEditor({
 }
 
 // 메인 연애운 편집 컴포넌트
-export default function LoveFortuneEditor({
+const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
   orderId,
   validationResult,
   initialData,
   onChange
-}) {
+}, ref) {
   const currentYear = new Date().getFullYear();
   const [loveFortuneData, setLoveFortuneData] = useState([]);
   const [baseAnalysis, setBaseAnalysis] = useState(null);
@@ -336,6 +348,12 @@ export default function LoveFortuneEditor({
   const userName = validationResult?.order_info?.name || '고객';
   const zodiacDay = validationResult?.saju_data?.zodiac_day || '';
   const dayEarth = zodiacDay.charAt(1);
+
+  // 부모 컴포넌트에서 호출 가능한 메서드 노출
+  useImperativeHandle(ref, () => ({
+    regenerateAll: handleRegenerateAll,
+    isRegenerating: () => regeneratingAll
+  }));
 
   // 연애운 데이터 로드
   useEffect(() => {
@@ -382,6 +400,8 @@ export default function LoveFortuneEditor({
         return {
           year: yearInfo.year,
           ganji: yearInfo.ganji,
+          age_at_year: yearInfo.age_at_year,
+          decade: yearInfo.decade,
           day_earth_outcome: yearInfo.day_earth_outcome || [],
           day_earth_relations: yearInfo.day_earth_relations || {},
           year_temperature: yearInfo.year_temperature,
@@ -544,6 +564,27 @@ export default function LoveFortuneEditor({
   // 데이터 저장
   const saveLoveFortuneData = async (data) => {
     try {
+      // 캐시할 분석 데이터 구성 (다음 로드시 빠르게 반환하기 위해)
+      const cachedAnalysis = {
+        saju: {
+          zodiac_day: zodiacDay,
+          day_earth: dayEarth,
+          ilgan: zodiacDay.charAt(0)
+        },
+        base_analysis: baseAnalysis,
+        current_decade: data[0]?.decade || null,
+        years: data.map(item => ({
+          year: item.year,
+          ganji: item.ganji,
+          age_at_year: item.age_at_year,
+          decade: item.decade,
+          day_earth_outcome: item.day_earth_outcome,
+          day_earth_relations: item.day_earth_relations,
+          year_temperature: item.year_temperature,
+          year_humid: item.year_humid
+        }))
+      };
+
       await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/save_love_fortune`, {
         method: 'POST',
         headers: {
@@ -553,11 +594,12 @@ export default function LoveFortuneEditor({
         body: JSON.stringify({
           love_fortune_data: {
             baseAnalysis: baseAnalysis,
-            yearlyLoveFortunes: data
+            yearlyLoveFortunes: data,
+            cached_analysis: cachedAnalysis
           }
         })
       });
-      console.log('[LoveFortuneEditor] Auto-saved');
+      console.log('[LoveFortuneEditor] Auto-saved with cache');
     } catch (err) {
       console.error('Auto-save error:', err);
     }
@@ -687,4 +729,6 @@ export default function LoveFortuneEditor({
       </div>
     </div>
   );
-}
+});
+
+export default LoveFortuneEditor;
