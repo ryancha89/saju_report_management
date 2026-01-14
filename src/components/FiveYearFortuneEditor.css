@@ -1,5 +1,6 @@
 .five-year-fortune-editor {
   padding: 16px;
+  position: relative;
 }
 
 .five-year-fortune-editor.loading {
@@ -632,4 +633,48 @@
 
 .spinning {
   animation: spin 1s linear infinite;
+}
+
+/* 전체 생성 중 오버레이 */
+.regenerating-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.regenerating-content {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  padding: 40px 60px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  gap: 16px;
+}
+
+.regenerating-content span {
+  font-size: 20px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.regenerating-content .regenerating-note {
+  font-size: 14px;
+  color: #047857;
+  margin: 0;
+  text-align: center;
+}
+
+.regenerating-content .spinning {
+  color: #166534;
 }

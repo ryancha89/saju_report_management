@@ -67,8 +67,6 @@ function ReportPreview({ isAdminPreview = false }) {
       if (!response.ok || !data.success) {
         throw new Error(data.error || '레포트를 불러오는데 실패했습니다.');
       }
-      console.log('Report data:', data.report);
-      console.log('Saju data:', data.report?.saju_data);
       setReportData(data.report);
     } catch (err) {
       setError(err.message);
@@ -713,9 +711,9 @@ function ReportPreview({ isAdminPreview = false }) {
       return renderSajuInfo();
     }
 
-    // 챕터 2, 3은 기존 방식 (이전 1, 2)
+    // 챕터 2, 3은 기존 방식 (chapter2 = 아이덴티티, chapter3 = 잠재력)
     if (num === 2 || num === 3) {
-      return renderContent(getChapterContent(num - 1));
+      return renderContent(getChapterContent(num));
     }
 
     // 챕터 4는 대운 흐름 (이전 3)

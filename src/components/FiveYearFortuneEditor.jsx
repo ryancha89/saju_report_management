@@ -611,12 +611,13 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     }
 
     if (orderId && validationResult && !dataLoaded.current) {
-      // initialData가 있으면 API 호출 건너뛰기
-      if (initialData && initialData.length > 0) {
+      // initialData가 배열이고 데이터가 있으면 사용
+      if (Array.isArray(initialData) && initialData.length > 0) {
         setFiveYearData(initialData);
         dataLoaded.current = true;
         return;
       }
+      // 항상 API에서 최신 데이터 로드
       loadFiveYearData();
       dataLoaded.current = true;
     }
@@ -624,7 +625,7 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
 
   // 초기 데이터 변경 시 업데이트 (부모에서 전달된 경우)
   useEffect(() => {
-    if (initialData && initialData.length > 0 && fiveYearData.length === 0 && !loading) {
+    if (Array.isArray(initialData) && initialData.length > 0 && fiveYearData.length === 0 && !loading) {
       setFiveYearData(initialData);
       dataLoaded.current = true;
     }
@@ -654,6 +655,10 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
       const yearsData = data.data.years.map(yearInfo => {
         const savedYearData = savedYears.find(sy => sy.year === yearInfo.year);
 
+        // fortune_level은 항상 새로 계산 (API 응답 기준)
+        const calculatedLevel = calculateDefaultLevel(yearInfo);
+        const existingEdit = savedYearData?.manager_edit || {};
+
         return {
           year: yearInfo.year,
           ganji: yearInfo.ganji,
@@ -665,11 +670,11 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
           year_temperature: yearInfo.year_temperature,
           year_humid: yearInfo.year_humid,
           relations: yearInfo.relations || [],
-          manager_edit: savedYearData?.manager_edit || {
-            fortune_level: calculateDefaultLevel(yearInfo),
-            reason: '',
-            advice: '',
-            memo: ''
+          manager_edit: {
+            fortune_level: calculatedLevel,  // 항상 새로 계산
+            reason: existingEdit.reason || '',
+            advice: existingEdit.advice || '',
+            memo: existingEdit.memo || ''
           },
           generated_content: savedYearData?.generated_content || ''
         };
@@ -681,9 +686,19 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
       saveToCache(yearsData, data.data.base_analysis);
 
       if (onChange && yearsData.length > 0) {
+        // 각 연도의 generated_content를 합쳐서 content 생성
+        const combinedContent = yearsData
+          .filter(year => year.generated_content)
+          .map(year => {
+            const levelLabel = FORTUNE_LEVELS.find(l => l.value === year.manager_edit?.fortune_level)?.label || '보통';
+            return `【${year.year}년 (${year.ganji}) - ${levelLabel}】\n${year.generated_content}`;
+          })
+          .join('\n\n');
+
         onChange({
           baseAnalysis: data.data.base_analysis,
-          yearlyFiveYearFortunes: yearsData
+          yearlyFiveYearFortunes: yearsData,
+          content: combinedContent || null
         });
       }
     } catch (err) {
@@ -739,12 +754,32 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     const skyResult = yearInfo.sky_outcome?.result;
     const earthResult = yearInfo.earth_outcome?.result;
 
-    const hasSuccess = (skyResult === '성' || skyResult === '成' || earthResult === '성' || earthResult === '成');
-    const hasFail = (skyResult === '패' || skyResult === '敗' || earthResult === '패' || earthResult === '敗');
+    // 성중유패, 패중유성 등 혼합 결과도 체크
+    const isPureSuccess = (result) => result === '성' || result === '成';
+    const isPureFail = (result) => result === '패' || result === '敗';
+    const isMixedBad = (result) => result === '성중유패' || result === '成中有敗';
+    const isMixedGood = (result) => result === '패중유성' || result === '敗中有成';
 
-    if (hasSuccess && !hasFail) return 'good';
-    if (hasFail && !hasSuccess) return 'difficult';
-    if (hasSuccess && hasFail) return 'caution';
+    // 천간/지지 각각의 상태 확인
+    const skyGood = isPureSuccess(skyResult) || isMixedGood(skyResult);
+    const skyBad = isPureFail(skyResult) || isMixedBad(skyResult);
+    const earthGood = isPureSuccess(earthResult) || isMixedGood(earthResult);
+    const earthBad = isPureFail(earthResult) || isMixedBad(earthResult);
+
+    // 둘 다 순수 성공이면 좋음
+    if (isPureSuccess(skyResult) && isPureSuccess(earthResult)) return 'good';
+    // 둘 다 순수 실패이면 어려움
+    if (isPureFail(skyResult) && isPureFail(earthResult)) return 'difficult';
+    // 하나라도 나쁜 결과(패 또는 성중유패)가 있으면 보통 또는 주의
+    if (skyBad || earthBad) {
+      // 하나가 좋고 하나가 나쁘면 보통
+      if ((skyGood && earthBad) || (skyBad && earthGood)) return 'normal';
+      return 'caution';
+    }
+    // 하나만 성공이고 다른 하나는 없으면 보통
+    if ((skyGood && !earthResult) || (!skyResult && earthGood)) return 'normal';
+    // 둘 다 좋으면 좋음
+    if (skyGood && earthGood) return 'good';
 
     const relations = yearInfo.relations || [];
     const hasGoodRelation = relations.some(r => r.type === '육합' || r.type === '삼합');
@@ -770,13 +805,14 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     });
   };
 
-  // 개별 연도 재생성
+  // 개별 연도 재생성 (5년운세 + 재물운 + 직업운 + 연애운)
   const handleRegenerateYear = async (year) => {
     setRegeneratingYear(year);
     try {
       const yearData = fiveYearData.find(d => d.year === year);
       const managerInput = yearData?.manager_edit || {};
 
+      // 1. 5년운세 기본 생성
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_five_year_fortune`, {
         method: 'POST',
         headers: {
@@ -794,17 +830,73 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
         throw new Error(data.error || '재생성에 실패했습니다.');
       }
 
-      const updatedData = fiveYearData.map(item =>
-        item.year === year
-          ? {
-              ...item,
-              generated_content: data.generated_content,
-              sky_outcome: data.sky_outcome || item.sky_outcome,
-              earth_outcome: data.earth_outcome || item.earth_outcome,
-              relations: data.relations || item.relations
+      // 2. 재물운 생성
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_fortune_year`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({ year, manager_input: {} })
+        });
+      } catch (e) {
+        console.warn(`재물운 생성 실패 (${year}):`, e);
+      }
+
+      // 3. 직업운 생성
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_career_year`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({ year, manager_input: {} })
+        });
+      } catch (e) {
+        console.warn(`직업운 생성 실패 (${year}):`, e);
+      }
+
+      // 4. 연애운 생성
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_love_fortune`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({ year, manager_input: {} })
+        });
+      } catch (e) {
+        console.warn(`연애운 생성 실패 (${year}):`, e);
+      }
+
+      const updatedData = fiveYearData.map(item => {
+        if (item.year === year) {
+          const newSkyOutcome = data.sky_outcome || item.sky_outcome;
+          const newEarthOutcome = data.earth_outcome || item.earth_outcome;
+          const newRelations = data.relations || item.relations;
+          // fortune_level 재계산
+          const newLevel = calculateDefaultLevel({
+            sky_outcome: newSkyOutcome,
+            earth_outcome: newEarthOutcome,
+            relations: newRelations
+          });
+          return {
+            ...item,
+            generated_content: data.generated_content,
+            sky_outcome: newSkyOutcome,
+            earth_outcome: newEarthOutcome,
+            relations: newRelations,
+            manager_edit: {
+              ...item.manager_edit,
+              fortune_level: newLevel
             }
-          : item
-      );
+          };
+        }
+        return item;
+      });
       setFiveYearData(updatedData);
       saveToCache(updatedData, baseAnalysis);
       notifyParent(updatedData);
@@ -818,14 +910,47 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     }
   };
 
-  // 전체 재생성
+  // 전체 재생성 (5년운세 + 재물운 + 직업운 + 연애운 + 코칭)
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     try {
       let updatedData = [...fiveYearData];
+      const currentYear = new Date().getFullYear();
 
+      // 1. 재물운 전체 생성
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_fortune_all`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({ manager_inputs: {} })
+        });
+        console.log('재물운 전체 생성 완료');
+      } catch (e) {
+        console.warn('재물운 전체 생성 실패:', e);
+      }
+
+      // 2. 직업운 전체 생성
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_career_all`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({ manager_inputs: {} })
+        });
+        console.log('직업운 전체 생성 완료');
+      } catch (e) {
+        console.warn('직업운 전체 생성 실패:', e);
+      }
+
+      // 3. 각 연도별 5년운세 및 연애운 생성
       for (const yearData of fiveYearData) {
         try {
+          // 5년운세 기본 생성
           const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_five_year_fortune`, {
             method: 'POST',
             headers: {
@@ -840,21 +965,64 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
 
           const data = await response.json();
           if (response.ok) {
-            updatedData = updatedData.map(item =>
-              item.year === yearData.year
-                ? {
-                    ...item,
-                    generated_content: data.generated_content,
-                    sky_outcome: data.sky_outcome || item.sky_outcome,
-                    earth_outcome: data.earth_outcome || item.earth_outcome,
-                    relations: data.relations || item.relations
+            updatedData = updatedData.map(item => {
+              if (item.year === yearData.year) {
+                const newSkyOutcome = data.sky_outcome || item.sky_outcome;
+                const newEarthOutcome = data.earth_outcome || item.earth_outcome;
+                const newRelations = data.relations || item.relations;
+                // fortune_level 재계산
+                const newLevel = calculateDefaultLevel({
+                  sky_outcome: newSkyOutcome,
+                  earth_outcome: newEarthOutcome,
+                  relations: newRelations
+                });
+                return {
+                  ...item,
+                  generated_content: data.generated_content,
+                  sky_outcome: newSkyOutcome,
+                  earth_outcome: newEarthOutcome,
+                  relations: newRelations,
+                  manager_edit: {
+                    ...item.manager_edit,
+                    fortune_level: newLevel
                   }
-                : item
-            );
+                };
+              }
+              return item;
+            });
+          }
+
+          // 연애운 생성 (각 연도별)
+          try {
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_love_fortune`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Saju-Authorization': `Bearer-${API_TOKEN}`
+              },
+              body: JSON.stringify({ year: yearData.year, manager_input: {} })
+            });
+          } catch (e) {
+            console.warn(`연애운 생성 실패 (${yearData.year}):`, e);
           }
         } catch (err) {
           console.error(`Year ${yearData.year} generation failed:`, err);
         }
+      }
+
+      // 4. 코칭 생성
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_coaching`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({ topics: [] })
+        });
+        console.log('코칭 생성 완료');
+      } catch (e) {
+        console.warn('코칭 생성 실패:', e);
       }
 
       setFiveYearData(updatedData);
@@ -871,9 +1039,19 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
   // 부모 컴포넌트에 알림
   const notifyParent = (data) => {
     if (onChange) {
+      // 각 연도의 generated_content를 합쳐서 content 생성
+      const combinedContent = data
+        .filter(year => year.generated_content)
+        .map(year => {
+          const levelLabel = FORTUNE_LEVELS.find(l => l.value === year.manager_edit?.fortune_level)?.label || '보통';
+          return `【${year.year}년 (${year.ganji}) - ${levelLabel}】\n${year.generated_content}`;
+        })
+        .join('\n\n');
+
       onChange({
         baseAnalysis,
-        yearlyFiveYearFortunes: data
+        yearlyFiveYearFortunes: data,
+        content: combinedContent || null
       });
     }
   };
@@ -909,6 +1087,17 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
 
   return (
     <div className="five-year-fortune-editor">
+      {/* 전체 생성 중 오버레이 */}
+      {regeneratingAll && (
+        <div className="regenerating-overlay">
+          <div className="regenerating-content">
+            <RefreshCw size={32} className="spinning" />
+            <span>5년간의 운세를 생성하고 있습니다...</span>
+            <p className="regenerating-note">각 연도별 운세를 순차적으로 생성 중입니다. 잠시만 기다려주세요.</p>
+          </div>
+        </div>
+      )}
+
       <div className="five-year-fortune-header-section">
         <h3 className="section-title">
           <TrendingUp size={20} />

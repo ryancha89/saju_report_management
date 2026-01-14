@@ -709,12 +709,25 @@ const FortuneEditor = forwardRef(function FortuneEditor({
     }
   }, [validationResult]);
 
-  // 초기 데이터가 있으면 로드 (현재 데이터가 비어있을 때만) - decade 정보 추가
+  // 초기 데이터가 있으면 로드 (저장된 데이터가 있으면 초기화 데이터보다 우선) - decade 정보 추가
   useEffect(() => {
-    if (initialData && initialData.length > 0 && fortuneData.length === 0 && validationResult) {
-      const { decade_luck, current_decade } = validationResult;
+    // initialData에 실제 content가 있는 항목이 있는지 확인
+    const hasContent = initialData && initialData.length > 0 &&
+      initialData.some(item => item.content || item.generated_content);
+
+    console.log('[FortuneEditor] initialData check:', {
+      initialData,
+      hasContent,
+      fortuneDataLength: fortuneData.length
+    });
+
+    if (hasContent && validationResult) {
+      const { decade_luck, current_decade, type_analysis } = validationResult;
       const decadeArray = decade_luck?.decade_array || [];
       const decadeStartAge = decade_luck?.start_age || 1;
+
+      const skyType = type_analysis?.sky_result?.status?.type || '';
+      const earthType = type_analysis?.earth_result?.status?.type || '';
 
       // 출생년도 계산
       const birthDateStr = validationResult?.order_info?.birth_date || '';
@@ -740,12 +753,78 @@ const FortuneEditor = forwardRef(function FortuneEditor({
           };
         }
 
+        // 간지 계산
+        const ganji = item.ganji || getYearGanji(item.year);
+        const sky = ganji.charAt(0);
+        const earth = ganji.charAt(1);
+
+        // validationResult에서 세운 성패 분석 추출
+        const yearLuckResult = extractYearLuckResult(item.year, sky, earth, type_analysis, decadeForYear);
+
+        // 저장된 데이터에 sky/earth 분석 결과가 없으면 validationResult에서 가져옴
+        const skyData = item.sky?.result ? item.sky : {
+          type: '천간',
+          gyeokguk: skyType,
+          char: sky,
+          ...yearLuckResult.sky
+        };
+
+        const earthData = item.earth?.result ? item.earth : {
+          type: '지지',
+          gyeokguk: earthType,
+          char: earth,
+          ...yearLuckResult.earth
+        };
+
+        const dayEarthData = item.day_earth?.result ? item.day_earth : {
+          type: '일지관계',
+          label: '일지와의 관계',
+          char: earth,
+          ...yearLuckResult.day_earth
+        };
+
+        // manager_edit이 없으면 격국 성패 결과로 계산
+        const calcLevel = (result) => {
+          if (result === '성' || result === '패중유성') return 'good';
+          if (result === '패' || result === '성중유패') return 'difficult';
+          return 'normal';
+        };
+
+        const calculatedManagerEdit = item.manager_edit || {
+          sky: {
+            fortune_level: calcLevel(skyData.result),
+            reason: ''
+          },
+          earth: {
+            fortune_level: calcLevel(earthData.result),
+            reason: ''
+          },
+          advice: '',
+          memo: ''
+        };
+
+        console.log(`[FortuneEditor] Year ${item.year}:`, {
+          manager_edit: calculatedManagerEdit,
+          sky_result: skyData.result,
+          earth_result: earthData.result,
+          calculated_sky_level: calcLevel(skyData.result),
+          calculated_earth_level: calcLevel(earthData.result)
+        });
+
         return {
           ...item,
+          ganji,
+          sky: skyData,
+          earth: earthData,
+          day_earth: dayEarthData,
+          // content 또는 generated_content 필드 모두 지원
+          generated_content: item.generated_content || item.content || '',
+          manager_edit: calculatedManagerEdit,
           decade: item.decade || decadeForYear,
           ageAtYear: item.ageAtYear || ageAtYear
         };
       });
+      console.log('[FortuneEditor] Loading saved data:', dataWithDecade);
       setFortuneData(dataWithDecade);
     }
   }, [initialData, validationResult]);

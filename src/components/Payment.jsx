@@ -18,12 +18,7 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
       ? 'http://localhost:4000/api/v1/payment_histories/portone_webhook'
       : 'https://api.fortunetorch.com/api/v1/payment_histories/portone_webhook';
 
-  const handlePayment = () => {
-    if (!window.IMP) {
-      setError('결제 모듈을 불러올 수 없습니다. 페이지를 새로고침해주세요.');
-      return;
-    }
-
+  const handlePayment = async () => {
     if (!productInfo || !userInfo) {
       setError('결제 정보가 부족합니다.');
       return;
@@ -32,11 +27,24 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
     setError('');
     setIsProcessing(true);
 
-    const { IMP } = window;
-    IMP.init(PORTONE_MERCHANT_ID);
-
     const timestamp = new Date().getTime();
     const merchant_uid = `report-${productInfo.id}-${timestamp}`;
+
+    // 개발 모드에서는 결제 없이 바로 주문 생성
+    if (import.meta.env.MODE === 'development') {
+      const mockImpUid = `dev_imp_${timestamp}`;
+      await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
+      return;
+    }
+
+    if (!window.IMP) {
+      setError('결제 모듈을 불러올 수 없습니다. 페이지를 새로고침해주세요.');
+      setIsProcessing(false);
+      return;
+    }
+
+    const { IMP } = window;
+    IMP.init(PORTONE_MERCHANT_ID);
 
     // 전화번호 포맷팅 (숫자만 있는 경우 하이픈 추가)
     const formatPhone = (phone) => {

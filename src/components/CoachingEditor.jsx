@@ -458,6 +458,17 @@ const CoachingEditor = forwardRef(function CoachingEditor({
 
   return (
     <div className="coaching-editor">
+      {/* 전체 생성 중 오버레이 */}
+      {regeneratingAll && (
+        <div className="coaching-editor-loading-overlay">
+          <div className="loading-content">
+            <div className="loading-spinner"></div>
+            <div className="loading-text">코칭 내용을 생성하고 있습니다...</div>
+            <div className="loading-subtext">AI가 사주 분석을 바탕으로 맞춤형 코칭을 작성 중입니다. 잠시만 기다려주세요.</div>
+          </div>
+        </div>
+      )}
+
       <div className="coaching-header-section">
         <h3 className="section-title">
           <MessageSquare size={20} />

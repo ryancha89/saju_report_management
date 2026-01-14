@@ -355,24 +355,22 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     isRegenerating: () => regeneratingAll
   }));
 
-  // 연애운 데이터 로드
+  // 컴포넌트 마운트 시 API에서 데이터 로드
   useEffect(() => {
-    if (orderId && validationResult && !dataLoaded.current) {
-      loadLoveFortuneData();
-      dataLoaded.current = true;
+    if (!orderId) {
+      return;
     }
-  }, [orderId, validationResult]);
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    if (initialData && initialData.length > 0 && loveFortuneData.length === 0) {
-      setLoveFortuneData(initialData);
-    }
-  }, [initialData]);
+    console.log('[LoveFortuneEditor] Component mounted, loading data for orderId:', orderId);
+
+    // 항상 API에서 로드 (저장된 데이터는 API 응답에서 병합됨)
+    loadLoveFortuneData();
+  }, [orderId]);
 
   const loadLoveFortuneData = async () => {
     setLoading(true);
     try {
+      console.log('[LoveFortuneEditor] Fetching API data for order:', orderId);
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/love_fortune_data`, {
         method: 'GET',
         headers: {
@@ -382,6 +380,8 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
       });
 
       const data = await response.json();
+      console.log('[LoveFortuneEditor] API Response:', data);
+
       if (!response.ok) {
         throw new Error(data.error || '연애운 데이터 로드에 실패했습니다.');
       }
@@ -391,11 +391,17 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
       // 저장된 데이터 확인
       const savedData = data.data.saved_data;
       const savedYears = savedData?.yearlyLoveFortunes || [];
+      console.log('[LoveFortuneEditor] savedData:', savedData);
+      console.log('[LoveFortuneEditor] savedYears:', savedYears);
 
       // 연도별 데이터 구성 (저장된 데이터와 병합)
+      console.log('[LoveFortuneEditor] API years:', data.data.years?.map(y => y.year));
+      console.log('[LoveFortuneEditor] Saved years:', savedYears.map(sy => ({ year: sy.year, type: typeof sy.year, hasContent: !!sy.generated_content })));
+
       const yearsData = data.data.years.map(yearInfo => {
-        // 해당 연도의 저장된 데이터 찾기
-        const savedYearData = savedYears.find(sy => sy.year === yearInfo.year);
+        // 해당 연도의 저장된 데이터 찾기 (타입 변환 포함)
+        const savedYearData = savedYears.find(sy => String(sy.year) === String(yearInfo.year));
+        console.log(`[LoveFortuneEditor] Year ${yearInfo.year}: savedYearData=`, savedYearData);
 
         return {
           year: yearInfo.year,
@@ -413,9 +419,13 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
             advice: '',
             memo: ''
           },
-          generated_content: savedYearData?.generated_content || ''
+          // content 또는 generated_content 필드 모두 지원
+          generated_content: savedYearData?.generated_content || savedYearData?.content || ''
         };
       });
+
+      console.log('[LoveFortuneEditor] yearsData (with merged content):', yearsData);
+      console.log('[LoveFortuneEditor] First year generated_content:', yearsData[0]?.generated_content);
 
       setLoveFortuneData(yearsData);
 
@@ -615,19 +625,21 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     }
   };
 
-  if (!validationResult) {
-    return (
-      <div className="love-fortune-editor-empty">
-        <p>사주 검증을 먼저 실행해주세요.</p>
-      </div>
-    );
-  }
-
+  // 로딩 중
   if (loading) {
     return (
       <div className="love-fortune-editor-loading">
         <div className="loading-spinner"></div>
         <span>연애운 데이터를 불러오는 중...</span>
+      </div>
+    );
+  }
+
+  // 데이터가 없으면 안내 메시지 표시
+  if (loveFortuneData.length === 0) {
+    return (
+      <div className="love-fortune-editor-empty">
+        <p>연애운 데이터를 불러오는 중입니다...</p>
       </div>
     );
   }
