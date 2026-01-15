@@ -1597,11 +1597,6 @@
   cursor: pointer;
 }
 
-.decade-item:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
 .decade-item.current {
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   border-color: #3b82f6;

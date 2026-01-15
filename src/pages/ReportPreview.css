@@ -356,14 +356,21 @@ body:has(.report-page) {
   overflow: hidden;
 }
 
-.saju-pillars {
-  display: flex;
+.saju-info-content .saju-pillars,
+.saju-chart .saju-pillars {
+  display: flex !important;
   gap: 6px;
   justify-content: center;
   width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
 }
 
-.saju-pillar {
+.saju-info-content .saju-pillar,
+.saju-chart .saju-pillar {
   display: flex;
   flex-direction: column;
   align-items: center;

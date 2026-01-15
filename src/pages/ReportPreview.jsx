@@ -254,7 +254,7 @@ function ReportPreview({ isAdminPreview = false }) {
 
   // 챕터 3 대운 흐름 렌더링
   const renderDecadeFlow = () => {
-    const decadeFlow = reportData?.chapter3_decade_flow;
+    const decadeFlow = reportData?.chapter4_decade_flow;
     const content = getChapterContent(3);
 
     if (!decadeFlow && !content) {

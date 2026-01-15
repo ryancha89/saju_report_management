@@ -764,3 +764,310 @@ body:has(.user-info-page) {
 .order-complete-icon svg[class*="Building"] {
   color: #fb923c;
 }
+
+/* ==================== */
+/* 사주 미리보기 스타일 */
+/* ==================== */
+
+.user-info-content.preview-mode {
+  padding-bottom: 24px;
+}
+
+.user-info-content.payment-mode {
+  padding-bottom: 24px;
+}
+
+.saju-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.saju-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.saju-loading p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.saju-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.saju-error p {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.saju-error button {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saju-error button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* 사용자 정보 요약 */
+.preview-user-info {
+  text-align: center;
+  padding: 20px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+  margin-bottom: -16px;
+}
+
+.preview-user-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.preview-user-name svg {
+  color: #d4af37;
+}
+
+.preview-user-details {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.preview-user-details span {
+  position: relative;
+}
+
+.preview-user-details span:not(:last-child)::after {
+  content: '·';
+  position: absolute;
+  right: -10px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* 사주팔자 카드 */
+.saju-pillars {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(30, 30, 50, 0.9) 0%, rgba(20, 20, 35, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 20px;
+  padding: 24px 16px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  margin-bottom: -28px;
+}
+
+.saju-pillars .pillar-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.saju-pillars .pillar-row:last-child {
+  margin-bottom: 0;
+}
+
+.saju-pillars .pillar-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.saju-pillars .pillar-row.pillar-header .pillar-cell {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px;
+  background: transparent;
+}
+
+.saju-pillars .pillar-row.cheongan .pillar-cell {
+  background: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+  font-size: 1.8rem;
+  font-weight: 700;
+  padding: 16px 8px;
+}
+
+.saju-pillars .pillar-row.cheongan .pillar-cell.highlight {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.2) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.saju-pillars .pillar-row.jiji .pillar-cell {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.8rem;
+  font-weight: 700;
+  padding: 16px 8px;
+}
+
+/* 일간 설명 */
+.preview-ilgan-info {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.preview-ilgan-info p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.preview-ilgan-info strong {
+  color: #d4af37;
+  font-size: 1.1rem;
+}
+
+/* 상품 정보 & 결제 버튼 섹션 */
+.preview-product-section {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 20px;
+  padding: 24px;
+  margin-top: 8px;
+}
+
+.preview-product-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-product-info .product-name {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.preview-product-info .product-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.preview-payment-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #d4af37 0%, #c9a227 100%);
+  border: none;
+  border-radius: 14px;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+}
+
+.preview-payment-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
+  background: linear-gradient(135deg, #e0bc45 0%, #d4af37 100%);
+}
+
+.preview-payment-btn:active {
+  transform: translateY(0);
+}
+
+.preview-payment-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.preview-payment-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* 미리보기 단계에서 입력된 정보 요약 */
+.preview-completed-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.preview-completed-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.preview-completed-info .info-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.preview-completed-info .info-value {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 380px) {
+  .saju-pillars .pillar-row.cheongan .pillar-cell,
+  .saju-pillars .pillar-row.jiji .pillar-cell {
+    font-size: 1.4rem;
+    padding: 14px 6px;
+  }
+
+  .preview-user-details {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .preview-product-info {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}

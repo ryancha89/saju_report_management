@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Loader, CheckCircle, Building2 } from 'lucide-react';
+import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking } from '../lib/tracking';
 import Payment from '../components/Payment';
@@ -26,7 +26,7 @@ const STEPS = [
   { id: 'gender', label: '성별을 알려주세요', placeholder: '' },
   { id: 'email', label: '리포트를 받을 이메일을 알려주세요', placeholder: '이메일을 입력해주세요' },
   { id: 'phone', label: '연락처를 알려주세요', placeholder: '010-0000-0000' },
-  { id: 'payment', label: '결제를 진행해주세요', placeholder: '' },
+  { id: 'preview', label: '사주팔자 확인 및 결제', placeholder: '' },
 ];
 
 function UserInfoPage() {
@@ -40,6 +40,8 @@ function UserInfoPage() {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [paymentResult, setPaymentResult] = useState(null); // 결제 결과 (vbank 정보 등)
+  const [sajuData, setSajuData] = useState(null); // 사주 데이터
+  const [sajuLoading, setSajuLoading] = useState(false); // 사주 로딩 상태
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
 
@@ -142,7 +144,7 @@ function UserInfoPage() {
       case 4: return formData.gender.length > 0;
       case 5: return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       case 6: return formData.phone.replace(/\D/g, '').length === 11; // 전화번호 11자리
-      case 7: return true; // 결제 단계 - Payment 컴포넌트에서 처리
+      case 7: return true; // 미리보기 + 결제 단계
       default: return false;
     }
   };
@@ -180,6 +182,10 @@ function UserInfoPage() {
   const goToStep = (step) => {
     if (nameTimeoutRef.current) {
       clearTimeout(nameTimeoutRef.current);
+    }
+    // 사주에 영향을 주는 단계로 이동하면 사주 데이터 초기화
+    if (step <= 4) {
+      setSajuData(null);
     }
     setCurrentStep(step);
     setIsEditing(step < highestStep);
@@ -232,6 +238,77 @@ function UserInfoPage() {
       navigate('/');
     }
   };
+
+  // 사주 데이터 가져오기
+  const fetchSajuData = async () => {
+    if (!formData.birthDate) return;
+
+    setSajuLoading(true);
+    try {
+      const [year, month, day] = formData.birthDate.split('-').map(Number);
+      let hour = null;
+      let minute = null;
+
+      if (!formData.birthTimeUnknown && formData.birthTime) {
+        [hour, minute] = formData.birthTime.split(':').map(Number);
+
+        // 시간 조정 적용
+        if (formData.timeAdjustMinutes) {
+          let totalMinutes = hour * 60 + minute + formData.timeAdjustMinutes;
+          if (totalMinutes < 0) totalMinutes += 24 * 60;
+          if (totalMinutes >= 24 * 60) totalMinutes -= 24 * 60;
+          hour = Math.floor(totalMinutes / 60);
+          minute = totalMinutes % 60;
+        }
+      }
+
+      const params = new URLSearchParams({
+        year: year.toString(),
+        month: month.toString(),
+        day: day.toString(),
+        gender: formData.gender,
+        calendar_type: formData.calendarType === 'lunarLeap' ? 'leap' : formData.calendarType,
+      });
+
+      if (hour !== null) {
+        params.append('hour', hour.toString());
+        params.append('minute', (minute || 0).toString());
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/super_calendars?${params}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // API 응답이 배열로 래핑되어 있음
+        const result = data[0];
+        const saju = result?.super_calendar;
+        if (saju) {
+          setSajuData({
+            ganji_year: saju.zodiac_year,
+            ganji_month: saju.zodiac_month,
+            ganji_day: saju.zodiac_day,
+            ganji_time: result.ganji_time, // ganji_time은 루트 레벨에 있음
+          });
+        }
+      }
+    } catch (error) {
+      console.error('사주 데이터 로딩 실패:', error);
+    } finally {
+      setSajuLoading(false);
+    }
+  };
+
+  // 미리보기 단계 진입 시 사주 데이터 로드
+  useEffect(() => {
+    if (currentStep === 7 && !sajuData && !sajuLoading) {
+      fetchSajuData();
+    }
+  }, [currentStep]);
 
   // 결제 성공 핸들러
   const handlePaymentSuccess = (result) => {
@@ -592,7 +669,7 @@ function UserInfoPage() {
                 }
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && formData.phone.length >= 10) {
+                if (e.key === 'Enter' && formData.phone.length === 11) {
                   if (isEditing) {
                     finishEditing();
                   } else {
@@ -608,15 +685,101 @@ function UserInfoPage() {
           </div>
         );
 
-      case 7: // 결제
+      case 7: // 사주 미리보기 + 결제
         return (
-          <Payment
-            productInfo={productInfo}
-            userInfo={getUserInfoForPayment()}
-            trackingData={getTrackingForAPI()}
-            onPaymentSuccess={handlePaymentSuccess}
-            onPaymentError={handlePaymentError}
-          />
+          <div className="saju-preview">
+            {sajuLoading ? (
+              <div className="saju-loading">
+                <Loader size={40} className="spinning" />
+                <p>사주팔자를 분석하고 있습니다...</p>
+              </div>
+            ) : sajuData ? (
+              <>
+                {/* 결제 컴포넌트 */}
+                <Payment
+                  productInfo={productInfo}
+                  userInfo={getUserInfoForPayment()}
+                  trackingData={getTrackingForAPI()}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onPaymentError={handlePaymentError}
+                />
+
+                {/* 사용자 정보 요약 */}
+                <div className="preview-user-info">
+                  <div className="preview-user-name">
+                    <Sparkles size={20} />
+                    <span>{formData.name}님의 사주</span>
+                  </div>
+                  <div className="preview-user-details">
+                    <span>{formData.birthDate.replace(/-/g, '.')} {formData.calendarType === 'solar' ? '양력' : '음력'}</span>
+                    <span>{formData.birthTimeUnknown ? '시간미상' : formData.birthTime}</span>
+                    <span>{formData.gender === 'male' ? '남' : '여'}</span>
+                  </div>
+                </div>
+
+                {/* 사주팔자 카드 */}
+                <div className="saju-pillars">
+                  <div className="pillar-row pillar-header">
+                    <div className="pillar-cell">시주</div>
+                    <div className="pillar-cell">일주</div>
+                    <div className="pillar-cell">월주</div>
+                    <div className="pillar-cell">년주</div>
+                  </div>
+                  <div className="pillar-row cheongan">
+                    <div className="pillar-cell">{sajuData.ganji_time?.[0] || '?'}</div>
+                    <div className="pillar-cell highlight">{sajuData.ganji_day?.[0] || '?'}</div>
+                    <div className="pillar-cell">{sajuData.ganji_month?.[0] || '?'}</div>
+                    <div className="pillar-cell">{sajuData.ganji_year?.[0] || '?'}</div>
+                  </div>
+                  <div className="pillar-row jiji">
+                    <div className="pillar-cell">{sajuData.ganji_time?.[1] || '?'}</div>
+                    <div className="pillar-cell">{sajuData.ganji_day?.[1] || '?'}</div>
+                    <div className="pillar-cell">{sajuData.ganji_month?.[1] || '?'}</div>
+                    <div className="pillar-cell">{sajuData.ganji_year?.[1] || '?'}</div>
+                  </div>
+                </div>
+
+                {/* 입력된 정보 요약 - 기존 스타일 */}
+                <div className="completed-steps">
+                  <div className="completed-item" onClick={() => goToStep(0)}>
+                    <span className="label">이름</span>
+                    <span className="value">{formData.name}</span>
+                  </div>
+                  <div className="completed-item" onClick={() => goToStep(1)}>
+                    <span className="label">생년월일</span>
+                    <span className="value">{formData.birthDate} ({formData.calendarType === 'solar' ? '양력' : '음력'})</span>
+                  </div>
+                  <div className="completed-item" onClick={() => goToStep(2)}>
+                    <span className="label">태어난 시간</span>
+                    <span className="value">{formData.birthTimeUnknown ? '모름' : formData.birthTime}</span>
+                  </div>
+                  {formData.birthPlace && (
+                    <div className="completed-item" onClick={() => goToStep(3)}>
+                      <span className="label">태어난 곳</span>
+                      <span className="value">{formData.birthPlace}</span>
+                    </div>
+                  )}
+                  <div className="completed-item" onClick={() => goToStep(4)}>
+                    <span className="label">성별</span>
+                    <span className="value">{formData.gender === 'male' ? '남성' : '여성'}</span>
+                  </div>
+                  <div className="completed-item" onClick={() => goToStep(5)}>
+                    <span className="label">이메일</span>
+                    <span className="value">{formData.email}</span>
+                  </div>
+                  <div className="completed-item" onClick={() => goToStep(6)}>
+                    <span className="label">연락처</span>
+                    <span className="value">{formData.phoneDisplay}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="saju-error">
+                <p>사주 정보를 불러올 수 없습니다.</p>
+                <button onClick={fetchSajuData}>다시 시도</button>
+              </div>
+            )}
+          </div>
         );
 
       default:
@@ -734,7 +897,7 @@ function UserInfoPage() {
         </header>
 
         {/* 메인 콘텐츠 */}
-        <main className="user-info-content">
+        <main className={`user-info-content ${currentStep === 7 ? 'preview-mode' : ''}`}>
           {currentStep !== 7 && (
             <div className="step-label">{STEPS[currentStep].label}</div>
           )}
@@ -759,7 +922,8 @@ function UserInfoPage() {
             </button>
           )}
 
-          {/* 완료된 단계 표시 (현재 단계 제외, highestStep 기준) */}
+          {/* 완료된 단계 표시 (미리보기 단계에서는 숨김) */}
+          {currentStep !== 7 && (
           <div className="completed-steps">
             {highestStep > 0 && currentStep !== 0 && formData.name && (
               <div
@@ -829,6 +993,7 @@ function UserInfoPage() {
               </div>
             )}
           </div>
+          )}
         </main>
 
 {/* 결제 단계는 Payment 컴포넌트에서 자체 버튼 처리 */}
