@@ -935,6 +935,33 @@
   color: #991b1b;
 }
 
+/* 수정제안 버튼 */
+.suggest-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.suggest-edit-btn:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.suggest-edit-btn svg {
+  flex-shrink: 0;
+}
+
 .merged-positions {
   display: flex;
   align-items: center;
@@ -968,6 +995,61 @@
 .merged-roles-section .role-label {
   font-size: 0.75rem;
   color: #94a3b8;
+}
+
+/* 수정된 항목 스타일 */
+.merged-detail-item.modified {
+  border: 2px solid #3b82f6;
+  position: relative;
+}
+
+.modified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: #3b82f6;
+  color: white;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.modified-reason {
+  background: #eff6ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 2px solid #3b82f6;
+}
+
+.original-data {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.original-label {
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.original-result {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.original-reason {
+  text-decoration: line-through;
+  color: #94a3b8;
+  font-size: 0.7rem;
 }
 
 .outcome-list {

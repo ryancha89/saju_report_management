@@ -2,19 +2,21 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   ShoppingCart,
-  MessageSquare,
   Settings,
   Users,
   LogOut,
   User,
-  Crown
+  Crown,
+  FileEdit,
+  BookOpen
 } from 'lucide-react';
 import './Sidebar.css';
 
 const menuItems = [
   { path: '/admin/orders', icon: ShoppingCart, label: '주문 관리' },
-  { path: '/admin/kakao', icon: MessageSquare, label: '카카오 메시지' },
   { path: '/admin/customers', icon: Users, label: '고객 관리' },
+  { path: '/admin/suggestions', icon: FileEdit, label: '수정 제안' },
+  { path: '/admin/lectures', icon: BookOpen, label: '강의' },
   { path: '/admin/settings', icon: Settings, label: '설정' },
 ];
 
@@ -50,17 +52,24 @@ function Sidebar() {
 
       <nav className="sidebar-nav">
         {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? 'active' : ''}`
-            }
-            end={item.path === '/'}
-          >
-            <item.icon size={20} />
-            <span>{item.label}</span>
-          </NavLink>
+          item.disabled ? (
+            <div key={item.path} className="nav-item disabled">
+              <item.icon size={20} />
+              <span>{item.label}</span>
+            </div>
+          ) : (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `nav-item ${isActive ? 'active' : ''}`
+              }
+              end={item.path === '/'}
+            >
+              <item.icon size={20} />
+              <span>{item.label}</span>
+            </NavLink>
+          )
         ))}
       </nav>
 

@@ -1,0 +1,124 @@
+.lectures-page {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.page-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.lectures-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lecture-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lecture-card.available:hover {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  transform: translateY(-2px);
+}
+
+.lecture-card.coming-soon {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lecture-icon {
+  width: 60px;
+  height: 60px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.lecture-card.available .lecture-icon {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+}
+
+.lecture-content {
+  flex: 1;
+}
+
+.lecture-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 6px 0;
+}
+
+.lecture-content p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.lecture-action {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.lecture-card.available .lecture-action {
+  color: #4f46e5;
+}
+
+.coming-soon-badge {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+@media (max-width: 768px) {
+  .lectures-page {
+    padding: 16px;
+  }
+
+  .lecture-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .lecture-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+
+  .lecture-content h3 {
+    font-size: 16px;
+  }
+}

@@ -8,6 +8,10 @@ import OrderDetail from './pages/OrderDetail';
 import KakaoMessage from './pages/KakaoMessage';
 import Customers from './pages/Customers';
 import Settings from './pages/Settings';
+import GyeokgukSuggestions from './pages/GyeokgukSuggestions';
+import Lectures from './pages/Lectures';
+import GyeokgukLectures from './pages/GyeokgukLectures';
+import ZhengguanLecture from './pages/ZhengguanLecture';
 import Login from './pages/Login';
 import MobilePreview from './pages/MobilePreview';
 import ReportPreview from './pages/ReportPreview';
@@ -78,6 +82,10 @@ function App() {
             <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="kakao" element={<KakaoMessage />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="suggestions" element={<GyeokgukSuggestions />} />
+            <Route path="lectures" element={<Lectures />} />
+            <Route path="lectures/gyeokguk" element={<GyeokgukLectures />} />
+            <Route path="lectures/gyeokguk/zhengguan" element={<ZhengguanLecture />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>

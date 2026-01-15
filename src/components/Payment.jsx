@@ -30,12 +30,10 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
     const timestamp = new Date().getTime();
     const merchant_uid = `report-${productInfo.id}-${timestamp}`;
 
-    // 개발 모드에서는 결제 없이 바로 주문 생성
-    if (import.meta.env.MODE === 'development') {
-      const mockImpUid = `dev_imp_${timestamp}`;
-      await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
-      return;
-    }
+    // 결제 없이 바로 주문 생성 (테스트용)
+    const mockImpUid = `test_imp_${timestamp}`;
+    await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
+    return;
 
     if (!window.IMP) {
       setError('결제 모듈을 불러올 수 없습니다. 페이지를 새로고침해주세요.');

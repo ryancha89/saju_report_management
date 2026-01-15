@@ -1,0 +1,436 @@
+.gyeokguk-lectures-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.back-btn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.page-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* 섹션 스타일 */
+.lecture-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.lecture-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.section-description {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  white-space: pre-line;
+}
+
+/* 특징 리스트 */
+.characteristics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.characteristic-item {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.characteristic-item .bullet {
+  color: #4f46e5;
+  font-weight: bold;
+}
+
+/* 운 그리드 */
+.luck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.luck-card {
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.luck-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+
+.luck-card.selected {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.luck-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.luck-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.luck-type {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.luck-score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.score-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.eval-text {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.luck-key-point {
+  font-size: 13px;
+  color: #4b5563;
+  margin: 0;
+  font-style: italic;
+}
+
+/* 상세 내용 */
+.luck-details {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.luck-summary {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.detail-list {
+  margin: 0 0 12px 0;
+  padding-left: 20px;
+}
+
+.detail-list li {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.advice-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+/* 특수 상황 섹션 */
+.special-section {
+  background: linear-gradient(to right, #fefce8, #fff);
+  border-color: #fde047;
+}
+
+.toggle-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.toggle-btn {
+  padding: 10px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #4b5563;
+}
+
+.toggle-btn:hover {
+  border-color: #d1d5db;
+}
+
+.toggle-btn.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
+/* 비교 테이블 */
+.comparison-table,
+.gender-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  background: #f3f4f6;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+}
+
+.gender-table .table-header {
+  grid-template-columns: 100px 1fr 1fr;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.gender-table .table-row {
+  grid-template-columns: 100px 1fr 1fr;
+}
+
+.luck-cell,
+.aspect-cell {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.effect-cell,
+.gender-cell {
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.reason-text {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.key-insight {
+  background: #fef3c7;
+  border: 1px solid #fde047;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.key-insight h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.key-insight p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #78350f;
+  line-height: 1.5;
+}
+
+.key-insight p:last-child {
+  margin-bottom: 0;
+}
+
+/* 체크리스트 섹션 */
+.checklist-section {
+  background: linear-gradient(to right, #eff6ff, #fff);
+  border-color: #93c5fd;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checklist-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  background: #4f46e5;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+/* JSON 구조 */
+.json-structure {
+  background: #1f2937;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.json-structure pre {
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  line-height: 1.6;
+}
+
+.available-keys h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.key-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.key-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.key-badge.normal {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.key-badge.mixed {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .gyeokguk-lectures-page {
+    padding: 16px;
+  }
+
+  .lecture-section {
+    padding: 16px;
+  }
+
+  .luck-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 80px 1fr;
+  }
+
+  .gender-table .table-header,
+  .gender-table .table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .gender-table .table-header span:first-child,
+  .gender-table .table-row .aspect-cell {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .toggle-container {
+    flex-direction: column;
+  }
+}

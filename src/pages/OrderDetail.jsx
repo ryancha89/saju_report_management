@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3 } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import FortuneEditor from '../components/FortuneEditor';
 import CareerEditor from '../components/CareerEditor';
 import LoveFortuneEditor from '../components/LoveFortuneEditor';
 import FiveYearFortuneEditor from '../components/FiveYearFortuneEditor';
 import CoachingEditor from '../components/CoachingEditor';
+import GyeokgukSuggestionModal from '../components/GyeokgukSuggestionModal';
 import './OrderDetail.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -96,8 +97,49 @@ function JsonViewer({ data, name = 'root', level = 0 }) {
   return <span>{String(data)}</span>;
 }
 
-function SajuValidationDisplay({ data }) {
+function SajuValidationDisplay({ data, orderId }) {
   const { order_info, saju_data, current_decade, current_year_luck, type_analysis, decade_luck } = data;
+
+  // 수정 제안 모달 상태
+  const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
+  const [suggestionData, setSuggestionData] = useState(null);
+
+  // 승인된 수정제안 상태
+  const [approvedSuggestions, setApprovedSuggestions] = useState({});
+
+  // 격국명 추출
+  const getGyeokgukName = () => {
+    return type_analysis?.sky_result?.status?.type || type_analysis?.earth_result?.status?.type || '미상';
+  };
+
+  // 패턴 키 생성 헬퍼
+  const buildPatternKey = (suggestionType, targetChar, code) => {
+    return `${suggestionType}:${getGyeokgukName()}:${targetChar}:${code}`;
+  };
+
+  // 승인된 수정제안에서 데이터 가져오기
+  const getApprovedSuggestion = (suggestionType, targetChar, code) => {
+    const key = buildPatternKey(suggestionType, targetChar, code);
+    return approvedSuggestions[key] || null;
+  };
+
+  // 수정 제안 모달 열기
+  const openSuggestionModal = (suggestionType, targetChar, item) => {
+    setSuggestionData({
+      suggestionType,
+      gyeokgukName: getGyeokgukName(),
+      targetChar,
+      code: item.code || '',
+      originalResult: item.result || '',
+      originalReason: item.reason || '',
+      // 개별 역할들 전달
+      firstRoles: item.first_roles || [],
+      secondRoles: item.second_roles || [],
+      thirdRoles: item.third_roles || [],
+      fourthRoles: item.fourth_roles || [],
+    });
+    setSuggestionModalOpen(true);
+  };
 
   // 선택된 대운과 세운 상태
   const [selectedDecadeIndex, setSelectedDecadeIndex] = useState(current_decade?.index ?? 0);
@@ -109,6 +151,84 @@ function SajuValidationDisplay({ data }) {
       setSelectedDecadeIndex(current_decade.index);
     }
   }, [current_decade?.index]);
+
+  // 승인된 수정제안 조회
+  useEffect(() => {
+    const fetchApprovedSuggestions = async () => {
+      if (!type_analysis) return;
+
+      const gyeokgukName = type_analysis.sky_result?.status?.type || type_analysis.earth_result?.status?.type;
+      if (!gyeokgukName || gyeokgukName === '미상') return;
+
+      // 모든 대운/세운의 merged 항목에서 조회할 항목 수집
+      const items = [];
+      const skyDecadeLucks = type_analysis.sky_result?.lucks?.decade_lucks || {};
+      const earthDecadeLucks = type_analysis.earth_result?.lucks?.decade_lucks || {};
+
+      // 대운 천간/지지 merged 수집
+      Object.entries(skyDecadeLucks).forEach(([targetChar, luckData]) => {
+        (luckData?.merged || []).forEach(item => {
+          if (item?.code) {
+            items.push({ suggestion_type: 'decade_luck_sky', target_char: targetChar, code: item.code });
+          }
+        });
+        // 세운 천간 merged 수집
+        const yearLucks = luckData?.year_lucks || {};
+        Object.entries(yearLucks).forEach(([yearChar, yearData]) => {
+          (yearData?.merged || []).forEach(item => {
+            if (item?.code) {
+              items.push({ suggestion_type: 'year_luck_sky', target_char: yearChar, code: item.code });
+            }
+          });
+        });
+      });
+
+      Object.entries(earthDecadeLucks).forEach(([targetChar, luckData]) => {
+        (luckData?.merged || []).forEach(item => {
+          if (item?.code) {
+            items.push({ suggestion_type: 'decade_luck_earth', target_char: targetChar, code: item.code });
+          }
+        });
+        // 세운 지지 merged 수집
+        const yearLucks = luckData?.year_lucks || {};
+        Object.entries(yearLucks).forEach(([yearChar, yearData]) => {
+          (yearData?.merged || []).forEach(item => {
+            if (item?.code) {
+              items.push({ suggestion_type: 'year_luck_earth', target_char: yearChar, code: item.code });
+            }
+          });
+        });
+      });
+
+      if (items.length === 0) return;
+
+      try {
+        const token = localStorage.getItem('manager_token');
+        const response = await fetch(`${API_BASE_URL}/api/v1/manager/gyeokguk_suggestions/approved_batch`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            gyeokguk_name: gyeokgukName,
+            items: items
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setApprovedSuggestions(result.approved || {});
+          }
+        }
+      } catch (err) {
+        console.error('승인된 수정제안 조회 실패:', err);
+      }
+    };
+
+    fetchApprovedSuggestions();
+  }, [type_analysis]);
 
   // 60갑자 배열
   const GANJI_60 = [
@@ -342,7 +462,7 @@ function SajuValidationDisplay({ data }) {
   };
 
   // Outcome 아이템 렌더링 함수
-  const renderOutcomeItem = (outcome, idx) => {
+  const renderOutcomeItem = (outcome, idx, suggestionType = null, targetChar = null) => {
     if (!outcome) return null;
     return (
       <div key={idx} className={`outcome-item ${getOutcomeClass(outcome.result)}`}>
@@ -351,6 +471,16 @@ function SajuValidationDisplay({ data }) {
           <span className="outcome-code">{safeString(outcome.code)}</span>
           {outcome.deep_level && <span className="outcome-level">Lv.{outcome.deep_level}</span>}
           {outcome.is_sanhe && <span className="outcome-sanhe">삼합</span>}
+          {suggestionType && targetChar && (
+            <button
+              className="suggest-edit-btn"
+              onClick={() => openSuggestionModal(suggestionType, targetChar, outcome)}
+              title="수정 제안"
+            >
+              <Edit3 size={12} />
+              수정제안
+            </button>
+          )}
         </div>
         {outcome.reason && <div className="outcome-reason">{safeString(outcome.reason)}</div>}
         <div className="outcome-key-values">
@@ -397,7 +527,7 @@ function SajuValidationDisplay({ data }) {
   };
 
   // 합(merged) 결과 렌더링 - roles 포함
-  const renderMergedItem = (item, idx) => {
+  const renderMergedItem = (item, idx, suggestionType = null, targetChar = null) => {
     if (!item) return null;
 
     // 문자열인 경우 기존 방식으로 표시
@@ -407,27 +537,68 @@ function SajuValidationDisplay({ data }) {
 
     // 객체인 경우 상세 정보 표시
     if (typeof item === 'object') {
+      // 승인된 수정제안 확인
+      const approvedSuggestion = suggestionType && targetChar && item.code
+        ? getApprovedSuggestion(suggestionType, targetChar, item.code)
+        : null;
+
+      // 수정제안이 있고 원본 데이터와 다른 경우 확인
+      const hasModifiedResult = approvedSuggestion && approvedSuggestion.suggested_result !== item.result;
+      const hasModifiedReason = approvedSuggestion && approvedSuggestion.suggested_reason && approvedSuggestion.suggested_reason !== item.reason;
+      const hasModification = hasModifiedResult || hasModifiedReason;
+
+      // 표시할 성패 및 이유 결정 (수정제안이 있으면 수정된 값 사용)
+      const displayResult = hasModifiedResult ? approvedSuggestion.suggested_result : item.result;
+      const displayReason = hasModifiedReason ? approvedSuggestion.suggested_reason : item.reason;
+      const displayRoles = approvedSuggestion?.suggested_roles?.length > 0 ? approvedSuggestion.suggested_roles : item.roles;
+
       // 패, 성중유패 → fail (빨간색) / 성, 패중유성 → success (녹색)
-      const resultClass = (item.result === '敗' || item.result === '成中有敗') ? 'fail' :
-                         (item.result === '成' || item.result === '敗中有成') ? 'success' : 'neutral';
+      const resultClass = (displayResult === '敗' || displayResult === '成中有敗' || displayResult === '패' || displayResult === '성중유패') ? 'fail' :
+                         (displayResult === '成' || displayResult === '敗中有成' || displayResult === '성' || displayResult === '패중유성') ? 'success' : 'neutral';
 
       return (
-        <div key={idx} className={`merged-detail-item ${resultClass}`}>
+        <div key={idx} className={`merged-detail-item ${resultClass} ${hasModification ? 'modified' : ''}`}>
           <div className="merged-main">
-            <span className="merged-result">{safeString(item.result)}</span>
+            <span className="merged-result">
+              {safeString(displayResult)}
+              {hasModifiedResult && <span className="modified-badge">수정됨</span>}
+            </span>
             <span className="merged-code">{safeString(item.code)}</span>
+            {suggestionType && targetChar && (
+              <button
+                className="suggest-edit-btn"
+                onClick={() => openSuggestionModal(suggestionType, targetChar, item)}
+                title="수정 제안"
+              >
+                <Edit3 size={12} />
+                수정제안
+              </button>
+            )}
           </div>
-          {item.reason && <div className="merged-reason">{safeString(item.reason)}</div>}
+          {displayReason && (
+            <div className={`merged-reason ${hasModifiedReason ? 'modified-reason' : ''}`}>
+              {safeString(displayReason)}
+              {hasModifiedReason && <span className="modified-badge">수정됨</span>}
+            </div>
+          )}
+          {/* 원본 데이터 표시 (수정된 경우에만) */}
+          {hasModification && (
+            <div className="original-data">
+              <span className="original-label">원본:</span>
+              {hasModifiedResult && <span className="original-result">{safeString(item.result)}</span>}
+              {hasModifiedReason && <span className="original-reason">{safeString(item.reason)}</span>}
+            </div>
+          )}
           {item.positions?.length > 0 && (
             <div className="merged-positions">
               <span className="positions-label">위치:</span>
               <span className="positions-value">{translatePositions(item.positions)}</span>
             </div>
           )}
-          {item.roles && item.roles.length > 0 && (
+          {displayRoles && displayRoles.length > 0 && (
             <div className="merged-roles-section">
               <span className="role-label">역할:</span>
-              {renderRoles(item.roles)}
+              {renderRoles(displayRoles)}
             </div>
           )}
         </div>
@@ -687,12 +858,12 @@ function SajuValidationDisplay({ data }) {
                       )}
                       {decadeLuckResult.sky_merged?.length > 0 && (
                         <div className="result-merged">
-                          {decadeLuckResult.sky_merged.map((item, idx) => renderMergedItem(item, idx))}
+                          {decadeLuckResult.sky_merged.map((item, idx) => renderMergedItem(item, idx, 'decade_luck_sky', selectedDecade.sky))}
                         </div>
                       )}
                       {decadeLuckResult.sky_outcome?.filter(Boolean).length > 0 ? (
                         <div className="outcome-list">
-                          {decadeLuckResult.sky_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                          {decadeLuckResult.sky_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'decade_luck_sky', selectedDecade.sky))}
                         </div>
                       ) : (
                         <div className="no-outcome">성패 없음</div>
@@ -703,7 +874,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">년월 천간</div>
                           <div className="outcome-list">
-                            {decadeLuckResult.sky_year_month_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {decadeLuckResult.sky_year_month_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'decade_luck_sky', selectedDecade.sky))}
                           </div>
                         </div>
                       )}
@@ -713,7 +884,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">월시 천간</div>
                           <div className="outcome-list">
-                            {decadeLuckResult.sky_month_time_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {decadeLuckResult.sky_month_time_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'decade_luck_sky', selectedDecade.sky))}
                           </div>
                         </div>
                       )}
@@ -733,12 +904,12 @@ function SajuValidationDisplay({ data }) {
                       )}
                       {decadeLuckResult.earth_merged?.length > 0 && (
                         <div className="result-merged">
-                          {decadeLuckResult.earth_merged.map((item, idx) => renderMergedItem(item, idx))}
+                          {decadeLuckResult.earth_merged.map((item, idx) => renderMergedItem(item, idx, 'decade_luck_earth', selectedDecade.earth))}
                         </div>
                       )}
                       {decadeLuckResult.earth_outcome?.filter(Boolean).length > 0 ? (
                         <div className="outcome-list">
-                          {decadeLuckResult.earth_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                          {decadeLuckResult.earth_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'decade_luck_earth', selectedDecade.earth))}
                         </div>
                       ) : (
                         <div className="no-outcome">성패 없음</div>
@@ -793,12 +964,12 @@ function SajuValidationDisplay({ data }) {
                       )}
                       {yearLuckResult.sky_merged?.length > 0 && (
                         <div className="result-merged">
-                          {yearLuckResult.sky_merged.map((item, idx) => renderMergedItem(item, idx))}
+                          {yearLuckResult.sky_merged.map((item, idx) => renderMergedItem(item, idx, 'year_luck_sky', selectedYearLuck.sky))}
                         </div>
                       )}
                       {yearLuckResult.sky_outcome?.filter(Boolean).length > 0 && (
                         <div className="outcome-list">
-                          {yearLuckResult.sky_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                          {yearLuckResult.sky_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_sky', selectedYearLuck.sky))}
                         </div>
                       )}
 
@@ -807,7 +978,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">대운 천간</div>
                           <div className="outcome-list">
-                            {yearLuckResult.sky_decade_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.sky_decade_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_sky', selectedYearLuck.sky))}
                           </div>
                         </div>
                       )}
@@ -817,7 +988,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">년주 천간</div>
                           <div className="outcome-list">
-                            {yearLuckResult.sky_year_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.sky_year_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_sky', selectedYearLuck.sky))}
                           </div>
                         </div>
                       )}
@@ -827,7 +998,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">월주 천간</div>
                           <div className="outcome-list">
-                            {yearLuckResult.sky_month_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.sky_month_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_sky', selectedYearLuck.sky))}
                           </div>
                         </div>
                       )}
@@ -837,7 +1008,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">시주 천간</div>
                           <div className="outcome-list">
-                            {yearLuckResult.sky_time_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.sky_time_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_sky', selectedYearLuck.sky))}
                           </div>
                         </div>
                       )}
@@ -857,12 +1028,12 @@ function SajuValidationDisplay({ data }) {
                       )}
                       {yearLuckResult.earth_merged?.length > 0 && (
                         <div className="result-merged">
-                          {yearLuckResult.earth_merged.map((item, idx) => renderMergedItem(item, idx))}
+                          {yearLuckResult.earth_merged.map((item, idx) => renderMergedItem(item, idx, 'year_luck_earth', selectedYearLuck.earth))}
                         </div>
                       )}
                       {yearLuckResult.earth_outcome?.filter(Boolean).length > 0 && (
                         <div className="outcome-list">
-                          {yearLuckResult.earth_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                          {yearLuckResult.earth_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_earth', selectedYearLuck.earth))}
                         </div>
                       )}
 
@@ -871,7 +1042,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">대운 지지</div>
                           <div className="outcome-list">
-                            {yearLuckResult.earth_decade_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.earth_decade_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_earth', selectedYearLuck.earth))}
                           </div>
                         </div>
                       )}
@@ -881,7 +1052,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">년지</div>
                           <div className="outcome-list">
-                            {yearLuckResult.earth_year_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.earth_year_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_earth', selectedYearLuck.earth))}
                           </div>
                         </div>
                       )}
@@ -891,7 +1062,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">월지</div>
                           <div className="outcome-list">
-                            {yearLuckResult.earth_month_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.earth_month_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_earth', selectedYearLuck.earth))}
                           </div>
                         </div>
                       )}
@@ -901,7 +1072,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section day-earth-section">
                           <div className="outcome-sub-title day-earth-title">일지 성패 (배우자궁)</div>
                           <div className="outcome-list">
-                            {yearLuckResult.earth_day_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.earth_day_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_earth', selectedYearLuck.earth))}
                           </div>
                         </div>
                       )}
@@ -911,7 +1082,7 @@ function SajuValidationDisplay({ data }) {
                         <div className="outcome-sub-section">
                           <div className="outcome-sub-title">시지</div>
                           <div className="outcome-list">
-                            {yearLuckResult.earth_time_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx))}
+                            {yearLuckResult.earth_time_outcome.map((outcome, idx) => renderOutcomeItem(outcome, idx, 'year_luck_earth', selectedYearLuck.earth))}
                           </div>
                         </div>
                       )}
@@ -926,7 +1097,30 @@ function SajuValidationDisplay({ data }) {
         </div>
       </div>
 
-
+      {/* 수정 제안 모달 */}
+      {suggestionData && (
+        <GyeokgukSuggestionModal
+          isOpen={suggestionModalOpen}
+          onClose={() => {
+            setSuggestionModalOpen(false);
+            setSuggestionData(null);
+          }}
+          suggestionType={suggestionData.suggestionType}
+          gyeokgukName={suggestionData.gyeokgukName}
+          targetChar={suggestionData.targetChar}
+          code={suggestionData.code}
+          originalResult={suggestionData.originalResult}
+          originalReason={suggestionData.originalReason}
+          firstRoles={suggestionData.firstRoles}
+          secondRoles={suggestionData.secondRoles}
+          thirdRoles={suggestionData.thirdRoles}
+          fourthRoles={suggestionData.fourthRoles}
+          orderId={orderId}
+          onSuccess={() => {
+            // 성공 시 필요한 처리 (예: 알림)
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -2862,7 +3056,7 @@ function OrderDetail() {
                   <p>{validationError}</p>
                 </div>
               ) : validationResult ? (
-                <SajuValidationDisplay data={validationResult} />
+                <SajuValidationDisplay data={validationResult} orderId={id} />
               ) : null}
             </div>
           </div>
@@ -2951,7 +3145,7 @@ function OrderDetail() {
               </div>
               <div className="preview-left-content">
                 {validationResult ? (
-                  <SajuValidationDisplay data={validationResult} />
+                  <SajuValidationDisplay data={validationResult} orderId={id} />
                 ) : (
                   <div className="preview-loading">
                     <Loader size={24} className="spinning" />
