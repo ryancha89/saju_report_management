@@ -917,8 +917,8 @@ body:has(.report-page) {
 
 .decade-item.current {
   padding-left: 16px;
-  border-left: 3px solid rgb(255, 244, 200);
-  background: rgba(255, 244, 200, 0.03);
+  border-left: 3px solid rgb(34, 197, 94);
+  background: rgba(34, 197, 94, 0.05);
 }
 
 .decade-card-header {
@@ -1015,7 +1015,7 @@ body:has(.report-page) {
 
 .decade-card.current {
   padding-left: 12px;
-  border-left: 3px solid rgb(255, 244, 200);
+  border-left: 3px solid rgb(34, 197, 94);
 }
 
 .decade-header {
@@ -1097,8 +1097,8 @@ body:has(.report-page) {
 
 .current-badge {
   display: inline-block;
-  background: rgba(255, 244, 200, 0.2);
-  color: rgb(255, 244, 200);
+  background: rgba(34, 197, 94, 0.2);
+  color: rgb(34, 197, 94);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 3px 8px;
