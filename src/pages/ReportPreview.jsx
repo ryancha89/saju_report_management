@@ -252,6 +252,109 @@ function ReportPreview({ isAdminPreview = false }) {
     return '';
   };
 
+  // 종합 판정 계산 (Degree 우선, 없으면 result, 그 다음 score로 판단)
+  const getOverallRating = (decade) => {
+    // 0. Degree 필드가 있으면 최우선으로 사용
+    if (decade.degree || decade.Degree) {
+      const deg = (decade.degree || decade.Degree).toLowerCase();
+      if (deg === 'excellent' || deg === '대길') return 'excellent';
+      if (deg === 'good' || deg === '길') return 'good';
+      if (deg === 'neutral' || deg === '보통') return 'neutral';
+      if (deg === 'caution' || deg === '주의') return 'caution';
+      if (deg === 'difficult' || deg === '흉') return 'difficult';
+    }
+
+    // 1. result 문자열로 판정
+    const isGood = (result) => {
+      if (!result) return false;
+      return result === '成' || result === '성' ||
+             result.includes('敗中有成') || result.includes('패중유성');
+    };
+    const isBad = (result) => {
+      if (!result) return false;
+      return result === '敗' || result === '패' ||
+             result.includes('成中有敗') || result.includes('성중유패');
+    };
+
+    const skyGood = isGood(decade.sky_result);
+    const skyBad = isBad(decade.sky_result);
+    const earthGood = isGood(decade.earth_result);
+    const earthBad = isBad(decade.earth_result);
+
+    // 결과가 있으면 결과로 판정
+    if (decade.sky_result || decade.earth_result) {
+      if (skyGood && earthGood) return 'excellent';
+      if (skyGood && !earthBad) return 'good';
+      if (earthGood && !skyBad) return 'good';
+      if (skyBad && earthBad) return 'difficult';
+      if (skyBad || earthBad) return 'caution';
+      if (skyGood || earthGood) return 'neutral';
+    }
+
+    // 2. score로 판정 (fallback)
+    if (typeof decade.sky_score === 'number' && typeof decade.earth_score === 'number') {
+      const totalScore = decade.sky_score + decade.earth_score;
+      if (totalScore >= 3) return 'excellent';
+      if (totalScore >= 1) return 'good';
+      if (totalScore >= -1) return 'neutral';
+      if (totalScore >= -3) return 'caution';
+      return 'difficult';
+    }
+
+    return 'neutral';
+  };
+
+  const getOverallRatingClass = (decade) => {
+    const rating = getOverallRating(decade);
+    return `rating-${rating}`;
+  };
+
+  const getOverallRatingText = (decade) => {
+    const rating = getOverallRating(decade);
+    switch (rating) {
+      case 'excellent': return '◎ 대길';
+      case 'good': return '○ 길';
+      case 'neutral': return '△ 보통';
+      case 'caution': return '▽ 주의';
+      case 'difficult': return '✕ 흉';
+      default: return '― 미정';
+    }
+  };
+
+  // 개별 성패 판정 (천간/지지 각각) - Degree 우선, 없으면 result, 그 다음 score
+  const getSingleRating = (result, score, degree) => {
+    // 0. Degree가 있으면 최우선
+    if (degree) {
+      const deg = degree.toLowerCase();
+      if (deg === 'excellent' || deg === '대길') return { class: 'excellent', text: '대길', icon: '◎' };
+      if (deg === 'good' || deg === '길') return { class: 'good', text: '길', icon: '○' };
+      if (deg === 'neutral' || deg === '보통') return { class: 'neutral', text: '보통', icon: '△' };
+      if (deg === 'caution' || deg === '주의') return { class: 'caution', text: '주의', icon: '▽' };
+      if (deg === 'difficult' || deg === '흉') return { class: 'bad', text: '흉', icon: '✕' };
+    }
+
+    // 1. result 문자열로 판정
+    if (result) {
+      // 길: 成, 敗中有成 (결국 좋아짐)
+      if (result === '成' || result === '성') return { class: 'good', text: '길', icon: '○' };
+      if (result.includes('敗中有成') || result.includes('패중유성')) return { class: 'good', text: '길', icon: '○' };
+      // 흉: 敗, 成中有敗 (결국 나빠짐)
+      if (result === '敗' || result === '패') return { class: 'bad', text: '흉', icon: '✕' };
+      if (result.includes('成中有敗') || result.includes('성중유패')) return { class: 'bad', text: '흉', icon: '✕' };
+      // 보통: 성패공존
+      if (result.includes('成敗共存') || result.includes('성패공존')) return { class: 'neutral', text: '보통', icon: '△' };
+    }
+
+    // 2. score로 판정 (fallback)
+    if (typeof score === 'number') {
+      if (score >= 1) return { class: 'good', text: '길', icon: '○' };
+      if (score > 0) return { class: 'neutral', text: '보통', icon: '△' };
+      if (score <= -1) return { class: 'bad', text: '흉', icon: '✕' };
+      return { class: 'neutral', text: '보통', icon: '△' };
+    }
+    return { class: 'neutral', text: '', icon: '―' };
+  };
+
   // 챕터 3 대운 흐름 렌더링
   const renderDecadeFlow = () => {
     const decadeFlow = reportData?.chapter4_decade_flow;
@@ -288,7 +391,8 @@ function ReportPreview({ isAdminPreview = false }) {
                       <td className="row-label">대운</td>
                       {decadeFlow.map((decade, idx) => (
                         <td key={idx} className={`ganji-cell ${decade.is_current ? 'current' : ''}`}>
-                          {decade.ganji}
+                          <span className={getElementClass(decade.sky)}>{decade.sky}</span>
+                          <span className={getElementClass(decade.earth)}>{decade.earth}</span>
                         </td>
                       ))}
                     </tr>
@@ -319,24 +423,136 @@ function ReportPreview({ isAdminPreview = false }) {
             <div className="decade-detail-section">
               <h5 className="detail-section-title">대운별 상세 분석</h5>
               {decadeFlow.map((decade, idx) => (
-                <div key={idx} className={`decade-item ${decade.is_current ? 'current' : ''}`}>
+                <div key={idx} className={`decade-item ${decade.is_current ? 'current' : ''} ${getOverallRatingClass(decade)}`}>
                   <div className="decade-card-header">
                     <span className="decade-age">{decade.start_age}~{decade.end_age}세</span>
                     <span className="decade-ganji">{decade.ganji}</span>
+                    {decade.is_current && <span className="current-badge">현재</span>}
+
+                    {/* 종합 판정 배지 */}
+                    <span className={`overall-rating-badge ${getOverallRatingClass(decade)}`}>
+                      {getOverallRatingText(decade)}
+                    </span>
+
                     <div className="decade-results">
-                      <span className={`decade-result sky ${getDecadeResultClass(decade.sky_result)}`}>
+                      <span className={`decade-result ${getElementClass(decade.sky)} rating-${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
                         {decade.sky} <small>({decade.sky_sipsin})</small>
+                        <span className="result-indicator">{getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).icon}</span>
                       </span>
-                      <span className={`decade-result earth ${getDecadeResultClass(decade.earth_result)}`}>
+                      <span className={`decade-result ${getElementClass(decade.earth)} rating-${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
                         {decade.earth} <small>({decade.earth_sipsin})</small>
+                        <span className="result-indicator">{getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).icon}</span>
                       </span>
                     </div>
                   </div>
-                  {decade.ai_description && (
-                    <div className="decade-desc-body">
-                      {renderContent(decade.ai_description)}
+
+                  {/* 프리미엄 대운 분석 카드 */}
+                  <div className="decade-analysis-content">
+                    {/* 키워드 섹션 */}
+                    {decade.keywords && decade.keywords.length > 0 && (
+                      <div className="decade-keywords">
+                        {decade.keywords.map((keyword, kIdx) => (
+                          <span key={kIdx} className="keyword-tag">{keyword}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 천간 분석 */}
+                    {decade.sky_analysis && (
+                      <div className="analysis-section sky-section">
+                        <div className="analysis-header">
+                          <span className={`analysis-icon ${getElementClass(decade.sky)}`}>{decade.sky}</span>
+                          <span className="analysis-title">천간 분석 <small>(정신·의지·계획)</small></span>
+                        </div>
+                        <div className="analysis-body">
+                          {renderContent(decade.sky_analysis)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 지지 분석 */}
+                    {decade.earth_analysis && (
+                      <div className="analysis-section earth-section">
+                        <div className="analysis-header">
+                          <span className={`analysis-icon ${getElementClass(decade.earth)}`}>{decade.earth}</span>
+                          <span className="analysis-title">지지 분석 <small>(현실·환경·실행)</small></span>
+                        </div>
+                        <div className="analysis-body">
+                          {renderContent(decade.earth_analysis)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 인생 영역별 조언 */}
+                    {decade.life_areas && Object.keys(decade.life_areas).length > 0 && (
+                      <div className="life-areas-grid">
+                        {decade.life_areas.career && (
+                          <div className="life-area-card career">
+                            <div className="life-area-icon">💼</div>
+                            <div className="life-area-label">사업/직장</div>
+                            <div className="life-area-content">{decade.life_areas.career}</div>
+                          </div>
+                        )}
+                        {decade.life_areas.wealth && (
+                          <div className="life-area-card wealth">
+                            <div className="life-area-icon">💰</div>
+                            <div className="life-area-label">재물/투자</div>
+                            <div className="life-area-content">{decade.life_areas.wealth}</div>
+                          </div>
+                        )}
+                        {decade.life_areas.relationship && (
+                          <div className="life-area-card relationship">
+                            <div className="life-area-icon">❤️</div>
+                            <div className="life-area-label">대인관계</div>
+                            <div className="life-area-content">{decade.life_areas.relationship}</div>
+                          </div>
+                        )}
+                        {decade.life_areas.health && (
+                          <div className="life-area-card health">
+                            <div className="life-area-icon">🏥</div>
+                            <div className="life-area-label">건강</div>
+                            <div className="life-area-content">{decade.life_areas.health}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 조언 & 주의사항 */}
+                    <div className="advice-caution-row">
+                      {decade.advice && (
+                        <div className="advice-box">
+                          <div className="box-header">
+                            <span className="box-icon">💡</span>
+                            <span className="box-title">핵심 조언</span>
+                          </div>
+                          <div className="box-content">{decade.advice}</div>
+                        </div>
+                      )}
+                      {decade.caution && (
+                        <div className="caution-box">
+                          <div className="box-header">
+                            <span className="box-icon">⚠️</span>
+                            <span className="box-title">주의사항</span>
+                          </div>
+                          <div className="box-content">{decade.caution}</div>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* 기존 ai_description 하위호환 */}
+                    {decade.ai_description && !decade.sky_analysis && (
+                      <div className="decade-desc-body legacy">
+                        {renderContent(decade.ai_description)}
+                      </div>
+                    )}
+
+                    {/* 아무 콘텐츠도 없을 때 */}
+                    {!decade.sky_analysis && !decade.earth_analysis && !decade.ai_description && (!decade.keywords || decade.keywords.length === 0) && (
+                      <div className="decade-no-content">
+                        <p>AI 분석을 생성해주세요.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

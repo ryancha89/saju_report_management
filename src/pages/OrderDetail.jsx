@@ -12,6 +12,7 @@ import './OrderDetail.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
+const REPORT_BASE_URL = import.meta.env.DEV ? 'http://localhost:5173' : 'https://fortunetorch.com';
 
 function JsonViewer({ data, name = 'root', level = 0 }) {
   const [isExpanded, setIsExpanded] = useState(level < 2);
@@ -1212,6 +1213,107 @@ function OrderDetail() {
   const [savingReport, setSavingReport] = useState(false);
   const [generatingChapter, setGeneratingChapter] = useState(null); // 현재 생성 중인 챕터 번호
   const [sendingReport, setSendingReport] = useState(false); // 레포트 발송 중
+
+  // 종합 판정 계산 (Degree 우선, 없으면 result, 그 다음 score로 판단)
+  const getOverallRating = (decade) => {
+    // 0. Degree 필드가 있으면 최우선으로 사용
+    if (decade.degree || decade.Degree) {
+      const deg = (decade.degree || decade.Degree).toLowerCase();
+      if (deg === 'excellent' || deg === '대길') return 'excellent';
+      if (deg === 'good' || deg === '길') return 'good';
+      if (deg === 'neutral' || deg === '보통') return 'neutral';
+      if (deg === 'caution' || deg === '주의') return 'caution';
+      if (deg === 'difficult' || deg === '흉') return 'difficult';
+    }
+
+    // 1. result 문자열로 판정
+    const isGood = (result) => {
+      if (!result) return false;
+      return result === '成' || result === '성' ||
+             result.includes('敗中有成') || result.includes('패중유성');
+    };
+    const isBad = (result) => {
+      if (!result) return false;
+      return result === '敗' || result === '패' ||
+             result.includes('成中有敗') || result.includes('성중유패');
+    };
+
+    const skyGood = isGood(decade.sky_result);
+    const skyBad = isBad(decade.sky_result);
+    const earthGood = isGood(decade.earth_result);
+    const earthBad = isBad(decade.earth_result);
+
+    // 결과가 있으면 결과로 판정
+    if (decade.sky_result || decade.earth_result) {
+      if (skyGood && earthGood) return 'excellent';
+      if (skyGood && !earthBad) return 'good';
+      if (earthGood && !skyBad) return 'good';
+      if (skyBad && earthBad) return 'difficult';
+      if (skyBad || earthBad) return 'caution';
+      if (skyGood || earthGood) return 'neutral';
+    }
+
+    // 2. score로 판정 (fallback)
+    if (typeof decade.sky_score === 'number' && typeof decade.earth_score === 'number') {
+      const totalScore = decade.sky_score + decade.earth_score;
+      if (totalScore >= 3) return 'excellent';
+      if (totalScore >= 1) return 'good';
+      if (totalScore >= -1) return 'neutral';
+      if (totalScore >= -3) return 'caution';
+      return 'difficult';
+    }
+
+    return 'neutral';
+  };
+
+  const getOverallRatingClass = (decade) => `rating-${getOverallRating(decade)}`;
+
+  const getOverallRatingText = (decade) => {
+    const rating = getOverallRating(decade);
+    switch (rating) {
+      case 'excellent': return '◎ 대길';
+      case 'good': return '○ 길';
+      case 'neutral': return '△ 보통';
+      case 'caution': return '▽ 주의';
+      case 'difficult': return '✕ 흉';
+      default: return '― 미정';
+    }
+  };
+
+  // 개별 성패 판정 (천간/지지 각각) - Degree 우선, 없으면 result, 그 다음 score
+  const getSingleRating = (result, score, degree) => {
+    // 0. Degree가 있으면 최우선
+    if (degree) {
+      const deg = degree.toLowerCase();
+      if (deg === 'excellent' || deg === '대길') return { class: 'excellent', text: '◎ 대길', icon: '◎' };
+      if (deg === 'good' || deg === '길') return { class: 'good', text: '○ 길', icon: '○' };
+      if (deg === 'neutral' || deg === '보통') return { class: 'neutral', text: '△ 보통', icon: '△' };
+      if (deg === 'caution' || deg === '주의') return { class: 'caution', text: '▽ 주의', icon: '▽' };
+      if (deg === 'difficult' || deg === '흉') return { class: 'bad', text: '✕ 흉', icon: '✕' };
+    }
+
+    // 1. result 문자열로 판정
+    if (result) {
+      // 길: 成, 敗中有成 (결국 좋아짐)
+      if (result === '成' || result === '성') return { class: 'good', text: '○ 길', icon: '○' };
+      if (result.includes('敗中有成') || result.includes('패중유성')) return { class: 'good', text: '○ 길', icon: '○' };
+      // 흉: 敗, 成中有敗 (결국 나빠짐)
+      if (result === '敗' || result === '패') return { class: 'bad', text: '✕ 흉', icon: '✕' };
+      if (result.includes('成中有敗') || result.includes('성중유패')) return { class: 'bad', text: '✕ 흉', icon: '✕' };
+      // 보통: 성패공존
+      if (result.includes('成敗共存') || result.includes('성패공존')) return { class: 'neutral', text: '△ 보통', icon: '△' };
+    }
+
+    // 2. score가 있으면 score로 판정
+    if (typeof score === 'number') {
+      if (score >= 1) return { class: 'good', text: '○ 길', icon: '○' };
+      if (score > 0) return { class: 'neutral', text: '△ 보통', icon: '△' };
+      if (score <= -1) return { class: 'bad', text: '✕ 흉', icon: '✕' };
+      return { class: 'neutral', text: '△ 보통', icon: '△' };
+    }
+
+    return { class: 'neutral', text: '― 미정', icon: '―' };
+  };
 
   // 위치 번역 함수
   const translatePositionForBasis = (position) => {
@@ -2952,7 +3054,7 @@ function OrderDetail() {
                   <button
                     className="btn btn-copy-link"
                     onClick={() => {
-                      const url = `${window.location.origin}/report/${savedReport.secure_token}`;
+                      const url = `${REPORT_BASE_URL}/report/${savedReport.secure_token}`;
                       navigator.clipboard.writeText(url);
                       alert('레포트 링크가 복사되었습니다.');
                     }}
@@ -2997,12 +3099,12 @@ function OrderDetail() {
                   <div className="preview-link">
                     <span className="link-label">고객용 URL:</span>
                     <a
-                      href={`/report/${savedReport.secure_token}`}
+                      href={`${REPORT_BASE_URL}/report/${savedReport.secure_token}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="link-url"
                     >
-                      {`${window.location.origin}/report/${savedReport.secure_token}`}
+                      {`${REPORT_BASE_URL}/report/${savedReport.secure_token}`}
                     </a>
                   </div>
                 )}
@@ -3936,17 +4038,35 @@ function OrderDetail() {
                                   <Sparkles size={18} />
                                   AI 대운 분석 생성하기
                                 </button>
+                                <button
+                                  className="btn-generate-chapter3 btn-check-only"
+                                  onClick={generateChapter3}
+                                  disabled={chapter3Loading}
+                                >
+                                  <Search size={18} />
+                                  로직 확인만 (저장 안함)
+                                </button>
                               </div>
                             </div>
                           )}
 
                           {chapter3Loading && (
-                            <div className="chapter-loading">
-                              <div className="loading-spinner-wrapper">
-                                <Loader className="spinner" size={32} />
+                            <div className="generation-overlay">
+                              <div className="generation-modal">
+                                <div className="generation-animation">
+                                  <div className="generation-circle">
+                                    <span className="generation-icon">🔮</span>
+                                  </div>
+                                  <div className="generation-pulse"></div>
+                                  <div className="generation-pulse delay-1"></div>
+                                  <div className="generation-pulse delay-2"></div>
+                                </div>
+                                <div className="generation-text">
+                                  <h3>대운흐름 분석 중</h3>
+                                  <p className="generation-chapter-title">전체 대운의 성패를 분석하고 있습니다...</p>
+                                  <p className="generation-note">잠시만 기다려주세요</p>
+                                </div>
                               </div>
-                              <p>전체 대운의 성패를 분석하고 있습니다...</p>
-                              <p className="loading-note">잠시만 기다려주세요.</p>
                             </div>
                           )}
 
@@ -4158,13 +4278,13 @@ function OrderDetail() {
                                   </div>
                                 </div>
 
-                                {/* AI 운세 해석 */}
-                                {chapter3Data.decade_flow?.some(d => d.ai_description) && (
+                                {/* AI 운세 해석 - 새 구조 (sky_analysis, earth_analysis) 또는 기존 구조 (ai_description) */}
+                                {chapter3Data.decade_flow?.some(d => d.sky_analysis || d.ai_description) && (
                                   <div className="decade-ai-descriptions">
                                     <h5>🔮 대운별 운세 해석</h5>
                                     <div className="ai-descriptions-list">
                                       {chapter3Data.decade_flow?.map((decade, idx) => (
-                                        decade.ai_description && (
+                                        (decade.sky_analysis || decade.ai_description) && (
                                           <div
                                             key={idx}
                                             className={`ai-description-card ${decade.is_current ? 'current' : ''}`}
@@ -4173,10 +4293,82 @@ function OrderDetail() {
                                               <span className="ai-card-ganji">{decade.ganji}</span>
                                               <span className="ai-card-age">{decade.start_age}~{decade.end_age}세</span>
                                               {decade.is_current && <span className="ai-card-current">현재</span>}
+                                              {/* 종합 판정 배지 */}
+                                              <span className={`overall-rating-badge ${getOverallRatingClass(decade)}`}>
+                                                {getOverallRatingText(decade)}
+                                              </span>
                                             </div>
-                                            <div className="ai-card-body">
-                                              <p>{decade.ai_description}</p>
-                                            </div>
+
+                                            {/* 새 구조: 키워드, 천간/지지 분석, 영역별 조언 */}
+                                            {decade.sky_analysis ? (
+                                              <div className="ai-card-body-new">
+                                                {/* 키워드 */}
+                                                {decade.keywords?.length > 0 && (
+                                                  <div className="decade-keywords-admin">
+                                                    {decade.keywords.map((kw, kIdx) => (
+                                                      <span key={kIdx} className="keyword-badge">{kw}</span>
+                                                    ))}
+                                                  </div>
+                                                )}
+
+                                                {/* 천간 분석 */}
+                                                <div className={`analysis-block sky ${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
+                                                  <div className="analysis-block-header">
+                                                    <span className="block-char">{decade.sky}</span>
+                                                    <span className="block-title">천간 분석</span>
+                                                    <span className={`single-rating-badge ${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
+                                                      {getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).text}
+                                                    </span>
+                                                  </div>
+                                                  <p>{decade.sky_analysis}</p>
+                                                </div>
+
+                                                {/* 지지 분석 */}
+                                                {decade.earth_analysis && (
+                                                  <div className={`analysis-block earth ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
+                                                    <div className="analysis-block-header">
+                                                      <span className="block-char">{decade.earth}</span>
+                                                      <span className="block-title">지지 분석</span>
+                                                      <span className={`single-rating-badge ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
+                                                        {getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).text}
+                                                      </span>
+                                                    </div>
+                                                    <p>{decade.earth_analysis}</p>
+                                                  </div>
+                                                )}
+
+                                                {/* 영역별 조언 */}
+                                                {decade.life_areas && Object.keys(decade.life_areas).length > 0 && (
+                                                  <div className="life-areas-admin">
+                                                    {decade.life_areas.career && (
+                                                      <div className="life-area-item"><strong>💼 사업:</strong> {decade.life_areas.career}</div>
+                                                    )}
+                                                    {decade.life_areas.wealth && (
+                                                      <div className="life-area-item"><strong>💰 재물:</strong> {decade.life_areas.wealth}</div>
+                                                    )}
+                                                    {decade.life_areas.relationship && (
+                                                      <div className="life-area-item"><strong>❤️ 관계:</strong> {decade.life_areas.relationship}</div>
+                                                    )}
+                                                    {decade.life_areas.health && (
+                                                      <div className="life-area-item"><strong>🏥 건강:</strong> {decade.life_areas.health}</div>
+                                                    )}
+                                                  </div>
+                                                )}
+
+                                                {/* 조언 & 주의 */}
+                                                {decade.advice && (
+                                                  <div className="advice-admin">💡 <strong>조언:</strong> {decade.advice}</div>
+                                                )}
+                                                {decade.caution && (
+                                                  <div className="caution-admin">⚠️ <strong>주의:</strong> {decade.caution}</div>
+                                                )}
+                                              </div>
+                                            ) : (
+                                              /* 기존 구조: ai_description */
+                                              <div className="ai-card-body">
+                                                <p>{decade.ai_description}</p>
+                                              </div>
+                                            )}
                                           </div>
                                         )
                                       ))}
@@ -4187,6 +4379,22 @@ function OrderDetail() {
 
                               {/* 재생성 및 미리보기 버튼 */}
                               <div className="chapter3-regenerate">
+                                <button
+                                  className="btn btn-check-logic"
+                                  onClick={generateChapter3}
+                                  disabled={chapter3Loading}
+                                >
+                                  <Search size={14} />
+                                  로직 확인만
+                                </button>
+                                <button
+                                  className="btn btn-regenerate"
+                                  onClick={generateChapter3WithAutoSave}
+                                  disabled={chapter3Loading}
+                                >
+                                  <Sparkles size={14} />
+                                  다시 생성 + 저장
+                                </button>
                                 <button
                                   className="btn btn-preview"
                                   onClick={() => openMobilePreview(3)}
@@ -4201,14 +4409,6 @@ function OrderDetail() {
                                 >
                                   {pdfLoading[3] ? <Loader size={14} className="spinning" /> : <Download size={14} />}
                                   PDF 다운로드
-                                </button>
-                                <button
-                                  className="btn btn-regenerate"
-                                  onClick={generateChapter3}
-                                  disabled={chapter3Loading}
-                                >
-                                  <Loader size={14} />
-                                  다시 생성하기
                                 </button>
                               </div>
                             </div>
