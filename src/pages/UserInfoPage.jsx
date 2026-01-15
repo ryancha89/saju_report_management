@@ -11,7 +11,12 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 // 상품 정보
 const PRODUCT_INFO = {
-  life_journey: { id: 'life_journey', name: '2026 인생여정 리포트', price: 39000 },
+  life_journey: {
+    id: 'life_journey',
+    name: 'The Blueprint: 당신만을 위한 인생 최적화 가이드',
+    description: '평생 대운과 5개년도의 전략 리포트',
+    price: 99000
+  },
   new_year: { id: 'new_year', name: '2026 신년운세 리포트', price: 29000 },
   love: { id: 'love', name: '연애운 리포트', price: 29000 },
   wealth: { id: 'wealth', name: '재물운 리포트', price: 29000 },
@@ -26,6 +31,7 @@ const STEPS = [
   { id: 'gender', label: '성별을 알려주세요', placeholder: '' },
   { id: 'email', label: '리포트를 받을 이메일을 알려주세요', placeholder: '이메일을 입력해주세요' },
   { id: 'phone', label: '연락처를 알려주세요', placeholder: '010-0000-0000' },
+  { id: 'questions', label: '리포트에서 알고 싶은 내용이 있나요?', placeholder: '' },
   { id: 'preview', label: '사주팔자 확인 및 결제', placeholder: '' },
 ];
 
@@ -65,6 +71,7 @@ function UserInfoPage() {
     phone: '',
     phoneDisplay: '', // 화면 표시용 (010-0000-0000)
     calendarType: 'solar', // solar, lunar, lunarLeap
+    questions: ['', '', ''], // 최대 3개 질문 (선택사항)
   });
 
   // 페이지 진입 시 추적 데이터 초기화 (직접 접근 시)
@@ -144,7 +151,8 @@ function UserInfoPage() {
       case 4: return formData.gender.length > 0;
       case 5: return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       case 6: return formData.phone.replace(/\D/g, '').length === 11; // 전화번호 11자리
-      case 7: return true; // 미리보기 + 결제 단계
+      case 7: return true; // 질문 단계 - 선택사항
+      case 8: return true; // 미리보기 + 결제 단계
       default: return false;
     }
   };
@@ -305,7 +313,7 @@ function UserInfoPage() {
 
   // 미리보기 단계 진입 시 사주 데이터 로드
   useEffect(() => {
-    if (currentStep === 7 && !sajuData && !sajuLoading) {
+    if (currentStep === 8 && !sajuData && !sajuLoading) {
       fetchSajuData();
     }
   }, [currentStep]);
@@ -323,6 +331,8 @@ function UserInfoPage() {
 
   // Payment 컴포넌트에 전달할 사용자 정보
   const getUserInfoForPayment = () => {
+    // 비어있지 않은 질문만 필터링
+    const validQuestions = formData.questions.filter(q => q.trim());
     return {
       name: formData.name,
       email: formData.email,
@@ -337,6 +347,7 @@ function UserInfoPage() {
       birthLon: formData.birthLon,
       timeAdjustment: formData.timeAdjustment,
       timeAdjustMinutes: formData.timeAdjustMinutes,
+      questions: validQuestions.length > 0 ? validQuestions : null,
     };
   };
 
@@ -685,7 +696,60 @@ function UserInfoPage() {
           </div>
         );
 
-      case 7: // 사주 미리보기 + 결제
+      case 7: // 질문 입력 (최대 3개, 선택사항)
+        return (
+          <div className="input-group questions-group">
+            <p className="questions-hint">리포트에 반영할 질문을 입력해주세요 (선택사항)</p>
+            {formData.questions.map((question, index) => (
+              <div key={index} className="question-input-row">
+                <span className="question-number">{index + 1}</span>
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => {
+                    const newQuestions = [...formData.questions];
+                    newQuestions[index] = e.target.value;
+                    setFormData({ ...formData, questions: newQuestions });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (index < 2) {
+                        // 다음 질문 입력창으로 포커스 이동
+                        const nextInput = e.target.parentElement.nextElementSibling?.querySelector('input');
+                        if (nextInput) nextInput.focus();
+                      } else {
+                        // 마지막 질문에서 Enter 시 다음 단계로
+                        if (isEditing) {
+                          finishEditing();
+                        } else {
+                          autoNext();
+                        }
+                      }
+                    }
+                  }}
+                  placeholder={`질문 ${index + 1}을 입력해주세요`}
+                  className="text-input question-input"
+                  maxLength={100}
+                  autoFocus={index === 0}
+                />
+              </div>
+            ))}
+            <button
+              className="skip-questions-btn"
+              onClick={() => {
+                if (isEditing) {
+                  finishEditing();
+                } else {
+                  autoNext();
+                }
+              }}
+            >
+              {formData.questions.some(q => q.trim()) ? '다음' : '건너뛰기'}
+            </button>
+          </div>
+        );
+
+      case 8: // 사주 미리보기 + 결제
         return (
           <div className="saju-preview">
             {sajuLoading ? (
@@ -771,6 +835,12 @@ function UserInfoPage() {
                     <span className="label">연락처</span>
                     <span className="value">{formData.phoneDisplay}</span>
                   </div>
+                  {formData.questions.some(q => q.trim()) && (
+                    <div className="completed-item" onClick={() => goToStep(7)}>
+                      <span className="label">질문</span>
+                      <span className="value">{formData.questions.filter(q => q.trim()).length}개</span>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -897,15 +967,15 @@ function UserInfoPage() {
         </header>
 
         {/* 메인 콘텐츠 */}
-        <main className={`user-info-content ${currentStep === 7 ? 'preview-mode' : ''}`}>
-          {currentStep !== 7 && (
+        <main className={`user-info-content ${currentStep === 8 ? 'preview-mode' : ''}`}>
+          {currentStep !== 8 && (
             <div className="step-label">{STEPS[currentStep].label}</div>
           )}
 
           {renderStepContent()}
 
           {/* 다음/완료 버튼 */}
-          {currentStep !== 7 && (
+          {currentStep !== 7 && currentStep !== 8 && (
             // 이름 단계: 2글자 이상이면 버튼 표시
             // 이메일 단계: 유효한 이메일이면 버튼 표시
             // 다른 단계: 수정 중일 때만 버튼 표시
@@ -922,8 +992,8 @@ function UserInfoPage() {
             </button>
           )}
 
-          {/* 완료된 단계 표시 (미리보기 단계에서는 숨김) */}
-          {currentStep !== 7 && (
+          {/* 완료된 단계 표시 (질문/미리보기 단계에서는 숨김) */}
+          {currentStep !== 7 && currentStep !== 8 && (
           <div className="completed-steps">
             {highestStep > 0 && currentStep !== 0 && formData.name && (
               <div

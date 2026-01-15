@@ -172,6 +172,7 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
         birth_lon: userInfo.birthLon,
         time_adjustment: userInfo.timeAdjustment,
         time_adjust_minutes: userInfo.timeAdjustMinutes,
+        questions: userInfo.questions,
         tracking: trackingData,
         // 결제 정보
         payment: {

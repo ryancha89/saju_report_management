@@ -220,6 +220,66 @@ body:has(.user-info-page) {
   cursor: pointer;
 }
 
+/* Questions Input Group */
+.questions-group {
+  gap: 12px;
+}
+
+.questions-hint {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.question-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.question-number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 50%;
+  color: #d4af37;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.question-input {
+  flex: 1;
+}
+
+.skip-questions-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.skip-questions-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.skip-questions-btn:active {
+  transform: translateY(0);
+}
+
 /* Name Input Row */
 .name-input-row {
   display: flex;

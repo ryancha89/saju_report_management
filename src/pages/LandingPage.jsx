@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronDown, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
+import { ChevronDown, Sparkles, Map, ArrowRight } from 'lucide-react';
 import { initTracking } from '../lib/tracking';
 import './LandingPage.css';
 
@@ -40,15 +40,15 @@ function LandingPage() {
   const reports = [
     {
       id: 'life_journey',
-      title: '라이프 Journey',
-      subtitle: '당신의 운명을 읽는 프리미엄 사주 리포트',
-      description: '2025년 신년운세와 향후 5년 대운 분석을 통해 인생의 방향과 중요한 전환점을 제시합니다.',
-      icon: TrendingUp,
-      price: '49,000',
-      originalPrice: '79,000',
-      badge: 'BEST',
-      gradient: 'from-purple-500 to-indigo-600',
-      features: ['2025 신년운세 분석', '향후 5년 대운 흐름', '월별 상세 운세', '커리어/재물/연애운', '맞춤 개운법 가이드']
+      title: 'The Blueprint',
+      subtitle: '당신만을 위한 인생 최적화 가이드',
+      description: '평생 대운과 5개년도의 전략 리포트로 인생의 방향과 중요한 전환점을 제시합니다.',
+      icon: Map,
+      price: '99,000',
+      originalPrice: '150,000',
+      badge: 'PREMIUM',
+      gradient: 'from-blue-500 to-indigo-700',
+      features: ['평생 대운 흐름 분석', '5개년 전략 로드맵', '월별 상세 운세', '커리어/재물/연애운', '맞춤 개운법 가이드']
     }
   ];
 
@@ -76,7 +76,7 @@ function LandingPage() {
                 인생의 방향을 찾다
               </h2>
               <p className="hero-description">
-                수천 년의 동양 지혜와 현대 AI 기술이 만나<br />
+                수천 년의 동양 지혜를 바탕으로<br />
                 당신만을 위한 맞춤 운세 리포트를 제공합니다
               </p>
             </div>

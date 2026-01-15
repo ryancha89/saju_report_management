@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3 } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3, MessageCircle, Wand2, Save } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import FortuneEditor from '../components/FortuneEditor';
 import CareerEditor from '../components/CareerEditor';
@@ -1179,6 +1179,11 @@ function OrderDetail() {
   // 챕터8 상태 (상담사 코칭) - CoachingEditor에서 관리
   const [coachingData, setCoachingData] = useState(null);
 
+  // Q&A 상태 (고객 질문 답변)
+  const [qaAnswers, setQaAnswers] = useState([]);
+  const [qaPolishing, setQaPolishing] = useState({}); // { index: true/false }
+  const [savingQa, setSavingQa] = useState(false);
+
   // 챕터4, 5, 6, 7, 8 편집기 refs (전체 생성용)
   const fiveYearFortuneEditorRef = useRef(null);
   const fortuneEditorRef = useRef(null);
@@ -1438,6 +1443,101 @@ function OrderDetail() {
       fetchSavedReport();
     }
   }, [order?.id]);
+
+  // 주문 로드 후 Q&A 초기화
+  useEffect(() => {
+    if (order?.questions && Array.isArray(order.questions)) {
+      // 빈 문자열이 아닌 실제 질문만 필터링
+      const validQuestions = order.questions.filter(q => q && q.trim());
+      if (validQuestions.length > 0) {
+        // 기존 답변이 있으면 유지, 없으면 빈 문자열로 초기화
+        const existingAnswers = order.qa_answers || [];
+        const initialAnswers = validQuestions.map((q, idx) => ({
+          question: q,
+          answer: existingAnswers[idx]?.answer || ''
+        }));
+        setQaAnswers(initialAnswers);
+      } else {
+        setQaAnswers([]);
+      }
+    }
+  }, [order?.id, order?.questions]);
+
+  // Q&A 답변 변경 핸들러
+  const handleQaAnswerChange = (idx, value) => {
+    setQaAnswers(prev => prev.map((qa, i) =>
+      i === idx ? { ...qa, answer: value } : qa
+    ));
+  };
+
+  // Q&A 답변 AI 다듬기
+  const polishQaAnswer = async (idx) => {
+    const qa = qaAnswers[idx];
+    if (!qa || !qa.answer.trim()) return;
+
+    setQaPolishing(prev => ({ ...prev, [idx]: true }));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/ai/polish-qa-answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          question: qa.question,
+          answer: qa.answer,
+          order_id: order.id,
+          customer_name: order.name
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('AI 다듬기에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      if (data.polished_answer) {
+        setQaAnswers(prev => prev.map((item, i) =>
+          i === idx ? { ...item, answer: data.polished_answer } : item
+        ));
+      }
+    } catch (error) {
+      console.error('AI 다듬기 오류:', error);
+      alert('AI 다듬기 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setQaPolishing(prev => ({ ...prev, [idx]: false }));
+    }
+  };
+
+  // Q&A 답변 저장
+  const saveQaAnswers = async () => {
+    setSavingQa(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${order.id}/qa-answers`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          qa_answers: qaAnswers
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Q&A 답변 저장에 실패했습니다.');
+      }
+
+      alert('Q&A 답변이 저장되었습니다.');
+    } catch (error) {
+      console.error('Q&A 저장 오류:', error);
+      alert('Q&A 저장 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setSavingQa(false);
+    }
+  };
 
   const fetchOrder = async () => {
     setLoading(true);
@@ -2015,6 +2115,19 @@ function OrderDetail() {
           { id: 'suitable_jobs', number: 12, label: '적합직종', title: '적합 직종', icon: '📋', category: 'detail' },
           { id: 'advice', number: 13, label: '조언', title: '커리어 조언', icon: '💡', category: 'detail' },
         ];
+      case 'life_journey':
+        return [
+          baseChapter,
+          chapter1,
+          chapter2,
+          chapter3,
+          chapter4,
+          chapter5,
+          chapter6,
+          chapter7,
+          chapter8,
+          { id: 'chapter_qa', number: 10, label: 'Q&A', title: '고객 질문 답변', icon: '❓', category: 'qa' },
+        ];
       default:
         return [
           baseChapter,
@@ -2054,8 +2167,14 @@ function OrderDetail() {
       }
     }
 
-    // 레포트 챕터 설정
-    const chapters = getReportChapters(order.report_type);
+    // 레포트 챕터 설정 (Q&A 챕터는 질문이 있을 때만 표시)
+    let chapters = getReportChapters(order.report_type);
+    const hasQuestions = order.questions &&
+      Array.isArray(order.questions) &&
+      order.questions.some(q => q && q.trim());
+    if (!hasQuestions) {
+      chapters = chapters.filter(ch => ch.id !== 'chapter_qa');
+    }
     setReportChapters(chapters);
     setSelectedChapter(0);
     setShowFullPreview(true);
@@ -2972,6 +3091,25 @@ function OrderDetail() {
               </div>
             </div>
           </div>
+
+          {/* 고객 질문 */}
+          {order.questions && order.questions.filter(q => q && q.trim()).length > 0 && (
+            <div className="detail-card questions-card">
+              <div className="card-header">
+                <MessageCircle size={20} />
+                <h3>고객 질문 ({order.questions.filter(q => q && q.trim()).length}개)</h3>
+              </div>
+              <div className="card-content">
+                {order.questions.filter(q => q && q.trim()).map((question, idx) => (
+                  <div key={idx} className="question-item">
+                    <div className="question-number">Q{idx + 1}</div>
+                    <div className="question-text">{question}</div>
+                  </div>
+                ))}
+                <p className="questions-hint">* 질문 답변은 Q&A 챕터에서 작성할 수 있습니다.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 액션 버튼 */}
@@ -4553,6 +4691,76 @@ function OrderDetail() {
                             initialData={coachingData}
                             onChange={(data) => setCoachingData(data)}
                           />
+                        </div>
+                      ) : reportChapters[selectedChapter].id === 'chapter_qa' ? (
+                        <div className="chapter-qa-content">
+                          {qaAnswers.length > 0 ? (
+                            <div className="qa-editor">
+                              <p className="qa-intro">
+                                고객이 남긴 질문에 대한 답변을 작성해 주세요. AI 다듬기 기능을 활용하여 답변을 더 풍부하게 만들 수 있습니다.
+                              </p>
+                              {qaAnswers.map((qa, idx) => (
+                                <div key={idx} className="qa-item">
+                                  <div className="qa-question">
+                                    <span className="qa-number">Q{idx + 1}</span>
+                                    <span className="qa-question-text">{qa.question}</span>
+                                  </div>
+                                  <div className="qa-answer">
+                                    <textarea
+                                      className="qa-answer-input"
+                                      value={qa.answer}
+                                      onChange={(e) => handleQaAnswerChange(idx, e.target.value)}
+                                      placeholder="답변을 입력하세요..."
+                                      rows={4}
+                                    />
+                                    <div className="qa-actions">
+                                      <button
+                                        className="btn btn-qa-polish"
+                                        onClick={() => polishQaAnswer(idx)}
+                                        disabled={qaPolishing[idx] || !qa.answer.trim()}
+                                      >
+                                        {qaPolishing[idx] ? (
+                                          <>
+                                            <Loader size={16} className="spinning" />
+                                            AI 다듬는 중...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Wand2 size={16} />
+                                            AI 다듬기
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              <div className="qa-save-actions">
+                                <button
+                                  className="btn btn-save-qa"
+                                  onClick={saveQaAnswers}
+                                  disabled={savingQa}
+                                >
+                                  {savingQa ? (
+                                    <>
+                                      <Loader size={16} className="spinning" />
+                                      저장 중...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Save size={16} />
+                                      Q&A 저장
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="qa-empty">
+                              <MessageCircle size={48} strokeWidth={1} />
+                              <p>고객이 질문을 남기지 않았습니다.</p>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="chapter-placeholder">
