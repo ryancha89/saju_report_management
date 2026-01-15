@@ -14,6 +14,7 @@ import ReportPreview from './pages/ReportPreview';
 import LandingPage from './pages/LandingPage';
 import UserInfoPage from './pages/UserInfoPage';
 import ResultPage from './pages/ResultPage';
+import Events from './pages/events/Events';
 import './App.css';
 
 // 동적 파라미터 리다이렉트 컴포넌트
@@ -30,6 +31,9 @@ function App() {
         <Routes>
           {/* 랜딩 페이지 (일반 사용자용) */}
           <Route path="/" element={<LandingPage />} />
+
+          {/* 이벤트 페이지 */}
+          <Route path="/events" element={<Events />} />
 
           {/* 관리자 로그인 페이지 */}
           <Route path="/admin/login" element={<Login />} />
