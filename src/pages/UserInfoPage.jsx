@@ -11,8 +11,8 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 // 상품 정보
 const PRODUCT_INFO = {
-  life_journey: {
-    id: 'life_journey',
+  blueprint: {
+    id: 'blueprint',
     name: 'The Blueprint: 당신만을 위한 인생 최적화 가이드',
     description: '평생 대운과 5개년도의 전략 리포트',
     price: 99000
@@ -52,8 +52,8 @@ function UserInfoPage() {
   const isTransitioning = useRef(false);
 
   // URL에서 product 파라미터 가져오기
-  const productId = new URLSearchParams(location.search).get('product') || 'life_journey';
-  const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.life_journey;
+  const productId = new URLSearchParams(location.search).get('product') || 'blueprint';
+  const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.blueprint;
 
   const [formData, setFormData] = useState({
     name: '',

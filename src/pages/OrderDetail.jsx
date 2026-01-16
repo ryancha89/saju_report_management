@@ -2115,7 +2115,7 @@ function OrderDetail() {
           { id: 'suitable_jobs', number: 12, label: '적합직종', title: '적합 직종', icon: '📋', category: 'detail' },
           { id: 'advice', number: 13, label: '조언', title: '커리어 조언', icon: '💡', category: 'detail' },
         ];
-      case 'life_journey':
+      case 'blueprint':
         return [
           baseChapter,
           chapter1,

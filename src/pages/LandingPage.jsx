@@ -39,7 +39,7 @@ function LandingPage() {
 
   const reports = [
     {
-      id: 'life_journey',
+      id: 'blueprint',
       title: 'The Blueprint',
       subtitle: '당신만을 위한 인생 최적화 가이드',
       description: '평생 대운과 5개년도의 전략 리포트로 인생의 방향과 중요한 전환점을 제시합니다.',
