@@ -21,18 +21,20 @@ export default function Events() {
           />
         </div>
         <img
-          src="/img/2026_story_v2_01.jpg"
+          src="/img/2026_story_v2_02.jpg"
           alt="Event Image"
           className="events-image"
         />
-        <video
-          src="/img/2026_video_v2_01.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="events-video"
-        />
+        <div className="bottom-video-wrapper">
+          <video
+            src="/img/2026_video_v2_01.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="events-video"
+          />
+        </div>
       </div>
 
       {/* Fixed bottom button */}
