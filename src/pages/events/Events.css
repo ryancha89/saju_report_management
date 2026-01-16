@@ -19,6 +19,17 @@
   max-width: 450px;
 }
 
+.video-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 1), transparent);
+  pointer-events: none;
+}
+
 .events-video {
   width: 100%;
   max-width: 450px;
@@ -42,6 +53,24 @@
   height: auto;
   display: block;
   vertical-align: bottom;
+}
+
+.bottom-video-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+}
+
+.bottom-video-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 1), transparent);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Button */
