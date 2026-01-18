@@ -459,6 +459,7 @@ body:has(.blueprint-intro-page) {
   color: #d4af37;
   flex-shrink: 0;
   background: #0a0a15;
+  margin-top: 5px;
 }
 
 .process-content {
