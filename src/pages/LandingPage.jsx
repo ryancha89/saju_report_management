@@ -57,7 +57,7 @@ function LandingPage() {
       originalPrice: '150,000',
       badge: 'PREMIUM',
       gradient: 'from-dark to-gold',
-      features: ['평생 대운 흐름 분석', '5개년 전략 로드맵', '월별 상세 운세', '커리어/재물/연애운', '맞춤 개운법 가이드']
+      features: ['나의 아이덴티티 잠재력 분석', '평생 대운 흐름 분석', '5개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     }
   ];
 
@@ -112,7 +112,6 @@ function LandingPage() {
                 )}
 
                 <div className="card-content">
-                  <div className="card-badge">{report.badge}</div>
                   <div className="card-text">
                     <h4 className="card-title">{report.title}</h4>
                     {report.subtitleSmall && <p className="card-subtitle-small">{report.subtitleSmall}</p>}
