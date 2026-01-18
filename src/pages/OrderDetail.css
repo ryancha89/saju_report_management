@@ -1927,6 +1927,28 @@
   flex-direction: column;
   border-right: 1px solid #e2e8f0;
   background: #fff;
+  transition: width 0.3s ease, min-width 0.3s ease;
+}
+
+.preview-left.collapsed {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+}
+
+.preview-left.collapsed .preview-section-header {
+  padding: 16px 12px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-left.collapsed .preview-section-header h3,
+.preview-left.collapsed .preview-section-header svg:first-of-type {
+  display: none;
+}
+
+.preview-left.collapsed .panel-toggle-btn {
+  margin-left: 0;
 }
 
 .preview-right {
@@ -1934,6 +1956,36 @@
   display: flex;
   flex-direction: column;
   background: #fff;
+  flex: 1;
+  transition: width 0.3s ease;
+}
+
+/* 왼쪽 패널 접혔을 때 오른쪽 패널 확장 */
+.fullscreen-content:has(.preview-left.collapsed) .preview-right {
+  width: calc(100% - 60px);
+}
+
+/* 패널 토글 버튼 */
+.panel-toggle-btn {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  border: none;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.panel-toggle-btn:hover {
+  background: #cbd5e1;
+  color: #1e293b;
 }
 
 .preview-section-header {
@@ -3038,6 +3090,24 @@
     max-height: 50vh;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
+  }
+
+  .preview-left.collapsed {
+    max-height: 50px;
+    min-height: 50px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .preview-left.collapsed .preview-section-header {
+    flex-direction: row;
+    padding: 10px 16px;
+  }
+
+  .fullscreen-content:has(.preview-left.collapsed) .preview-right {
+    width: 100%;
+    max-height: calc(100% - 50px);
   }
 
   .preview-right {
@@ -7613,4 +7683,464 @@
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-color: #6366f1;
   color: white;
+}
+
+/* ========================================
+   억부/조후 분석 섹션 스타일
+   (대운 흐름 Chapter 4 확장)
+======================================== */
+
+.eokbu-johu-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+}
+
+.eokbu-johu-section .section-header {
+  margin-bottom: 20px;
+}
+
+.eokbu-johu-section .section-header h5 {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.eokbu-johu-section .section-description {
+  margin: 0 0 16px 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* 원국 강약 정보 */
+.base-strength-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 10px;
+  border-left: 4px solid #94a3b8;
+}
+
+.base-strength-info .label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.base-strength-info .strength-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.base-strength-info .strength-badge.balanced {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.base-strength-info .strength-badge.strong {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+.base-strength-info .strength-badge.weak {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #60a5fa;
+}
+
+.base-strength-info .score {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* 억부/조후 타임라인 */
+.eokbu-johu-timeline {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 16px 0;
+  margin-bottom: 16px;
+}
+
+.eokbu-johu-item {
+  flex: 0 0 auto;
+  min-width: 130px;
+  max-width: 150px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.eokbu-johu-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.eokbu-johu-item.current {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+/* 억부/조후 아이템 헤더 */
+.ej-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.ej-header .ej-ganji {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.ej-header .ej-age {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.eokbu-johu-item.current .ej-header .ej-ganji {
+  color: #2563eb;
+}
+
+.eokbu-johu-item.current .ej-header .ej-age {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* 억부 (신강신약) 스타일 - 개선 */
+.ej-strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.ej-strength.balanced {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #6ee7b7;
+}
+
+.ej-strength.strong {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #f87171;
+}
+
+.ej-strength.weak {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #60a5fa;
+}
+
+.ej-strength.extreme {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fbbf24;
+}
+
+.ej-strength.none {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.ej-strength-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ej-strength-main .ej-emoji {
+  font-size: 1.1rem;
+}
+
+.ej-strength-main .ej-level-text {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+/* 억부 바 그래프 */
+.ej-strength-bar {
+  position: relative;
+  height: 8px;
+  background: linear-gradient(90deg,
+    #3b82f6 0%,    /* 극신약 - 파랑 */
+    #60a5fa 20%,   /* 신약 */
+    #22c55e 40%,   /* 중화 시작 */
+    #22c55e 60%,   /* 중화 끝 */
+    #f87171 80%,   /* 신강 */
+    #dc2626 100%   /* 극신강 - 빨강 */
+  );
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.ej-strength-fill {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  height: 12px;
+  width: 4px;
+  background: #1e293b;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: left 0.3s ease;
+}
+
+.ej-strength-marker {
+  position: absolute;
+  top: -3px;
+  font-size: 0.6rem;
+  color: #22c55e;
+  font-weight: 700;
+  transform: translateX(-50%);
+}
+
+.ej-strength-score {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* 조후 스타일 - 개선 */
+.ej-johu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.ej-johu.good {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #6ee7b7;
+}
+
+.ej-johu.normal {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  border: 1px solid #facc15;
+}
+
+.ej-johu.poor {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #f87171;
+}
+
+.ej-johu-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ej-johu-main .ej-johu-icon {
+  font-size: 1rem;
+}
+
+.ej-johu-main .ej-johu-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ej-johu-score {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* 생활영역 미니 점수 */
+.ej-life-areas {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.life-area-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #fff;
+  min-width: 28px;
+}
+
+.life-area-mini .area-icon {
+  font-size: 0.75rem;
+}
+
+.life-area-mini .area-score {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* 억부/조후 범례 */
+.eokbu-johu-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.eokbu-johu-legend .legend-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.eokbu-johu-legend .legend-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.eokbu-johu-legend .legend-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.eokbu-johu-legend .legend-badge.extreme {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.eokbu-johu-legend .legend-badge.strong {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+.eokbu-johu-legend .legend-badge.balanced {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.eokbu-johu-legend .legend-badge.weak {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border: 1px solid #60a5fa;
+}
+
+.eokbu-johu-legend .legend-badge.good {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.eokbu-johu-legend .legend-badge.normal {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  color: #854d0e;
+  border: 1px solid #facc15;
+}
+
+.eokbu-johu-legend .legend-badge.poor {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+.eokbu-johu-legend .legend-item {
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+/* 억부/조후 반응형 */
+@media (max-width: 768px) {
+  .eokbu-johu-section {
+    padding: 16px;
+    margin-top: 16px;
+  }
+
+  .eokbu-johu-section .section-header h5 {
+    font-size: 1rem;
+  }
+
+  .eokbu-johu-timeline {
+    gap: 6px;
+  }
+
+  .eokbu-johu-item {
+    min-width: 85px;
+    padding: 10px;
+  }
+
+  .eokbu-johu-legend {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .eokbu-johu-legend .legend-group {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .base-strength-info {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .eokbu-johu-item {
+    min-width: 75px;
+    padding: 8px;
+  }
+
+  .eokbu-johu-item .ej-age {
+    font-size: 0.7rem;
+  }
+
+  .ej-strength .ej-value,
+  .ej-johu .ej-value {
+    font-size: 0.7rem;
+  }
+
+  .life-area-mini {
+    min-width: 24px;
+    padding: 3px;
+  }
 }

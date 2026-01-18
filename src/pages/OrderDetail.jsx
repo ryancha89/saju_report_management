@@ -1144,6 +1144,7 @@ function OrderDetail() {
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [reportChapters, setReportChapters] = useState([]);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
 
 
   // 챕터1 상태
@@ -3378,21 +3379,30 @@ function OrderDetail() {
 
           <div className="fullscreen-content">
             {/* 왼쪽: 사주 검증 */}
-            <div className="preview-left">
+            <div className={`preview-left ${leftPanelCollapsed ? 'collapsed' : ''}`}>
               <div className="preview-section-header">
                 <Search size={18} />
                 <h3>사주 검증 결과</h3>
+                <button
+                  className="panel-toggle-btn"
+                  onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+                  title={leftPanelCollapsed ? '패널 펼치기' : '패널 접기'}
+                >
+                  {leftPanelCollapsed ? '▶' : '◀'}
+                </button>
               </div>
-              <div className="preview-left-content">
-                {validationResult ? (
-                  <SajuValidationDisplay data={validationResult} orderId={id} />
-                ) : (
-                  <div className="preview-loading">
-                    <Loader size={24} className="spinning" />
-                    <p>사주 정보를 불러오는 중...</p>
-                  </div>
-                )}
-              </div>
+              {!leftPanelCollapsed && (
+                <div className="preview-left-content">
+                  {validationResult ? (
+                    <SajuValidationDisplay data={validationResult} orderId={id} />
+                  ) : (
+                    <div className="preview-loading">
+                      <Loader size={24} className="spinning" />
+                      <p>사주 정보를 불러오는 중...</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* 오른쪽: 레포트 챕터 */}
@@ -4352,6 +4362,141 @@ function OrderDetail() {
                                         <span className="legend-color current-indicator"></span>
                                         <span className="legend-text">현재 대운</span>
                                       </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 억부/조후 분석 섹션 */}
+                                <div className="eokbu-johu-section">
+                                  <div className="section-header">
+                                    <h5>💫 억부/조후 분석 (관계·건강·행복)</h5>
+                                    <p className="section-description">
+                                      신강신약(억부)과 조후용신 충족도를 통해 관계운, 건강운, 행복지수를 분석합니다.
+                                    </p>
+                                    {chapter3Data.basis?.base_strength && (
+                                      <div className="base-strength-info">
+                                        <span className="label">원국 강약:</span>
+                                        <span className={`strength-badge ${chapter3Data.basis.base_strength.level === '중화' ? 'balanced' : chapter3Data.basis.base_strength.level?.includes('신강') ? 'strong' : 'weak'}`}>
+                                          {chapter3Data.basis.base_strength.level}
+                                        </span>
+                                        <span className="score">({chapter3Data.basis.base_strength.score}점)</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* 억부/조후 타임라인 */}
+                                  <div className="eokbu-johu-timeline">
+                                    {chapter3Data.decade_flow?.map((decade, idx) => {
+                                      const strengthChange = decade.strength?.change || 0;
+                                      const johuScore = decade.johu?.score || 50;
+                                      const lifeAreas = decade.life_areas || {};
+
+                                      const getStrengthClass = () => {
+                                        if (!decade.strength) return 'none';
+                                        const level = decade.strength.decade_level;
+                                        if (level === '중화') return 'balanced';
+                                        if (level?.includes('극신강') || level?.includes('극신약')) return 'extreme';
+                                        if (level?.includes('신강')) return 'strong';
+                                        if (level?.includes('신약')) return 'weak';
+                                        return 'none';
+                                      };
+
+                                      const getJohuClass = () => {
+                                        if (johuScore >= 70) return 'good';
+                                        if (johuScore >= 40) return 'normal';
+                                        return 'poor';
+                                      };
+
+                                      // 억부 레벨에 따른 이모지
+                                      const getStrengthEmoji = () => {
+                                        const level = decade.strength?.decade_level;
+                                        if (!level) return '❓';
+                                        if (level.includes('극신강')) return '🔥';
+                                        if (level.includes('신강')) return '💪';
+                                        if (level === '중화') return '⚖️';
+                                        if (level.includes('극신약')) return '💧';
+                                        if (level.includes('신약')) return '🌱';
+                                        return '❓';
+                                      };
+
+                                      const decadeScore = decade.strength?.decade_score || 50;
+
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`eokbu-johu-item ${decade.is_current ? 'current' : ''}`}
+                                        >
+                                          <div className="ej-header">
+                                            <span className="ej-ganji">{decade.ganji}</span>
+                                            <span className="ej-age">{decade.start_age}세</span>
+                                          </div>
+
+                                          {/* 억부 (신강신약) - 더 명확하게 */}
+                                          <div className={`ej-strength ${getStrengthClass()}`}>
+                                            <div className="ej-strength-main">
+                                              <span className="ej-emoji">{getStrengthEmoji()}</span>
+                                              <span className="ej-level-text">{decade.strength?.decade_level || '계산중'}</span>
+                                            </div>
+                                            <div className="ej-strength-bar">
+                                              <div
+                                                className="ej-strength-fill"
+                                                style={{ width: `${decadeScore}%` }}
+                                              ></div>
+                                              <span className="ej-strength-marker" style={{ left: '50%' }}>|</span>
+                                            </div>
+                                            <div className="ej-strength-score">{decadeScore}점</div>
+                                          </div>
+
+                                          {/* 조후 충족도 */}
+                                          <div className={`ej-johu ${getJohuClass()}`}>
+                                            <div className="ej-johu-main">
+                                              <span className="ej-johu-icon">{johuScore >= 70 ? '☀️' : johuScore >= 40 ? '🌤️' : '❄️'}</span>
+                                              <span className="ej-johu-text">{decade.johu?.level || '보통'}</span>
+                                            </div>
+                                            <div className="ej-johu-score">{johuScore}점</div>
+                                          </div>
+
+                                          {/* 생활영역 미니 점수 */}
+                                          <div className="ej-life-areas">
+                                            <div className="life-area-mini" title="관계운">
+                                              <span className="area-icon">❤️</span>
+                                              <span className="area-score">{lifeAreas.relationship || '-'}</span>
+                                            </div>
+                                            <div className="life-area-mini" title="건강운">
+                                              <span className="area-icon">💪</span>
+                                              <span className="area-score">{lifeAreas.health || '-'}</span>
+                                            </div>
+                                            <div className="life-area-mini" title="행복지수">
+                                              <span className="area-icon">😊</span>
+                                              <span className="area-score">{lifeAreas.happiness || '-'}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* 억부/조후 범례 */}
+                                  <div className="eokbu-johu-legend">
+                                    <div className="legend-group">
+                                      <span className="legend-title">억부 (신강신약):</span>
+                                      <span className="legend-badge extreme">🔥 극신강</span>
+                                      <span className="legend-badge strong">💪 신강</span>
+                                      <span className="legend-badge balanced">⚖️ 중화</span>
+                                      <span className="legend-badge weak">🌱 신약</span>
+                                      <span className="legend-badge extreme">💧 극신약</span>
+                                    </div>
+                                    <div className="legend-group">
+                                      <span className="legend-title">조후 (계절균형):</span>
+                                      <span className="legend-badge good">☀️ 좋음 (70+)</span>
+                                      <span className="legend-badge normal">🌤️ 보통 (40-69)</span>
+                                      <span className="legend-badge poor">❄️ 부족 (&lt;40)</span>
+                                    </div>
+                                    <div className="legend-group">
+                                      <span className="legend-title">생활영역:</span>
+                                      <span className="legend-item">❤️ 관계운</span>
+                                      <span className="legend-item">💪 건강운</span>
+                                      <span className="legend-item">😊 행복지수</span>
                                     </div>
                                   </div>
                                 </div>

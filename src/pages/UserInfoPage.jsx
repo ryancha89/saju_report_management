@@ -243,7 +243,12 @@ function UserInfoPage() {
       // 뒤로가면 highestStep도 현재 위치로 조정
       setHighestStep(prevStep);
     } else {
-      navigate('/');
+      // 상품별로 이전 페이지로 이동
+      if (productId === 'blueprint') {
+        navigate('/blueprint');
+      } else {
+        navigate('/');
+      }
     }
   };
 
