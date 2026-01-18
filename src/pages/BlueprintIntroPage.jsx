@@ -8,6 +8,8 @@ function BlueprintIntroPage() {
   const location = useLocation();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+
     const originalBg = document.body.style.backgroundColor;
     document.body.style.backgroundColor = '#fff';
     document.documentElement.style.backgroundColor = '#fff';
