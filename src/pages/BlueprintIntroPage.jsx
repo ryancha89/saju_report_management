@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, Sparkles, ChevronDown, Star } from 'lucide-react';
 import './BlueprintIntroPage.css';
 
 function BlueprintIntroPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [openFaq, setOpenFaq] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -27,11 +28,66 @@ function BlueprintIntroPage() {
   };
 
   const features = [
-    '나의 아이덴티티 잠재력 분석',
-    '평생 대운 흐름 분석',
-    '5개년 전략 로드맵',
-    '커리어/재물/연애운',
-    '맞춤 개운법 가이드'
+    {
+      title: '나의 아이덴티티 잠재력 분석',
+      desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
+    },
+    {
+      title: '평생 대운 흐름 분석',
+      desc: '10년 단위의 대운 흐름으로 인생의 큰 전환점과 기회를 예측합니다.'
+    },
+    {
+      title: '5개년 전략 로드맵',
+      desc: '향후 5년간의 연도별 운세와 구체적인 행동 전략을 제시합니다.'
+    },
+    {
+      title: '커리어/재물/연애운',
+      desc: '직업, 재정, 연애 각 영역별 맞춤 분석과 조언을 드립니다.'
+    },
+    {
+      title: '맞춤 개운법 가이드',
+      desc: '나에게 맞는 색상, 방향, 숫자 등 실생활 개운 팁을 알려드립니다.'
+    }
+  ];
+
+  const reviews = [
+    {
+      name: '김**',
+      age: '32세',
+      rating: 5,
+      text: '제 성격과 적성을 정확히 짚어줘서 놀랐어요. 커리어 방향을 고민하던 중이었는데 큰 도움이 됐습니다.'
+    },
+    {
+      name: '이**',
+      age: '28세',
+      rating: 5,
+      text: '단순한 운세가 아니라 실질적인 인생 전략을 알려줘서 좋았어요. 5개년 로드맵이 특히 유용했습니다.'
+    },
+    {
+      name: '박**',
+      age: '45세',
+      rating: 5,
+      text: '대운 분석이 정말 신기했어요. 지난 일들이 왜 그랬는지 이해가 되고, 앞으로의 방향이 보였습니다.'
+    }
+  ];
+
+  const faqs = [
+    {
+      question: '리포트 내용은 얼마나 상세한가요?',
+      answer: '총 9개 챕터로 구성되어 있으며, 아이덴티티 분석부터 평생 대운, 5개년 운세, 재물/연애/직업운까지 약 50페이지 분량의 상세한 분석을 제공합니다.'
+    },
+    {
+      question: '리포트는 어떻게 받나요?',
+      answer: '결제 완료 후 입력하신 이메일과 카카오톡으로 리포트 링크가 발송됩니다. 언제든지 다시 열람하실 수 있습니다.'
+    },
+    {
+      question: '사주 정보는 어떻게 입력하나요?',
+      answer: '생년월일, 태어난 시간, 성별만 입력하시면 됩니다. 태어난 시간을 모르시는 경우에도 분석이 가능합니다.'
+    },
+    {
+      question: '환불이 가능한가요?',
+      answer: '디지털 콘텐츠 특성상 리포트 발송 후에는 환불이 어렵습니다. 결제 전 신중하게 결정해 주세요.'
+    }
   ];
 
   return (
@@ -76,14 +132,56 @@ function BlueprintIntroPage() {
             </p>
           </div>
 
+          {/* Warning Section */}
+          <div className="warning-section">
+            <p className="warning-title">
+              달콤한 위로만 드리지 않습니다
+            </p>
+            <p className="warning-desc">
+              인생의 <strong>기회</strong>와 <strong>위기</strong>,<br />
+              있는 그대로 솔직하게 분석합니다.
+            </p>
+            <span className="warning-note">진실을 마주할 준비가 되신 분만 시작해 주세요.</span>
+          </div>
+
+          {/* Difference Section */}
+          <div className="difference-section">
+            <div className="difference-badge">일반 사주 서비스와 다릅니다</div>
+            <div className="difference-content">
+              <div className="difference-item wrong">
+                <span className="difference-icon">✕</span>
+                <p>자동 생성된 뻔한 풀이</p>
+              </div>
+              <div className="difference-item wrong">
+                <span className="difference-icon">✕</span>
+                <p>누구에게나 적용되는 일반적인 내용</p>
+              </div>
+              <div className="difference-item right">
+                <span className="difference-icon">✓</span>
+                <p><strong>전문 상담사의 철저한 사주 검증</strong></p>
+              </div>
+              <div className="difference-item right">
+                <span className="difference-icon">✓</span>
+                <p><strong>오직 당신만을 위한 맞춤 분석</strong></p>
+              </div>
+            </div>
+          </div>
+
           {/* Features */}
+          <div className="features-header">
+            <h3 className="section-title">리포트 구성</h3>
+            <p className="features-subtitle">총 9개 챕터 중 주요 내용</p>
+          </div>
           <div className="features-list">
             {features.map((feature, index) => (
               <div key={index} className="feature-item" style={{ animationDelay: `${index * 0.1}s` }}>
                 <div className="feature-check">
                   <Check size={14} />
                 </div>
-                <span>{feature}</span>
+                <div className="feature-text">
+                  <span className="feature-title">{feature.title}</span>
+                  <p className="feature-desc">{feature.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -98,6 +196,91 @@ function BlueprintIntroPage() {
           {/* CTA Button */}
           <button className="cta-button" onClick={handleStartClick}>
             <span>시작하기</span>
+            <ArrowRight size={20} />
+          </button>
+
+          {/* Process Section */}
+          <div className="process-section">
+            <h3 className="section-title">리포트 제작 과정</h3>
+            <div className="process-list">
+              <div className="process-item">
+                <div className="process-number">1</div>
+                <div className="process-content">
+                  <h4>정보 입력 & 결제</h4>
+                  <p>생년월일, 태어난 시간 등 사주 정보를 입력하고 결제를 완료하면 전문 상담사에게 정보가 전달됩니다.</p>
+                </div>
+              </div>
+              <div className="process-item">
+                <div className="process-number">2</div>
+                <div className="process-content">
+                  <h4>사주 검증 & 리포트 제작</h4>
+                  <p>결제 확인 후 전문 상담사가 직접 사주를 검증하고 맞춤 리포트를 제작합니다.</p>
+                  <span className="process-badge">보통 몇 시간 ~ 1일 (최대 3일)</span>
+                </div>
+              </div>
+              <div className="process-item">
+                <div className="process-number">3</div>
+                <div className="process-content">
+                  <h4>리포트 발송</h4>
+                  <p>입력하신 이메일로 웹 리포트 링크와 PDF 파일이 함께 발송됩니다.</p>
+                </div>
+              </div>
+            </div>
+            <div className="process-contact">
+              문의 <a href="mailto:help@ftorch.com">help@ftorch.com</a>
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="reviews-section">
+            <h3 className="section-title">실제 후기</h3>
+            <div className="reviews-list">
+              {reviews.map((review, index) => (
+                <div key={index} className="review-card">
+                  <div className="review-header">
+                    <div className="review-info">
+                      <span className="review-name">{review.name}</span>
+                      <span className="review-age">{review.age}</span>
+                    </div>
+                    <div className="review-stars">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} size={14} fill="#B8860B" color="#B8860B" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="review-text">{review.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="faq-section">
+            <h3 className="section-title">자주 묻는 질문</h3>
+            <div className="faq-list">
+              {faqs.map((faq, index) => (
+                <div
+                  key={index}
+                  className={`faq-item ${openFaq === index ? 'open' : ''}`}
+                >
+                  <button
+                    className="faq-question"
+                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  >
+                    <span>{faq.question}</span>
+                    <ChevronDown size={20} className="faq-icon" />
+                  </button>
+                  <div className="faq-answer">
+                    <p>{faq.answer}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <button className="cta-button" onClick={handleStartClick}>
+            <span>지금 시작하기</span>
             <ArrowRight size={20} />
           </button>
         </div>
