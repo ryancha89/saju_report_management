@@ -16,6 +16,7 @@ import Login from './pages/Login';
 import MobilePreview from './pages/MobilePreview';
 import ReportPreview from './pages/ReportPreview';
 import LandingPage from './pages/LandingPage';
+import BlueprintIntroPage from './pages/BlueprintIntroPage';
 import UserInfoPage from './pages/UserInfoPage';
 import ResultPage from './pages/ResultPage';
 import Events from './pages/events/Events';
@@ -35,6 +36,9 @@ function App() {
         <Routes>
           {/* 랜딩 페이지 (일반 사용자용) */}
           <Route path="/" element={<LandingPage />} />
+
+          {/* Blueprint 소개 페이지 */}
+          <Route path="/blueprint" element={<BlueprintIntroPage />} />
 
           {/* 이벤트 페이지 */}
           <Route path="/events" element={<Events />} />

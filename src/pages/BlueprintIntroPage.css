@@ -1,0 +1,326 @@
+/* Blueprint Intro Page */
+
+.blueprint-intro-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+}
+
+/* Prevent overscroll */
+html:has(.blueprint-intro-page),
+body:has(.blueprint-intro-page) {
+  background: #fff;
+  overscroll-behavior-y: none;
+}
+
+/* Mobile Wrapper */
+.blueprint-mobile-wrapper {
+  max-width: 480px;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Hero Section */
+.blueprint-hero {
+  position: relative;
+  height: 60vh;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border: none;
+  border-radius: 24px;
+  color: #1a1a2e;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.6s ease-out;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Hero Image */
+.hero-image-wrapper {
+  margin-bottom: 20px;
+  animation: fadeInUp 0.6s ease-out 0.05s both;
+}
+
+.hero-image {
+  max-width: 200px;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0 0 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 0%, #d4af37 50%, #ffffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.hero-subtitle-small {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #d4af37;
+  margin: 0 0 8px;
+  letter-spacing: 3px;
+  animation: fadeInUp 0.6s ease-out 0.15s both;
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  letter-spacing: 4px;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+/* Content Section */
+.blueprint-content {
+  flex: 1;
+  background: linear-gradient(180deg, #000 0%, #0a0a15 100%);
+  padding: 40px 24px 60px;
+}
+
+.content-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.intro-text {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.intro-text h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.intro-text p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* Features List */
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  animation: fadeInUp 0.5s ease-out both;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(212, 175, 55, 0.3);
+  transform: translateX(4px);
+}
+
+.feature-check {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a2e;
+  flex-shrink: 0;
+}
+
+.feature-item span {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* Price Section */
+.price-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+}
+
+.original-price {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: line-through;
+}
+
+.current-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.discount-badge {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+/* CTA Button */
+.cta-button {
+  width: 100%;
+  padding: 18px 32px;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  border: none;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
+}
+
+.cta-button:active {
+  transform: translateY(0);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .blueprint-hero {
+    height: auto;
+    min-height: 450px;
+    padding: 60px 0 40px;
+  }
+
+  .hero-image {
+    max-width: 160px;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-subtitle-small {
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+
+  .blueprint-content {
+    padding: 32px 20px 48px;
+  }
+
+  .intro-text h2 {
+    font-size: 1.3rem;
+  }
+
+  .price-section {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .current-price {
+    font-size: 1.8rem;
+  }
+}

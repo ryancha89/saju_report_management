@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronDown, Sparkles, Map, ArrowRight } from 'lucide-react';
+import { ChevronDown, Map, ArrowRight } from 'lucide-react';
 import { initTracking } from '../lib/tracking';
 import './LandingPage.css';
 
@@ -21,8 +21,8 @@ function LandingPage() {
   useEffect(() => {
     const originalBg = document.body.style.backgroundColor;
 
-    document.body.style.backgroundColor = '#2d2d3a';
-    document.documentElement.style.backgroundColor = '#2d2d3a';
+    document.body.style.backgroundColor = '#ffffff';
+    document.documentElement.style.backgroundColor = '#ffffff';
 
     return () => {
       document.body.style.backgroundColor = originalBg;
@@ -33,6 +33,13 @@ function LandingPage() {
   // 시작하기 클릭 - UTM 파라미터 유지 + 상품 타입 추가
   const handleStartClick = (productId) => {
     const params = new URLSearchParams(location.search);
+
+    // Blueprint 상품은 소개 페이지로 이동
+    if (productId === 'blueprint') {
+      navigate(`/blueprint?${params.toString()}`);
+      return;
+    }
+
     params.set('product', productId);
     navigate(`/user-info?${params.toString()}`);
   };
@@ -41,13 +48,15 @@ function LandingPage() {
     {
       id: 'blueprint',
       title: 'The Blueprint',
+      subtitleSmall: '인생 청사진',
       subtitle: '당신만을 위한 인생 최적화 가이드',
       description: '평생 대운과 5개년도의 전략 리포트로 인생의 방향과 중요한 전환점을 제시합니다.',
       icon: Map,
+      image: '/img/theblueprint2.png',
       price: '99,000',
       originalPrice: '150,000',
       badge: 'PREMIUM',
-      gradient: 'from-blue-500 to-indigo-700',
+      gradient: 'from-dark to-gold',
       features: ['평생 대운 흐름 분석', '5개년 전략 로드맵', '월별 상세 운세', '커리어/재물/연애운', '맞춤 개운법 가이드']
     }
   ];
@@ -58,10 +67,7 @@ function LandingPage() {
         {/* Header */}
         <header className="landing-header">
           <div className="logo-container">
-            <div className="logo-icon">
-              <Sparkles size={24} />
-            </div>
-            <h1 className="logo-text">FORTUNE TORCH</h1>
+            <h1 className="logo-text">포춘톨치</h1>
           </div>
           <p className="header-tagline">당신의 운명을 밝히는 빛</p>
         </header>
@@ -91,11 +97,6 @@ function LandingPage() {
 
         {/* Report Cards */}
         <section className="reports-section">
-          <h3 className="section-title">
-            <span className="title-icon">📜</span>
-            프리미엄 리포트
-          </h3>
-
           <div className="reports-grid">
             {reports.map((report, index) => (
               <div
@@ -103,19 +104,21 @@ function LandingPage() {
                 className="report-card"
                 style={{ animationDelay: `${index * 0.15}s` }}
               >
-                {/* Card Header */}
-                <div className={`card-header bg-gradient-to-r ${report.gradient}`}>
-                  <div className="card-badge">{report.badge}</div>
-                  <div className="card-icon-wrapper">
-                    <report.icon size={32} />
+                {/* Full Image Card */}
+                {report.image && (
+                  <div className="card-image-bg" style={{ backgroundImage: `url(${report.image})` }}>
+                    <div className="card-image-overlay"></div>
                   </div>
-                  <h4 className="card-title">{report.title}</h4>
-                  <p className="card-subtitle">{report.subtitle}</p>
-                </div>
+                )}
 
-                {/* Card Body */}
-                <div className="card-body">
-                  <p className="card-description">{report.description}</p>
+                <div className="card-content">
+                  <div className="card-badge">{report.badge}</div>
+                  <div className="card-text">
+                    <h4 className="card-title">{report.title}</h4>
+                    {report.subtitleSmall && <p className="card-subtitle-small">{report.subtitleSmall}</p>}
+                    <p className="card-subtitle">{report.subtitle}</p>
+                    <p className="card-description">{report.description}</p>
+                  </div>
 
                   <ul className="feature-list">
                     {report.features.map((feature, idx) => (
@@ -126,15 +129,17 @@ function LandingPage() {
                     ))}
                   </ul>
 
-                  <div className="price-section">
-                    <span className="original-price">{report.originalPrice}원</span>
-                    <span className="current-price">{report.price}원</span>
-                  </div>
+                  <div className="card-bottom">
+                    <div className="price-section">
+                      <span className="original-price">{report.originalPrice}원</span>
+                      <span className="current-price">{report.price}원</span>
+                    </div>
 
-                  <button className="order-button" onClick={() => handleStartClick(report.id)}>
-                    <span>시작하기</span>
-                    <ArrowRight size={18} />
-                  </button>
+                    <button className="order-button" onClick={() => handleStartClick(report.id)}>
+                      <span>시작하기</span>
+                      <ArrowRight size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Shine Effect */}
@@ -152,8 +157,8 @@ function LandingPage() {
             <p>카카오페이, 신용카드 지원</p>
           </div>
           <div className="feature-box">
-            <div className="feature-icon">⚡</div>
-            <h4>즉시 발송</h4>
+            <div className="feature-icon">🔮</div>
+            <h4>전문가의 분석</h4>
             <p>결제 후 5분 내 카카오톡 전송</p>
           </div>
           <div className="feature-box">
