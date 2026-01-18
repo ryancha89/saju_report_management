@@ -117,6 +117,7 @@ function BlueprintIntroPage() {
           <h1 className="hero-title">The Blueprint</h1>
           <p className="hero-subtitle-small">인생 청사진</p>
           <p className="hero-subtitle">당신의 인생을 설계합니다</p>
+          <p className="hero-tagline">이때까지 없었던 당신만을 위한 특별한 레포트</p>
         </div>
       </section>
 
@@ -146,7 +147,11 @@ function BlueprintIntroPage() {
 
           {/* Difference Section */}
           <div className="difference-section">
-            <div className="difference-badge">일반 사주 서비스와 다릅니다</div>
+            <div className="difference-badge">일반 사주 서비스와 다른 특별함을 드립니다</div>
+            <p className="difference-desc">
+              단순한 수박 겉핥기식 지식이 아닌, 철저한 명리학적 논리를 바탕으로<br />
+              성공, 건강, 행복의 흐름을 깊이 있게 분석합니다.
+            </p>
             <div className="difference-content">
               <div className="difference-item wrong">
                 <span className="difference-icon">✕</span>
@@ -215,7 +220,7 @@ function BlueprintIntroPage() {
                 <div className="process-content">
                   <h4>사주 검증 & 리포트 제작</h4>
                   <p>결제 확인 후 전문 상담사가 직접 사주를 검증하고 맞춤 리포트를 제작합니다.</p>
-                  <span className="process-badge">보통 몇 시간 ~ 1일 (최대 3일)</span>
+                  <span className="process-badge">보통 몇 시간 ~ 1일 (최대 3일) 소요</span>
                 </div>
               </div>
               <div className="process-item">
