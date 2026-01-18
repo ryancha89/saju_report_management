@@ -149,7 +149,7 @@ function BlueprintIntroPage() {
           <div className="difference-section">
             <div className="difference-badge">일반 사주 서비스와 다른 특별함을 드립니다</div>
             <p className="difference-desc">
-              단순한 수박 겉핥기식 지식이 아닌, 철저한 명리학적 논리를 바탕으로<br />
+              단순한 수박 겉핥기식 해석이 아닌, 철저한 명리학적 논리를 바탕으로<br />
               성공, 건강, 행복의 흐름을 깊이 있게 분석합니다.
             </p>
             <div className="difference-content">
