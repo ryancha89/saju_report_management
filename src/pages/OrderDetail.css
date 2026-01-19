@@ -7978,36 +7978,6 @@
   color: #475569;
 }
 
-/* 생활영역 미니 점수 */
-.ej-life-areas {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px dashed #cbd5e1;
-}
-
-.life-area-mini {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 6px;
-  background: #fff;
-  min-width: 28px;
-}
-
-.life-area-mini .area-icon {
-  font-size: 0.75rem;
-}
-
-.life-area-mini .area-score {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #475569;
-}
-
 /* 억부/조후 범례 */
 .eokbu-johu-legend {
   display: flex;
@@ -8138,9 +8108,527 @@
   .ej-johu .ej-value {
     font-size: 0.7rem;
   }
+}
 
-  .life-area-mini {
-    min-width: 24px;
-    padding: 3px;
+/* 대운 해석 편집 섹션 스타일 (통합) */
+.decade-interpretations-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.decade-keywords-section {
+  padding: 8px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.decade-keywords-section .keyword-badge {
+  font-size: 0.75rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.decade-interpretations-section h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.decade-interpretations-section .section-description {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 16px 0;
+}
+
+.interpretations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.interpretation-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.interpretation-card.current {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+}
+
+.interpretation-card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.interpretation-card-header .overall-rating-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+.interpretation-card-header .overall-rating-badge.rating-excellent {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+}
+
+.interpretation-card-header .overall-rating-badge.rating-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.interpretation-card-header .overall-rating-badge.rating-neutral {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.interpretation-card-header .overall-rating-badge.rating-bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.interpretation-card-header .overall-rating-badge.rating-caution {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.interpretation-card-header .card-ganji {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.interpretation-card-header .card-age {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.interpretation-card-header .card-current-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.interpretation-card-header .card-custom-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.interpretation-areas {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.interpretation-area {
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.interpretation-area.custom {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.area-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.area-header .area-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.area-header .btn-edit-area {
+  margin-left: auto;
+}
+
+.area-header .custom-indicator {
+  font-size: 0.7rem;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-edit-area {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #6366f1;
+  background: #eef2ff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit-area:hover {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.area-content p {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.area-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.area-edit-form textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.area-edit-form textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.edit-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-actions .btn-save-primary {
+  color: #fff;
+  background: #3b82f6;
+}
+
+.edit-actions .btn-save-primary:hover {
+  background: #2563eb;
+}
+
+.edit-actions .btn-ai-rewrite {
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+}
+
+.edit-actions .btn-ai-rewrite:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+}
+
+.edit-actions .btn-ai-rewrite:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-actions .btn-save-final {
+  color: #fff;
+  background: #16a34a;
+}
+
+.edit-actions .btn-save-final:hover {
+  background: #15803d;
+}
+
+.edit-actions .btn-cancel {
+  color: #6b7280;
+  background: #e5e7eb;
+}
+
+.edit-actions .btn-cancel:hover {
+  background: #d1d5db;
+}
+
+.edit-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.edit-actions .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 천간/지지 분석 블록 (격국 내) */
+.sky-earth-blocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sky-earth-blocks .analysis-block {
+  padding: 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+.sky-earth-blocks .analysis-block.sky {
+  border-left: 3px solid #3b82f6;
+}
+
+.sky-earth-blocks .analysis-block.earth {
+  border-left: 3px solid #8b5cf6;
+}
+
+.sky-earth-blocks .analysis-block.rating-good {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.sky-earth-blocks .analysis-block.rating-bad {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.sky-earth-blocks .analysis-block-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.sky-earth-blocks .block-char {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.sky-earth-blocks .block-title {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.sky-earth-blocks .single-rating-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.sky-earth-blocks .single-rating-badge.rating-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sky-earth-blocks .single-rating-badge.rating-bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.sky-earth-blocks .single-rating-badge.rating-mixed-good,
+.sky-earth-blocks .single-rating-badge.rating-mixed-bad {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sky-earth-blocks .block-analysis {
+  font-size: 0.8rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 억부/조후 미니 배지 */
+.strength-mini-badge,
+.temp-mini-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+.strength-mini-badge.balanced {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.strength-mini-badge.strong {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.strength-mini-badge.weak {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.temp-mini-badge.optimal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.temp-mini-badge.hot {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.temp-mini-badge.cold {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* 커스텀 해석 표시 */
+.area-content.custom-interpretation {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  border-left: 3px solid #22c55e;
+}
+
+/* 영역별 조언 요약 */
+.life-areas-summary {
+  padding: 12px;
+  background: #fffbeb;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
+}
+
+.life-areas-summary .life-area-item {
+  font-size: 0.8rem;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.life-areas-summary .life-area-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 조언/주의 요약 */
+.advice-caution-summary {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.advice-caution-summary .advice-item,
+.advice-caution-summary .caution-item {
+  font-size: 0.8rem;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.advice-caution-summary .advice-item:last-child,
+.advice-caution-summary .caution-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 조후 특별히 좋음 표시 */
+.interpretation-area.especially-good {
+  border: 2px solid #f59e0b;
+  background: linear-gradient(to bottom, #fffbeb, #fef3c7);
+}
+
+.especially-good-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 6px;
+  animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+}
+
+.especially-good-reason {
+  color: #b45309;
+  font-weight: 600;
+  background: #fef3c7;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 3px solid #f59e0b;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .decade-interpretations-section {
+    padding: 12px;
+  }
+
+  .interpretation-card-header {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  .sky-earth-blocks {
+    grid-template-columns: 1fr;
+  }
+
+  .interpretation-areas {
+    padding: 12px;
+  }
+
+  .edit-actions {
+    flex-direction: column;
+  }
+
+  .edit-actions .btn {
+    justify-content: center;
   }
 }

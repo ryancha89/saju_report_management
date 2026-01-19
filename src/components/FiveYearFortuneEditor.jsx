@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { RefreshCw, ChevronDown, ChevronRight, Sparkles, TrendingUp } from 'lucide-react';
+import { RefreshCw, ChevronDown, ChevronRight, Sparkles, TrendingUp, Edit3, Save, Wand2, CheckCircle, X, Loader } from 'lucide-react';
 import './FiveYearFortuneEditor.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -23,6 +23,71 @@ const FORTUNE_LEVELS = [
   { value: 'caution', label: '주의필요', color: '#f97316' },
   { value: 'difficult', label: '어려움', color: '#ef4444' },
 ];
+
+// 개별 성패 판정 (천간/지지 각각) - 대운흐름과 동일
+const getSingleRating = (result, score, degree) => {
+  // 0. Degree가 있으면 최우선
+  if (degree) {
+    const deg = degree.toLowerCase();
+    if (deg === 'excellent' || deg === '대길') return { class: 'excellent', text: '◎ 대길', icon: '◎' };
+    if (deg === 'good' || deg === '길') return { class: 'good', text: '○ 길', icon: '○' };
+    if (deg === 'neutral' || deg === '보통') return { class: 'neutral', text: '△ 보통', icon: '△' };
+    if (deg === 'caution' || deg === '주의') return { class: 'caution', text: '▽ 주의', icon: '▽' };
+    if (deg === 'difficult' || deg === '흉') return { class: 'bad', text: '✕ 흉', icon: '✕' };
+  }
+
+  // 1. result 문자열로 판정
+  if (result) {
+    if (result === '成' || result === '성') return { class: 'good', text: '○ 길', icon: '○' };
+    if (result.includes('敗中有成') || result.includes('패중유성')) return { class: 'good', text: '○ 길', icon: '○' };
+    if (result === '敗' || result === '패') return { class: 'bad', text: '✕ 흉', icon: '✕' };
+    if (result.includes('成中有敗') || result.includes('성중유패')) return { class: 'bad', text: '✕ 흉', icon: '✕' };
+    if (result.includes('成敗共存') || result.includes('성패공존')) return { class: 'neutral', text: '△ 보통', icon: '△' };
+  }
+
+  // 2. score로 판정 (결과 없을 때)
+  if (typeof score === 'number') {
+    if (score >= 70) return { class: 'good', text: '○ 길', icon: '○' };
+    if (score >= 40) return { class: 'neutral', text: '△ 보통', icon: '△' };
+    return { class: 'bad', text: '✕ 흉', icon: '✕' };
+  }
+
+  return { class: 'neutral', text: '― 미정', icon: '―' };
+};
+
+// 종합 운세 판정
+const getOverallRating = (yearData) => {
+  // sky_result 또는 sky_outcome.result 형식 모두 지원
+  const skyResult = yearData.sky_result || yearData.sky_outcome?.result;
+  const skyScore = yearData.sky_score || yearData.sky_outcome?.score;
+  const earthResult = yearData.earth_result || yearData.earth_outcome?.result;
+  const earthScore = yearData.earth_score || yearData.earth_outcome?.score;
+
+  const skyRating = getSingleRating(skyResult, skyScore);
+  const earthRating = getSingleRating(earthResult, earthScore);
+
+  // 둘 다 길이면 대길
+  if (skyRating.class === 'good' && earthRating.class === 'good') return 'excellent';
+  // 하나라도 길이고 나머지가 보통이면 길
+  if ((skyRating.class === 'good' || earthRating.class === 'good') &&
+      (skyRating.class !== 'bad' && earthRating.class !== 'bad')) return 'good';
+  // 둘 다 흉이면 흉
+  if (skyRating.class === 'bad' && earthRating.class === 'bad') return 'difficult';
+  // 하나라도 흉이면 주의
+  if (skyRating.class === 'bad' || earthRating.class === 'bad') return 'caution';
+  return 'neutral';
+};
+
+const getOverallRatingText = (rating) => {
+  switch (rating) {
+    case 'excellent': return '◎ 대길';
+    case 'good': return '○ 길';
+    case 'neutral': return '△ 보통';
+    case 'caution': return '▽ 주의';
+    case 'difficult': return '✕ 흉';
+    default: return '― 미정';
+  }
+};
 
 // 연도 인덱스를 한글 라벨로 변환
 const getYearLabel = (index) => {
@@ -170,6 +235,73 @@ const findDecadeForAge = (decadeArray, startAge, age) => {
   };
 };
 
+// 해석 영역별 편집 컴포넌트
+function AreaInterpretationEditor({
+  area,
+  areaLabel,
+  interpretation,
+  defaultText,  // 분석 데이터에서 가져온 기본 텍스트
+  onSavePrimary,
+  onSaveFinal,
+  onAiRewrite,
+  onCancel,
+  isSaving,
+  isAiGenerating
+}) {
+  // 저장된 해석이 있으면 사용, 없으면 defaultText 사용
+  const initialText = interpretation?.primary_interpretation || defaultText || '';
+  const [text, setText] = useState(initialText);
+
+  useEffect(() => {
+    setText(interpretation?.primary_interpretation || defaultText || '');
+  }, [interpretation, defaultText]);
+
+  return (
+    <div className="area-edit-form yearly-interpretation-edit">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={`${areaLabel} 해석을 입력하세요...`}
+        rows={4}
+      />
+      <div className="edit-actions">
+        <button
+          className="btn btn-save-primary"
+          onClick={() => onSavePrimary(text)}
+          disabled={isSaving || isAiGenerating}
+        >
+          {isSaving ? <Loader size={12} className="spinning" /> : <Save size={12} />}
+          1차해석 저장
+        </button>
+        <button
+          className="btn btn-ai-rewrite"
+          onClick={() => onAiRewrite(text)}
+          disabled={isSaving || isAiGenerating || !text.trim()}
+        >
+          {isAiGenerating ? <Loader size={12} className="spinning" /> : <Wand2 size={12} />}
+          AI 재작성
+        </button>
+        <button
+          className="btn btn-save-final"
+          onClick={() => onSaveFinal(text)}
+          disabled={isSaving || isAiGenerating}
+        >
+          <CheckCircle size={12} />
+          최종해석 저장
+        </button>
+        <button
+          className="btn btn-cancel"
+          onClick={onCancel}
+          disabled={isSaving || isAiGenerating}
+        >
+          <X size={12} />
+          취소
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 단일 연도 5년운세 컴포넌트
 function YearFiveYearFortuneEditor({
   yearData,
@@ -177,7 +309,10 @@ function YearFiveYearFortuneEditor({
   onUpdate,
   onRegenerate,
   isRegenerating,
-  userName
+  userName,
+  orderId,
+  interpretations,
+  onInterpretationChange
 }) {
   const [isExpanded, setIsExpanded] = useState(yearIndex === 0);
   const [localEdit, setLocalEdit] = useState(yearData.manager_edit || {
@@ -187,6 +322,11 @@ function YearFiveYearFortuneEditor({
     memo: ''
   });
 
+  // 편집 모드 상태 (영역별)
+  const [editingArea, setEditingArea] = useState(null); // 'gyeokguk_sky' | 'gyeokguk_earth' | 'eokbu' | 'johu' | null
+  const [savingArea, setSavingArea] = useState(null);
+  const [aiGeneratingArea, setAiGeneratingArea] = useState(null);
+
   useEffect(() => {
     setLocalEdit(yearData.manager_edit || {
       fortune_level: 'normal',
@@ -195,6 +335,258 @@ function YearFiveYearFortuneEditor({
       memo: ''
     });
   }, [yearData]);
+
+  // 해석 저장 (1차 해석)
+  const handleSavePrimary = async (area, text) => {
+    setSavingArea(area);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/update_yearly_interpretation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          year: yearData.year,
+          year_index: yearIndex,
+          ganji: yearData.ganji,
+          analysis_area: area,
+          primary_interpretation: text,
+          use_ai_for_final: true
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        onInterpretationChange(yearData.year, area, data.interpretation);
+        setEditingArea(null);
+      } else {
+        alert('저장 실패: ' + (data.error || '알 수 없는 오류'));
+      }
+    } catch (err) {
+      console.error('Save primary interpretation error:', err);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setSavingArea(null);
+    }
+  };
+
+  // 해석 저장 (최종 해석)
+  const handleSaveFinal = async (area, text) => {
+    setSavingArea(area);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/update_yearly_interpretation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          year: yearData.year,
+          year_index: yearIndex,
+          ganji: yearData.ganji,
+          analysis_area: area,
+          final_interpretation: text,
+          use_ai_for_final: false
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        onInterpretationChange(yearData.year, area, data.interpretation);
+        setEditingArea(null);
+      } else {
+        alert('저장 실패: ' + (data.error || '알 수 없는 오류'));
+      }
+    } catch (err) {
+      console.error('Save final interpretation error:', err);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setSavingArea(null);
+    }
+  };
+
+  // AI 재작성
+  const handleAiRewrite = async (area, primaryText) => {
+    console.log('=== AI 재작성 시작 ===');
+    console.log('area:', area);
+    console.log('primaryText:', primaryText);
+    console.log('orderId:', orderId);
+    console.log('yearData:', yearData);
+
+    setAiGeneratingArea(area);
+    try {
+      // 분석 데이터 컨텍스트 구성
+      const analysisContext = {
+        sky_outcome: yearData.sky_outcome || {},
+        earth_outcome: yearData.earth_outcome || {},
+        strength: yearData.strength || {},
+        temperature: yearData.temperature || {},
+        johu: yearData.johu || {},
+        life_areas: yearData.life_areas || {},
+        combined_score: yearData.combined_score,
+        relations: yearData.relations || []
+      };
+      console.log('analysisContext:', analysisContext);
+
+      // 먼저 1차 해석 저장
+      console.log('1차 해석 저장 API 호출...');
+      const firstResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/update_yearly_interpretation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          year: yearData.year,
+          year_index: yearIndex,
+          ganji: yearData.ganji,
+          analysis_area: area,
+          primary_interpretation: primaryText,
+          use_ai_for_final: true
+        })
+      });
+
+      if (!firstResponse.ok) {
+        const firstData = await firstResponse.json();
+        console.error('1차 해석 저장 실패:', firstData);
+        throw new Error('1차 해석 저장 실패: ' + (firstData.error || firstResponse.statusText));
+      }
+      console.log('1차 해석 저장 성공');
+
+      // AI 재작성 요청 (분석 컨텍스트 포함)
+      console.log('AI 재작성 API 호출...');
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_yearly_interpretation_ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          year: yearData.year,
+          year_index: yearIndex,
+          ganji: yearData.ganji,
+          analysis_area: area,
+          primary_interpretation: primaryText,
+          analysis_context: analysisContext
+        })
+      });
+      const data = await response.json();
+      console.log('AI 재작성 응답:', data);
+
+      if (response.ok) {
+        console.log('AI 재작성 성공, interpretation:', data.interpretation);
+        onInterpretationChange(yearData.year, area, data.interpretation);
+        setEditingArea(null);
+      } else {
+        console.error('AI 재작성 실패:', data);
+        alert('AI 재작성 실패: ' + (data.error || '알 수 없는 오류'));
+      }
+    } catch (err) {
+      console.error('AI rewrite error:', err);
+      alert('AI 재작성 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setAiGeneratingArea(null);
+    }
+  };
+
+  // 전체 AI 재작성 (4개 영역 모두)
+  const handleAiRewriteAll = async () => {
+    const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu'];
+    const areaLabels = {
+      'gyeokguk_sky': '천간 격국',
+      'gyeokguk_earth': '지지 격국',
+      'eokbu': '억부',
+      'johu': '조후'
+    };
+
+    // 각 영역의 기본 텍스트 가져오기
+    const getDefaultText = (area) => {
+      switch (area) {
+        case 'gyeokguk_sky':
+          return safeRenderReason(yearData.sky_outcome?.reason) || `${yearData.ganji} 천간 격국 분석`;
+        case 'gyeokguk_earth':
+          return safeRenderReason(yearData.earth_outcome?.reason) || `${yearData.ganji} 지지 격국 분석`;
+        case 'eokbu':
+          return strengthData.description || strengthData.analysis || `${yearData.ganji} 억부 분석`;
+        case 'johu':
+          return temperatureData.description || temperatureData.analysis || `${yearData.ganji} 조후 분석`;
+        default:
+          return '';
+      }
+    };
+
+    setAiGeneratingArea('all');
+    console.log('=== 전체 AI 재작성 시작 ===');
+
+    try {
+      const analysisContext = {
+        sky_outcome: yearData.sky_outcome || {},
+        earth_outcome: yearData.earth_outcome || {},
+        strength: yearData.strength || {},
+        temperature: yearData.temperature || {},
+        johu: yearData.johu || {},
+        life_areas: yearData.life_areas || {},
+        combined_score: yearData.combined_score,
+        relations: yearData.relations || []
+      };
+
+      for (const area of areas) {
+        console.log(`${areaLabels[area]} AI 생성 중...`);
+        const primaryText = getDefaultText(area);
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_yearly_interpretation_ai`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              year: yearData.year,
+              year_index: yearIndex,
+              ganji: yearData.ganji,
+              analysis_area: area,
+              primary_interpretation: primaryText,
+              analysis_context: analysisContext
+            })
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            console.log(`${areaLabels[area]} AI 생성 완료`);
+            onInterpretationChange(yearData.year, area, data.interpretation);
+          } else {
+            console.error(`${areaLabels[area]} AI 생성 실패:`, data.error);
+          }
+        } catch (err) {
+          console.error(`${areaLabels[area]} AI 생성 오류:`, err);
+        }
+      }
+
+      console.log('=== 전체 AI 재작성 완료 ===');
+      alert('4개 영역 AI 재작성이 완료되었습니다.');
+    } catch (err) {
+      console.error('전체 AI 재작성 오류:', err);
+      alert('전체 AI 재작성 중 오류가 발생했습니다.');
+    } finally {
+      setAiGeneratingArea(null);
+    }
+  };
+
+  // 해당 연도/영역의 해석 가져오기
+  const getInterpretation = (area) => {
+    return interpretations?.[yearData.year]?.[area];
+  };
+
+  // 효과적인 해석 텍스트 가져오기
+  const getEffectiveInterpretation = (area) => {
+    const interp = getInterpretation(area);
+    console.log(`getEffectiveInterpretation(${area}):`, interp);
+    if (!interp) return null;
+    // use_ai_for_final이 true이면 final_interpretation을 우선 사용
+    const result = interp.final_interpretation || interp.primary_interpretation;
+    console.log(`getEffectiveInterpretation result:`, result);
+    return result;
+  };
 
   const handleLocalChange = (field, value) => {
     const newEdit = { ...localEdit, [field]: value };
@@ -243,21 +635,34 @@ function YearFiveYearFortuneEditor({
     return parts.length > 0 ? parts.join(' → ') : '-';
   };
 
+  // 종합 운세 등급 계산
+  const overallRating = getOverallRating(yearData);
+  const overallRatingText = getOverallRatingText(overallRating);
+
+  // 억부/조후 데이터 (새 API 형식 또는 기존 형식 모두 지원)
+  const strengthData = yearData.strength || {};
+  const temperatureData = yearData.temperature || yearData.year_temperature || {};
+  const isEspeciallyGood = temperatureData.is_especially_good;
+
+  // 격국 결과 추출 (새 API 형식)
+  const skyResult = yearData.sky_result || yearData.sky_outcome?.result;
+  const skyScore = yearData.sky_score || yearData.sky_outcome?.score;
+  const earthResult = yearData.earth_result || yearData.earth_outcome?.result;
+  const earthScore = yearData.earth_score || yearData.earth_outcome?.score;
+
   return (
-    <div className="year-five-year-editor">
+    <div className={`year-five-year-editor interpretation-card ${yearIndex === 0 ? 'current' : ''}`}>
       <div
-        className="year-five-year-header"
+        className="year-five-year-header interpretation-card-header"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="year-five-year-title">
-          <span className="year-index-label">{getYearLabel(yearIndex)}</span>
+          <span className="card-ganji">{yearData.ganji}</span>
           <span className="year-label">{yearData.year}년</span>
-          <span className="ganji-label">({yearData.ganji})</span>
-          <span
-            className="fortune-level-badge five-year-badge"
-            style={{ backgroundColor: getLevelColor(localEdit.fortune_level) }}
-          >
-            <TrendingUp size={12} /> {FORTUNE_LEVELS.find(l => l.value === localEdit.fortune_level)?.label || '보통'}
+          {yearData.age_at_year && <span className="card-age">{yearData.age_at_year}세</span>}
+          {yearIndex === 0 && <span className="card-current-badge">올해</span>}
+          <span className={`overall-rating-badge rating-${overallRating}`}>
+            {overallRatingText}
           </span>
         </div>
         <div className="year-five-year-toggle">
@@ -266,180 +671,387 @@ function YearFiveYearFortuneEditor({
       </div>
 
       {isExpanded && (
-        <div className="year-five-year-body">
-          {/* 대운 정보 */}
-          {yearData.decade && (
-            <div className="five-year-decade-info">
-              <div className="decade-row">
-                <span className="decade-badge">대운</span>
-                <span className="decade-ganji-value">{yearData.decade.ganji}</span>
-                <span className="decade-age-range">({yearData.decade.start_age}~{yearData.decade.end_age}세)</span>
-                {yearData.age_at_year && <span className="current-age">{yearData.age_at_year}세</span>}
+        <div className="year-five-year-body interpretation-areas">
+          {/* 대운 정보 및 전체 AI 재작성 버튼 */}
+          <div className="five-year-top-actions">
+            {yearData.decade && (
+              <div className="five-year-decade-info">
+                <div className="decade-row">
+                  <span className="decade-badge">대운</span>
+                  <span className="decade-ganji-value">{yearData.decade.ganji}</span>
+                  <span className="decade-age-range">({yearData.decade.start_age}~{yearData.decade.end_age}세)</span>
+                </div>
               </div>
+            )}
+            <button
+              className="btn btn-ai-rewrite-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAiRewriteAll();
+              }}
+              disabled={aiGeneratingArea === 'all'}
+              title="천간/지지/억부/조후 4개 영역 모두 AI로 재작성"
+            >
+              {aiGeneratingArea === 'all' ? (
+                <>
+                  <Loader size={14} className="spinning" />
+                  AI 생성 중...
+                </>
+              ) : (
+                <>
+                  <Wand2 size={14} />
+                  전체 AI 재작성
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* 격국 - 천간 */}
+          <div className="interpretation-area gyeokguk-sky-area">
+            <div className="area-header">
+              <span className="area-label">
+                <span className="block-char">{yearData.ganji?.charAt(0)}</span> 천간 격국
+              </span>
+              <span className={`single-rating-badge ${getSingleRating(skyResult, skyScore).class}`}>
+                {getSingleRating(skyResult, skyScore).text}
+              </span>
+              {editingArea !== 'gyeokguk_sky' && (
+                <div className="area-action-buttons">
+                  <button
+                    className="btn btn-ai-area"
+                    onClick={() => handleAiRewrite('gyeokguk_sky', safeRenderReason(yearData.sky_outcome?.reason) || `${yearData.ganji} 천간 격국 분석`)}
+                    disabled={aiGeneratingArea !== null}
+                    title="AI로 재작성"
+                  >
+                    {aiGeneratingArea === 'gyeokguk_sky' ? <Loader size={12} className="spinning" /> : <Wand2 size={12} />}
+                  </button>
+                  <button
+                    className="btn btn-edit-area"
+                    onClick={() => setEditingArea('gyeokguk_sky')}
+                    title="해석 수정"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="area-content">
+              {yearData.sky_outcome ? (
+                <>
+                  <div className="analysis-detail-row">
+                    <span className="detail-label">십성:</span>
+                    <span className="detail-value">{renderSipsung(yearData.sky_outcome)}</span>
+                    {yearData.sky_outcome.code && (
+                      <span className="detail-code">{yearData.sky_outcome.code}</span>
+                    )}
+                  </div>
+                  {safeRenderReason(yearData.sky_outcome.reason) && (
+                    <p className="analysis-reason-text">{safeRenderReason(yearData.sky_outcome.reason)}</p>
+                  )}
+                </>
+              ) : (
+                <p>천간 성패 분석 결과 없음</p>
+              )}
+              {/* 저장된 해석 표시 */}
+              {getEffectiveInterpretation('gyeokguk_sky') && (
+                <div className="saved-interpretation">
+                  <p className="interpretation-text">{getEffectiveInterpretation('gyeokguk_sky')}</p>
+                </div>
+              )}
+              {/* 편집 모드 */}
+              {editingArea === 'gyeokguk_sky' && (
+                <AreaInterpretationEditor
+                  area="gyeokguk_sky"
+                  areaLabel="천간 격국"
+                  interpretation={getInterpretation('gyeokguk_sky')}
+                  defaultText={safeRenderReason(yearData.sky_outcome?.reason)}
+                  onSavePrimary={(text) => handleSavePrimary('gyeokguk_sky', text)}
+                  onSaveFinal={(text) => handleSaveFinal('gyeokguk_sky', text)}
+                  onAiRewrite={(text) => handleAiRewrite('gyeokguk_sky', text)}
+                  onCancel={() => setEditingArea(null)}
+                  isSaving={savingArea === 'gyeokguk_sky'}
+                  isAiGenerating={aiGeneratingArea === 'gyeokguk_sky'}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 격국 - 지지 */}
+          <div className="interpretation-area gyeokguk-earth-area">
+            <div className="area-header">
+              <span className="area-label">
+                <span className="block-char">{yearData.ganji?.charAt(1)}</span> 지지 격국
+              </span>
+              <span className={`single-rating-badge ${getSingleRating(earthResult, earthScore).class}`}>
+                {getSingleRating(earthResult, earthScore).text}
+              </span>
+              {editingArea !== 'gyeokguk_earth' && (
+                <div className="area-action-buttons">
+                  <button
+                    className="btn btn-ai-area"
+                    onClick={() => handleAiRewrite('gyeokguk_earth', safeRenderReason(yearData.earth_outcome?.reason) || `${yearData.ganji} 지지 격국 분석`)}
+                    disabled={aiGeneratingArea !== null}
+                    title="AI로 재작성"
+                  >
+                    {aiGeneratingArea === 'gyeokguk_earth' ? <Loader size={12} className="spinning" /> : <Wand2 size={12} />}
+                  </button>
+                  <button
+                    className="btn btn-edit-area"
+                    onClick={() => setEditingArea('gyeokguk_earth')}
+                    title="해석 수정"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="area-content">
+              {yearData.earth_outcome ? (
+                <>
+                  <div className="analysis-detail-row">
+                    <span className="detail-label">십성:</span>
+                    <span className="detail-value">{renderSipsung(yearData.earth_outcome)}</span>
+                    {yearData.earth_outcome.code && (
+                      <span className="detail-code">{yearData.earth_outcome.code}</span>
+                    )}
+                  </div>
+                  {/* 삼합 정보 */}
+                  {yearData.samhap && (
+                    <div className="samhap-info">
+                      <span className="samhap-badge">{yearData.samhap.type}</span>
+                      <span className="samhap-name">{yearData.samhap.name}</span>
+                    </div>
+                  )}
+                  {safeRenderReason(yearData.earth_outcome.reason) && (
+                    <p className="analysis-reason-text">{safeRenderReason(yearData.earth_outcome.reason)}</p>
+                  )}
+                </>
+              ) : (
+                <p>지지 성패 분석 결과 없음</p>
+              )}
+              {/* 저장된 해석 표시 */}
+              {getEffectiveInterpretation('gyeokguk_earth') && (
+                <div className="saved-interpretation">
+                  <p className="interpretation-text">{getEffectiveInterpretation('gyeokguk_earth')}</p>
+                </div>
+              )}
+              {/* 편집 모드 */}
+              {editingArea === 'gyeokguk_earth' && (
+                <AreaInterpretationEditor
+                  area="gyeokguk_earth"
+                  areaLabel="지지 격국"
+                  interpretation={getInterpretation('gyeokguk_earth')}
+                  defaultText={safeRenderReason(yearData.earth_outcome?.reason)}
+                  onSavePrimary={(text) => handleSavePrimary('gyeokguk_earth', text)}
+                  onSaveFinal={(text) => handleSaveFinal('gyeokguk_earth', text)}
+                  onAiRewrite={(text) => handleAiRewrite('gyeokguk_earth', text)}
+                  onCancel={() => setEditingArea(null)}
+                  isSaving={savingArea === 'gyeokguk_earth'}
+                  isAiGenerating={aiGeneratingArea === 'gyeokguk_earth'}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 억부 */}
+          <div className="interpretation-area eokbu-area">
+            <div className="area-header">
+              <span className="area-label">억부 (신강/신약)</span>
+              {(strengthData.level || strengthData.decade_level) && (
+                <span className={`strength-mini-badge ${
+                  // 한글 라벨 처리: 중화=balanced, 신강/극신강=strong, 신약/극신약=weak
+                  ['중화', 'balanced'].includes(strengthData.level || strengthData.decade_level) ? 'balanced' :
+                  (strengthData.level || strengthData.decade_level)?.includes('신강') ||
+                  (strengthData.level || strengthData.decade_level)?.includes('strong') ? 'strong' : 'weak'
+                }`}>
+                  {strengthData.level_name || strengthData.decade_level || strengthData.level}
+                </span>
+              )}
+              {editingArea !== 'eokbu' && (
+                <div className="area-action-buttons">
+                  <button
+                    className="btn btn-ai-area"
+                    onClick={() => handleAiRewrite('eokbu', strengthData.description || strengthData.analysis || `${yearData.ganji} 억부 분석`)}
+                    disabled={aiGeneratingArea !== null}
+                    title="AI로 재작성"
+                  >
+                    {aiGeneratingArea === 'eokbu' ? <Loader size={12} className="spinning" /> : <Wand2 size={12} />}
+                  </button>
+                  <button
+                    className="btn btn-edit-area"
+                    onClick={() => setEditingArea('eokbu')}
+                    title="해석 수정"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="area-content">
+              {strengthData.base_level && strengthData.decade_level && (
+                <div className="strength-flow">
+                  <span className="base-value">{strengthData.base_level}</span>
+                  <span className="flow-arrow">→</span>
+                  <span className="decade-value">{strengthData.decade_level}</span>
+                  {strengthData.trend && (
+                    <span className={`trend-badge ${strengthData.trend}`}>
+                      {strengthData.trend === 'improving' ? '(중화 방향 개선)' :
+                       strengthData.trend === 'worsening' ? '(중화에서 멀어짐)' : '(유지)'}
+                    </span>
+                  )}
+                </div>
+              )}
+              {(strengthData.description || strengthData.analysis) && (
+                <p>{strengthData.description || strengthData.analysis}</p>
+              )}
+              {!strengthData.level && !strengthData.decade_level && !strengthData.description && !strengthData.analysis && (
+                <p>억부 분석 결과 없음</p>
+              )}
+              {/* 저장된 해석 표시 */}
+              {getEffectiveInterpretation('eokbu') && (
+                <div className="saved-interpretation">
+                  <p className="interpretation-text">{getEffectiveInterpretation('eokbu')}</p>
+                </div>
+              )}
+              {/* 편집 모드 */}
+              {editingArea === 'eokbu' && (
+                <AreaInterpretationEditor
+                  area="eokbu"
+                  areaLabel="억부"
+                  interpretation={getInterpretation('eokbu')}
+                  defaultText={strengthData.analysis || strengthData.description || ''}
+                  onSavePrimary={(text) => handleSavePrimary('eokbu', text)}
+                  onSaveFinal={(text) => handleSaveFinal('eokbu', text)}
+                  onAiRewrite={(text) => handleAiRewrite('eokbu', text)}
+                  onCancel={() => setEditingArea(null)}
+                  isSaving={savingArea === 'eokbu'}
+                  isAiGenerating={aiGeneratingArea === 'eokbu'}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 조후 */}
+          <div className={`interpretation-area johu-area ${isEspeciallyGood ? 'especially-good' : ''}`}>
+            <div className="area-header">
+              <span className="area-label">조후 (기후/온도)</span>
+              {(temperatureData.level || temperatureData.decade_label || temperatureData.decade_level) && (
+                <span className={`temp-mini-badge ${
+                  // 한글 라벨 처리: 적당함=optimal, 더움/매우더움=hot, 추움/매우추움=cold
+                  ['moderate', 'optimal', '적당함', '적당', '온화'].includes(temperatureData.decade_level || temperatureData.level || temperatureData.decade_label) ? 'optimal' :
+                  (temperatureData.decade_level || temperatureData.level || temperatureData.decade_label)?.includes('hot') ||
+                  (temperatureData.decade_level || temperatureData.level || temperatureData.decade_label)?.includes('더') ? 'hot' : 'cold'
+                }`}>
+                  {temperatureData.level_name || temperatureData.decade_label || temperatureData.level}
+                  {(temperatureData.temp !== undefined || temperatureData.decade_actual_temp !== undefined) &&
+                    ` (${temperatureData.temp ?? temperatureData.decade_actual_temp}°C)`}
+                </span>
+              )}
+              {isEspeciallyGood && <span className="especially-good-badge">⭐ 특히 좋음</span>}
+              {editingArea !== 'johu' && (
+                <div className="area-action-buttons">
+                  <button
+                    className="btn btn-ai-area"
+                    onClick={() => handleAiRewrite('johu', temperatureData.description || temperatureData.analysis || `${yearData.ganji} 조후 분석`)}
+                    disabled={aiGeneratingArea !== null}
+                    title="AI로 재작성"
+                  >
+                    {aiGeneratingArea === 'johu' ? <Loader size={12} className="spinning" /> : <Wand2 size={12} />}
+                  </button>
+                  <button
+                    className="btn btn-edit-area"
+                    onClick={() => setEditingArea('johu')}
+                    title="해석 수정"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="area-content">
+              {isEspeciallyGood && temperatureData.especially_good_reason && (
+                <p className="especially-good-reason">⭐ {temperatureData.especially_good_reason}</p>
+              )}
+              {temperatureData.base_label && temperatureData.decade_label && (
+                <div className="temperature-flow">
+                  <span className="base-value">{temperatureData.base_label}</span>
+                  <span className="flow-arrow">→</span>
+                  <span className="decade-value">{temperatureData.decade_label}</span>
+                  {temperatureData.trend && (
+                    <span className={`trend-badge ${temperatureData.trend}`}>
+                      {temperatureData.trend === 'improving' ? '(적당해짐)' :
+                       temperatureData.trend === 'worsening' ? '(극단화)' : '(유지)'}
+                    </span>
+                  )}
+                </div>
+              )}
+              {temperatureData.description && (
+                <p>{temperatureData.description}</p>
+              )}
+              {!temperatureData.level && !temperatureData.decade_label && !temperatureData.decade_level && !temperatureData.description && (
+                <p>조후 분석 결과 없음</p>
+              )}
+              {/* 저장된 해석 표시 */}
+              {getEffectiveInterpretation('johu') && (
+                <div className="saved-interpretation">
+                  <p className="interpretation-text">{getEffectiveInterpretation('johu')}</p>
+                </div>
+              )}
+              {/* 편집 모드 */}
+              {editingArea === 'johu' && (
+                <AreaInterpretationEditor
+                  area="johu"
+                  areaLabel="조후"
+                  interpretation={getInterpretation('johu')}
+                  defaultText={temperatureData.description || ''}
+                  onSavePrimary={(text) => handleSavePrimary('johu', text)}
+                  onSaveFinal={(text) => handleSaveFinal('johu', text)}
+                  onAiRewrite={(text) => handleAiRewrite('johu', text)}
+                  onCancel={() => setEditingArea(null)}
+                  isSaving={savingArea === 'johu'}
+                  isAiGenerating={aiGeneratingArea === 'johu'}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 영역별 점수 (life_areas) */}
+          {yearData.life_areas && Object.keys(yearData.life_areas).length > 0 && (
+            <div className="life-areas-summary">
+              {yearData.life_areas.relationship !== undefined && (
+                <div className="life-area-item"><strong>❤️ 관계운:</strong> {yearData.life_areas.relationship}점</div>
+              )}
+              {yearData.life_areas.health !== undefined && (
+                <div className="life-area-item"><strong>🏥 건강운:</strong> {yearData.life_areas.health}점</div>
+              )}
+              {yearData.life_areas.happiness !== undefined && (
+                <div className="life-area-item"><strong>😊 행복지수:</strong> {yearData.life_areas.happiness}점</div>
+              )}
+              {yearData.combined_score !== undefined && (
+                <div className="life-area-item combined-score"><strong>📊 종합점수:</strong> {yearData.combined_score}점</div>
+              )}
             </div>
           )}
 
-          {/* 4가지 분석 */}
-          <div className="five-year-analysis-section">
-            {/* 1. 격국 성패 분석 (천간/지지) */}
-            <div className="five-year-analysis-box gyeokguk-box">
-              <div className="analysis-header">
-                <span className="analysis-type">【1. 격국 성패】</span>
-                <span className="analysis-label">천간/지지 성패 분석</span>
+          {/* 합형충파해 분석 */}
+          {yearData.relations?.length > 0 && (
+            <div className="interpretation-area relations-area">
+              <div className="area-header">
+                <span className="area-label">합형충파해</span>
               </div>
-              <div className="analysis-content">
-                {/* 천간 성패 */}
-                {yearData.sky_outcome ? (
-                  <div className="outcome-group">
-                    <div className="outcome-title">▸ 천간 ({yearData.ganji?.charAt(0)})</div>
-                    <div className="outcome-item">
-                      <div className="analysis-row">
-                        <span className="row-label">십성:</span>
-                        <span className="row-value">{renderSipsung(yearData.sky_outcome)}</span>
-                      </div>
-                      <div className="analysis-row">
-                        <span className="row-label">코드:</span>
-                        <span className="row-value code-value">{yearData.sky_outcome.code || '(없음)'}</span>
-                        {safeRenderResult(yearData.sky_outcome.result) && (
-                          <span className={`result-badge ${getResultClass(yearData.sky_outcome.result)}`}>
-                            {safeRenderResult(yearData.sky_outcome.result)}
-                          </span>
-                        )}
-                      </div>
-                      {safeRenderPositions(yearData.sky_outcome.positions) && (
-                        <div className="analysis-row">
-                          <span className="row-label">위치:</span>
-                          <span className="row-value">
-                            {safeRenderPositions(yearData.sky_outcome.positions)}
-                          </span>
-                        </div>
-                      )}
-                      {safeRenderReason(yearData.sky_outcome.reason) && (
-                        <div className="analysis-reason">{safeRenderReason(yearData.sky_outcome.reason)}</div>
-                      )}
+              <div className="area-content">
+                <div className="relations-list">
+                  {yearData.relations.map((rel, idx) => (
+                    <div key={idx} className={`relation-item ${getRelationClass(safeString(rel.type))}`}>
+                      <span className="relation-type">{safeString(rel.type)}</span>
+                      <span className="relation-chars">{safeString(rel.chars)}</span>
+                      <span className="relation-desc">{safeString(rel.description)}</span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="outcome-group">
-                    <div className="outcome-title">▸ 천간 ({yearData.ganji?.charAt(0)})</div>
-                    <div className="analysis-empty">천간 성패 분석 결과 없음</div>
-                  </div>
-                )}
-
-                {/* 지지 성패 */}
-                {yearData.earth_outcome ? (
-                  <div className="outcome-group">
-                    <div className="outcome-title">▸ 지지 ({yearData.ganji?.charAt(1)})</div>
-                    <div className="outcome-item">
-                      <div className="analysis-row">
-                        <span className="row-label">십성:</span>
-                        <span className="row-value">{renderSipsung(yearData.earth_outcome)}</span>
-                      </div>
-                      <div className="analysis-row">
-                        <span className="row-label">코드:</span>
-                        <span className="row-value code-value">{yearData.earth_outcome.code || '(없음)'}</span>
-                        {safeRenderResult(yearData.earth_outcome.result) && (
-                          <span className={`result-badge ${getResultClass(yearData.earth_outcome.result)}`}>
-                            {safeRenderResult(yearData.earth_outcome.result)}
-                          </span>
-                        )}
-                      </div>
-                      {safeRenderPositions(yearData.earth_outcome.positions) && (
-                        <div className="analysis-row">
-                          <span className="row-label">위치:</span>
-                          <span className="row-value">
-                            {safeRenderPositions(yearData.earth_outcome.positions)}
-                          </span>
-                        </div>
-                      )}
-                      {safeRenderReason(yearData.earth_outcome.reason) && (
-                        <div className="analysis-reason">{safeRenderReason(yearData.earth_outcome.reason)}</div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="outcome-group">
-                    <div className="outcome-title">▸ 지지 ({yearData.ganji?.charAt(1)})</div>
-                    <div className="analysis-empty">지지 성패 분석 결과 없음</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 2. 억부 분석 */}
-            <div className="five-year-analysis-box ukbu-box">
-              <div className="analysis-header">
-                <span className="analysis-type">【2. 억부(抑扶)】</span>
-                <span className="analysis-label">일간 강약 분석</span>
-              </div>
-              <div className="analysis-content">
-                <div className="strength-info">
-                  <div className="strength-row">
-                    <span className="strength-label">강약:</span>
-                    <span className="strength-level">{yearData.strength?.level || '-'}</span>
-                    <span className="strength-score">(점수: {yearData.strength?.score ?? '-'})</span>
-                  </div>
-                  {yearData.strength?.description && (
-                    <div className="analysis-reason">{yearData.strength.description}</div>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
-
-            {/* 3. 조후 분석 */}
-            <div className="five-year-analysis-box johu-box">
-              <div className="analysis-header">
-                <span className="analysis-type">【3. 조후(調候)】</span>
-                <span className="analysis-label">온도/습도 분석</span>
-              </div>
-              <div className="analysis-content">
-                <div className="johu-grid">
-                  <div className="johu-item temperature">
-                    <span className="johu-label">온도:</span>
-                    <span className="johu-value">
-                      {yearData.year_temperature?.temp ?? '-'}도
-                      <span className="johu-level">({yearData.year_temperature?.level || '-'})</span>
-                    </span>
-                  </div>
-                  <div className="johu-item humidity">
-                    <span className="johu-label">습도:</span>
-                    <span className="johu-value">
-                      {yearData.year_humid?.humid ?? '-'}%
-                      <span className="johu-level">({yearData.year_humid?.level || '-'})</span>
-                    </span>
-                  </div>
-                </div>
-                {(yearData.year_temperature?.description || yearData.year_humid?.description) && (
-                  <div className="analysis-reason">
-                    {yearData.year_temperature?.description || yearData.year_humid?.description}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 4. 합형충파해 분석 */}
-            <div className="five-year-analysis-box relations-box">
-              <div className="analysis-header">
-                <span className="analysis-type">【4. 합형충파해】</span>
-                <span className="analysis-label">지지 관계 분석</span>
-              </div>
-              <div className="analysis-content">
-                {yearData.relations?.length > 0 ? (
-                  <div className="relations-list">
-                    {yearData.relations.map((rel, idx) => (
-                      <div key={idx} className={`relation-item ${getRelationClass(safeString(rel.type))}`}>
-                        <span className="relation-type">{safeString(rel.type)}</span>
-                        <span className="relation-chars">{safeString(rel.chars)}</span>
-                        <span className="relation-desc">{safeString(rel.description)}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="analysis-empty">해당 연도에 특별한 합형충파해 없음</div>
-                )}
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* 매니저 수정 영역 */}
           <div className="manager-edit-section five-year-edit">
@@ -580,9 +1192,47 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
   const [loading, setLoading] = useState(false);
   const [regeneratingYear, setRegeneratingYear] = useState(null);
   const [regeneratingAll, setRegeneratingAll] = useState(false);
+  const [yearlyInterpretations, setYearlyInterpretations] = useState({}); // 연도별 해석 { 2025: { gyeokguk_sky: {...}, ... }, ... }
   const dataLoaded = useRef(cachedData !== null);
 
   const userName = validationResult?.order_info?.name || '고객';
+
+  // 연도별 해석 로드
+  const loadYearlyInterpretations = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/yearly_interpretations`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.interpretations) {
+        setYearlyInterpretations(data.interpretations);
+      }
+    } catch (err) {
+      console.error('Load yearly interpretations error:', err);
+    }
+  };
+
+  // 해석 변경 핸들러
+  const handleInterpretationChange = (year, area, interpretation) => {
+    console.log('=== handleInterpretationChange 호출 ===');
+    console.log('year:', year, 'area:', area);
+    console.log('interpretation:', interpretation);
+    setYearlyInterpretations(prev => {
+      const newState = {
+        ...prev,
+        [year]: {
+          ...prev[year],
+          [area]: interpretation
+        }
+      };
+      console.log('새로운 yearlyInterpretations 상태:', newState);
+      return newState;
+    });
+  };
 
   // 캐시에 데이터 저장
   const saveToCache = (yearData, analysis) => {
@@ -604,9 +1254,32 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
 
   // 데이터 로드 - 이미 데이터가 있거나 initialData가 있으면 스킵
   useEffect(() => {
-    // 이미 데이터가 있으면 로드 건너뛰기
+    // 이미 데이터가 있으면 fortune_level만 재계산하고 로드 건너뛰기
     if (fiveYearData.length > 0) {
       dataLoaded.current = true;
+      // fortune_level 재계산 (캐시 데이터일 수 있으므로)
+      const recalculatedData = fiveYearData.map(yearInfo => {
+        const newLevel = calculateDefaultLevel(yearInfo);
+        if (yearInfo.manager_edit?.fortune_level !== newLevel) {
+          return {
+            ...yearInfo,
+            manager_edit: {
+              ...yearInfo.manager_edit,
+              fortune_level: newLevel
+            }
+          };
+        }
+        return yearInfo;
+      });
+      // 변경된 경우에만 업데이트
+      if (recalculatedData.some((item, i) => item !== fiveYearData[i])) {
+        setFiveYearData(recalculatedData);
+        saveToCache(recalculatedData, baseAnalysis);
+      }
+      // 해석 데이터는 항상 로드
+      if (orderId) {
+        loadYearlyInterpretations();
+      }
       return;
     }
 
@@ -615,10 +1288,12 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
       if (Array.isArray(initialData) && initialData.length > 0) {
         setFiveYearData(initialData);
         dataLoaded.current = true;
+        loadYearlyInterpretations();
         return;
       }
       // 항상 API에서 최신 데이터 로드
       loadFiveYearData();
+      loadYearlyInterpretations();
       dataLoaded.current = true;
     }
   }, [orderId, validationResult, initialData]);
@@ -666,7 +1341,13 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
           decade: yearInfo.decade,
           sky_outcome: yearInfo.sky_outcome,
           earth_outcome: yearInfo.earth_outcome,
-          strength: data.data.base_analysis?.strength || yearInfo.strength,
+          // 연도별 억부/조후 분석 데이터 (analysis/description 필드 포함)
+          strength: yearInfo.strength,
+          temperature: yearInfo.temperature,
+          johu: yearInfo.johu,
+          life_areas: yearInfo.life_areas,
+          combined_score: yearInfo.combined_score,
+          // 기존 조후 데이터 (호환성)
           year_temperature: yearInfo.year_temperature,
           year_humid: yearInfo.year_humid,
           relations: yearInfo.relations || [],
@@ -732,7 +1413,11 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
         decade,
         sky_outcome: null,
         earth_outcome: null,
-        strength: validationResult.type_analysis?.strength || null,
+        strength: null,
+        temperature: null,
+        johu: null,
+        life_areas: null,
+        combined_score: null,
         year_temperature: null,
         year_humid: null,
         relations: [],
@@ -872,6 +1557,64 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
         console.warn(`연애운 생성 실패 (${year}):`, e);
       }
 
+      // 5. 4개 영역 AI 해석 재생성 (gyeokguk_sky, gyeokguk_earth, eokbu, johu)
+      const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu'];
+      const yearIndex = fiveYearData.findIndex(d => d.year === year);
+      const analysisContext = {
+        sky_outcome: data.sky_outcome || yearData?.sky_outcome || {},
+        earth_outcome: data.earth_outcome || yearData?.earth_outcome || {},
+        strength: data.strength || yearData?.strength || {},
+        temperature: data.temperature || yearData?.temperature || {},
+        johu: data.johu || yearData?.johu || {},
+        life_areas: data.life_areas || yearData?.life_areas || {},
+        combined_score: data.combined_score || yearData?.combined_score,
+        relations: data.relations || yearData?.relations || []
+      };
+
+      for (const area of areas) {
+        try {
+          let primaryText = '';
+          switch (area) {
+            case 'gyeokguk_sky':
+              primaryText = analysisContext.sky_outcome?.reason || `${yearData?.ganji || data.ganji} 천간 격국 분석`;
+              break;
+            case 'gyeokguk_earth':
+              primaryText = analysisContext.earth_outcome?.reason || `${yearData?.ganji || data.ganji} 지지 격국 분석`;
+              break;
+            case 'eokbu':
+              primaryText = analysisContext.strength?.analysis || analysisContext.strength?.description || `${yearData?.ganji || data.ganji} 억부 분석`;
+              break;
+            case 'johu':
+              primaryText = analysisContext.temperature?.description || analysisContext.temperature?.analysis || `${yearData?.ganji || data.ganji} 조후 분석`;
+              break;
+          }
+
+          const aiResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_yearly_interpretation_ai`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              year,
+              year_index: yearIndex,
+              ganji: yearData?.ganji || data.ganji,
+              analysis_area: area,
+              primary_interpretation: primaryText,
+              analysis_context: analysisContext
+            })
+          });
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            handleInterpretationChange(year, area, aiData.interpretation);
+            console.log(`${area} AI 해석 생성 완료`);
+          }
+        } catch (e) {
+          console.warn(`${area} AI 해석 생성 실패 (${year}):`, e);
+        }
+      }
+
       const updatedData = fiveYearData.map(item => {
         if (item.year === year) {
           const newSkyOutcome = data.sky_outcome || item.sky_outcome;
@@ -889,6 +1632,12 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
             sky_outcome: newSkyOutcome,
             earth_outcome: newEarthOutcome,
             relations: newRelations,
+            // 억부/조후 분석 데이터 업데이트 (API에서 반환된 경우)
+            strength: data.strength || item.strength,
+            temperature: data.temperature || item.temperature,
+            johu: data.johu || item.johu,
+            life_areas: data.life_areas || item.life_areas,
+            combined_score: data.combined_score || item.combined_score,
             manager_edit: {
               ...item.manager_edit,
               fortune_level: newLevel
@@ -982,6 +1731,12 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
                   sky_outcome: newSkyOutcome,
                   earth_outcome: newEarthOutcome,
                   relations: newRelations,
+                  // 억부/조후 분석 데이터 업데이트 (API에서 반환된 경우)
+                  strength: data.strength || item.strength,
+                  temperature: data.temperature || item.temperature,
+                  johu: data.johu || item.johu,
+                  life_areas: data.life_areas || item.life_areas,
+                  combined_score: data.combined_score || item.combined_score,
                   manager_edit: {
                     ...item.manager_edit,
                     fortune_level: newLevel
@@ -1135,6 +1890,9 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
             onRegenerate={handleRegenerateYear}
             isRegenerating={regeneratingYear === yearData.year}
             userName={userName}
+            orderId={orderId}
+            interpretations={yearlyInterpretations}
+            onInterpretationChange={handleInterpretationChange}
           />
         ))}
       </div>

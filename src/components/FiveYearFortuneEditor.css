@@ -74,13 +74,23 @@
   cursor: not-allowed;
 }
 
-/* 연도별 에디터 */
+/* 연도별 에디터 - interpretation-card 스타일 */
 .year-five-year-editor {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   margin-bottom: 12px;
   overflow: hidden;
+}
+
+.year-five-year-editor.interpretation-card {
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.year-five-year-editor.interpretation-card.current {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .year-five-year-header {
@@ -93,8 +103,21 @@
   transition: background 0.2s;
 }
 
+.year-five-year-header.interpretation-card-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.year-five-year-editor.current .year-five-year-header.interpretation-card-header {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
 .year-five-year-header:hover {
   background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.year-five-year-header.interpretation-card-header:hover {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
 }
 
 .year-five-year-title {
@@ -104,13 +127,12 @@
   flex-wrap: wrap;
 }
 
-.year-index-label {
-  background: #166534;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+/* 간지 글자 */
+.card-ganji {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-right: 4px;
 }
 
 .year-label {
@@ -119,20 +141,52 @@
   color: #1f2937;
 }
 
-.ganji-label {
-  font-size: 14px;
-  color: #6b7280;
+.card-age {
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
-.fortune-level-badge.five-year-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+.card-current-badge {
+  background: #3b82f6;
   color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* 종합 운세 배지 */
+.overall-rating-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.overall-rating-badge.rating-excellent {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.overall-rating-badge.rating-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.overall-rating-badge.rating-neutral {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.overall-rating-badge.rating-caution {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.overall-rating-badge.rating-difficult {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .year-five-year-toggle {
@@ -142,6 +196,12 @@
 .year-five-year-body {
   padding: 16px;
   border-top: 1px solid #e5e7eb;
+}
+
+.year-five-year-body.interpretation-areas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* 대운 정보 */
@@ -188,241 +248,203 @@
   font-weight: 500;
 }
 
-/* 분석 섹션 */
-.five-year-analysis-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.five-year-analysis-box {
-  border: 1px solid #e5e7eb;
+/* interpretation-area 스타일 (대운흐름과 동일) */
+.five-year-fortune-editor .interpretation-area {
+  padding: 12px;
+  background: #fafafa;
   border-radius: 8px;
-  overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
 
-.five-year-analysis-box .analysis-header {
+.five-year-fortune-editor .interpretation-area.custom {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.five-year-fortune-editor .area-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  padding: 10px 12px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.five-year-analysis-box .analysis-type {
-  font-weight: 600;
-  color: #1f2937;
-  font-size: 14px;
-}
-
-.five-year-analysis-box .analysis-label {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.five-year-analysis-box .analysis-content {
-  padding: 12px;
-}
-
-/* 격국 성패 박스 */
-.gyeokguk-box {
-  border-color: #c7d2fe;
-}
-
-.gyeokguk-box .analysis-header {
-  background: #eef2ff;
-}
-
-.gyeokguk-box .analysis-type {
-  color: #4338ca;
-}
-
-.outcome-group {
-  margin-bottom: 12px;
-}
-
-.outcome-group:last-child {
-  margin-bottom: 0;
-}
-
-.outcome-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #4b5563;
   margin-bottom: 8px;
 }
 
-.outcome-item {
-  padding-left: 12px;
-}
-
-/* 억부 박스 */
-.ukbu-box {
-  border-color: #fcd34d;
-}
-
-.ukbu-box .analysis-header {
-  background: #fefce8;
-}
-
-.ukbu-box .analysis-type {
-  color: #a16207;
-}
-
-.strength-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.strength-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.strength-label {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.strength-level {
-  font-size: 14px;
+.five-year-fortune-editor .area-header .area-label {
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #1f2937;
-}
-
-.strength-score {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-/* 조후 박스 */
-.johu-box {
-  border-color: #a5f3fc;
-}
-
-.johu-box .analysis-header {
-  background: #ecfeff;
-}
-
-.johu-box .analysis-type {
-  color: #0e7490;
-}
-
-.johu-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.johu-item {
+  color: #374151;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.johu-label {
-  font-size: 13px;
-  color: #6b7280;
+/* 블록 글자 (천간/지지) */
+.five-year-fortune-editor .block-char {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
 }
 
-.johu-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
+/* 천간 격국 영역 */
+.five-year-fortune-editor .gyeokguk-sky-area {
+  border-left: 3px solid #3b82f6;
 }
 
-.johu-level {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-left: 4px;
+.five-year-fortune-editor .gyeokguk-sky-area .block-char {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  color: #1e40af;
 }
 
-/* 합형충파해 박스 */
-.relations-box {
-  border-color: #fca5a5;
+/* 지지 격국 영역 */
+.five-year-fortune-editor .gyeokguk-earth-area {
+  border-left: 3px solid #8b5cf6;
 }
 
-.relations-box .analysis-header {
-  background: #fef2f2;
+.five-year-fortune-editor .gyeokguk-earth-area .block-char {
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  border-color: #c4b5fd;
+  color: #5b21b6;
 }
 
-.relations-box .analysis-type {
-  color: #b91c1c;
+/* 억부 영역 */
+.five-year-fortune-editor .eokbu-area {
+  border-left: 3px solid #f59e0b;
+  background: linear-gradient(to right, #fffbeb, #fafafa);
 }
 
-.relations-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* 조후 영역 */
+.five-year-fortune-editor .johu-area {
+  border-left: 3px solid #06b6d4;
+  background: linear-gradient(to right, #ecfeff, #fafafa);
 }
 
-.relation-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: #f9fafb;
-}
-
-.relation-type {
-  font-weight: 600;
-  font-size: 13px;
-  min-width: 40px;
-}
-
-.relation-chars {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.relation-desc {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.relation-item.relation-good {
-  background: #f0fdf4;
-  border-left: 3px solid #22c55e;
-}
-
-.relation-item.relation-good .relation-type {
-  color: #166534;
-}
-
-.relation-item.relation-bad {
-  background: #fef2f2;
+/* 합형충파해 영역 */
+.five-year-fortune-editor .relations-area {
   border-left: 3px solid #ef4444;
 }
 
-.relation-item.relation-bad .relation-type {
-  color: #b91c1c;
+/* 개별 성패 배지 */
+.five-year-fortune-editor .single-rating-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
 }
 
-.relation-item.relation-warning {
-  background: #fffbeb;
-  border-left: 3px solid #f59e0b;
+.five-year-fortune-editor .single-rating-badge.excellent {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
 }
 
-.relation-item.relation-warning .relation-type {
+.five-year-fortune-editor .single-rating-badge.good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.five-year-fortune-editor .single-rating-badge.neutral {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.five-year-fortune-editor .single-rating-badge.caution {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.five-year-fortune-editor .single-rating-badge.bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* 억부/조후 미니 배지 */
+.five-year-fortune-editor .strength-mini-badge,
+.five-year-fortune-editor .temp-mini-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+.five-year-fortune-editor .strength-mini-badge.balanced {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.five-year-fortune-editor .strength-mini-badge.strong {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.five-year-fortune-editor .strength-mini-badge.weak {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.five-year-fortune-editor .temp-mini-badge.optimal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.five-year-fortune-editor .temp-mini-badge.hot {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.five-year-fortune-editor .temp-mini-badge.cold {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* 특히 좋음 배지 */
+.five-year-fortune-editor .especially-good-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 6px;
+  animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+}
+
+/* 조후 특별히 좋음 표시 */
+.five-year-fortune-editor .interpretation-area.especially-good {
+  border: 2px solid #f59e0b;
+  background: linear-gradient(to bottom, #fffbeb, #fef3c7);
+  border-left: 4px solid #f59e0b;
+}
+
+.five-year-fortune-editor .especially-good-reason {
   color: #b45309;
+  font-weight: 600;
+  background: #fef3c7;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 3px solid #f59e0b;
+  font-size: 0.85rem;
 }
 
-.relation-item.relation-caution {
-  background: #fff7ed;
-  border-left: 3px solid #f97316;
+/* area-content */
+.five-year-fortune-editor .area-content p {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.6;
 }
 
-.relation-item.relation-caution .relation-type {
-  color: #c2410c;
-}
-
-/* 공통 분석 스타일 */
-.analysis-row {
+/* 분석 상세 행 */
+.five-year-fortune-editor .analysis-detail-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -430,54 +452,29 @@
   flex-wrap: wrap;
 }
 
-.row-label {
-  font-size: 12px;
+.five-year-fortune-editor .detail-label {
+  font-size: 0.75rem;
   color: #9ca3af;
   min-width: 40px;
 }
 
-.row-value {
-  font-size: 13px;
+.five-year-fortune-editor .detail-value {
+  font-size: 0.85rem;
   color: #1f2937;
+  font-weight: 500;
 }
 
-.code-value {
+.five-year-fortune-editor .detail-code {
   font-family: monospace;
   background: #f3f4f6;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 
-.result-badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.result-badge.result-success {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.result-badge.result-fail {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.result-badge.result-mixed-success {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.result-badge.result-mixed-fail {
-  background: #fed7aa;
-  color: #c2410c;
-}
-
-.analysis-reason {
-  font-size: 12px;
+.five-year-fortune-editor .analysis-reason-text {
+  font-size: 0.8rem;
   color: #6b7280;
   margin-top: 6px;
   padding: 8px;
@@ -486,11 +483,161 @@
   line-height: 1.5;
 }
 
-.analysis-empty {
-  font-size: 13px;
+/* 삼합 정보 */
+.five-year-fortune-editor .samhap-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.five-year-fortune-editor .samhap-badge {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.five-year-fortune-editor .samhap-name {
+  font-size: 0.8rem;
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+/* 억부/조후 흐름 표시 */
+.five-year-fortune-editor .strength-flow,
+.five-year-fortune-editor .temperature-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.five-year-fortune-editor .base-value,
+.five-year-fortune-editor .decade-value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  padding: 2px 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.five-year-fortune-editor .flow-arrow {
   color: #9ca3af;
-  font-style: italic;
-  padding: 8px 0;
+  font-size: 0.9rem;
+}
+
+.five-year-fortune-editor .trend-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.five-year-fortune-editor .trend-badge.improving {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.five-year-fortune-editor .trend-badge.worsening {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* 영역별 점수 요약 */
+.five-year-fortune-editor .life-areas-summary {
+  padding: 12px;
+  background: #fffbeb;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
+}
+
+.five-year-fortune-editor .life-areas-summary .life-area-item {
+  font-size: 0.8rem;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.five-year-fortune-editor .life-areas-summary .life-area-item:last-child {
+  margin-bottom: 0;
+}
+
+.five-year-fortune-editor .life-areas-summary .life-area-item.combined-score {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #fcd34d;
+  font-weight: 600;
+}
+
+/* 합형충파해 리스트 */
+.five-year-fortune-editor .relations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.five-year-fortune-editor .relation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.five-year-fortune-editor .relation-type {
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 40px;
+}
+
+.five-year-fortune-editor .relation-chars {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.five-year-fortune-editor .relation-desc {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.five-year-fortune-editor .relation-item.relation-good {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+}
+
+.five-year-fortune-editor .relation-item.relation-good .relation-type {
+  color: #166534;
+}
+
+.five-year-fortune-editor .relation-item.relation-bad {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.five-year-fortune-editor .relation-item.relation-bad .relation-type {
+  color: #b91c1c;
+}
+
+.five-year-fortune-editor .relation-item.relation-warning {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+}
+
+.five-year-fortune-editor .relation-item.relation-warning .relation-type {
+  color: #b45309;
+}
+
+.five-year-fortune-editor .relation-item.relation-caution {
+  background: #fff7ed;
+  border-left: 3px solid #f97316;
+}
+
+.five-year-fortune-editor .relation-item.relation-caution .relation-type {
+  color: #c2410c;
 }
 
 /* 매니저 수정 섹션 */
@@ -677,4 +824,217 @@
 
 .regenerating-content .spinning {
   color: #166534;
+}
+
+/* 해석 편집 버튼 */
+.five-year-fortune-editor .btn-edit-area {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.five-year-fortune-editor .btn-edit-area:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+/* 저장된 해석 표시 */
+.five-year-fortune-editor .saved-interpretation {
+  background: linear-gradient(135deg, #fefce8, #fef9c3);
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.five-year-fortune-editor .saved-interpretation .interpretation-text {
+  font-size: 14px;
+  color: #713f12;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* 해석 편집 폼 */
+.five-year-fortune-editor .area-edit-form.yearly-interpretation-edit {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.five-year-fortune-editor .area-edit-form.yearly-interpretation-edit textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.five-year-fortune-editor .area-edit-form.yearly-interpretation-edit textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.five-year-fortune-editor .area-edit-form .edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.five-year-fortune-editor .area-edit-form .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-save-primary {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-save-primary:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-ai-rewrite {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-ai-rewrite:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+.five-year-fortune-editor .area-edit-form .btn-save-final {
+  background: #22c55e;
+  color: white;
+  border: none;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-save-final:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-cancel {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.five-year-fortune-editor .area-edit-form .btn-cancel:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.five-year-fortune-editor .area-edit-form .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 전체 AI 재작성 버튼 */
+.five-year-fortune-editor .five-year-top-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.five-year-fortune-editor .btn-ai-rewrite-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+
+.five-year-fortune-editor .btn-ai-rewrite-all:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4);
+}
+
+.five-year-fortune-editor .btn-ai-rewrite-all:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.five-year-fortune-editor .btn-ai-rewrite-all .spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* 영역별 버튼 그룹 */
+.five-year-fortune-editor .area-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.five-year-fortune-editor .btn-ai-area {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.five-year-fortune-editor .btn-ai-area:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  transform: scale(1.05);
+}
+
+.five-year-fortune-editor .btn-ai-area:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.five-year-fortune-editor .btn-ai-area .spinning {
+  animation: spin 1s linear infinite;
 }

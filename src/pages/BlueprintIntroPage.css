@@ -346,6 +346,7 @@ body:has(.blueprint-intro-page) {
 /* Price Section */
 .price-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
@@ -354,6 +355,20 @@ body:has(.blueprint-intro-page) {
   background: rgba(212, 175, 55, 0.05);
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 16px;
+}
+
+.price-message {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8;
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .original-price {
@@ -688,8 +703,9 @@ body:has(.blueprint-intro-page) {
     font-size: 1.3rem;
   }
 
-  .price-section {
+  .price-row {
     flex-wrap: wrap;
+    justify-content: center;
     gap: 12px;
   }
 

@@ -33,7 +33,7 @@ function BlueprintIntroPage() {
       desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
     },
     {
-      title: '평생 대운 흐름 분석',
+      title: '평생 대운 분석, 평생 소장',
       desc: '10년 단위의 대운 흐름으로 인생의 큰 전환점과 기회를 예측합니다.'
     },
     {
@@ -74,7 +74,7 @@ function BlueprintIntroPage() {
   const faqs = [
     {
       question: '리포트 내용은 얼마나 상세한가요?',
-      answer: '총 9개 챕터로 구성되어 있으며, 아이덴티티 분석부터 평생 대운, 5개년 운세, 재물/연애/직업운까지 약 50페이지 분량의 상세한 분석을 제공합니다.'
+      answer: '총 9개 챕터로 구성되어 있으며, 아이덴티티 분석부터, 잠재력 분석, 대운 분석, 5개년 운세 분석, 재물은, 사회/직업운, 연애운, 상담사의 코칭, 질문에 대한 답변까지 약 30~40페이지 분량의 상세한 분석을 제공합니다.'
     },
     {
       question: '리포트는 어떻게 받나요?',
@@ -117,7 +117,7 @@ function BlueprintIntroPage() {
           <h1 className="hero-title">The Blueprint</h1>
           <p className="hero-subtitle-small">인생 청사진</p>
           <p className="hero-subtitle">당신의 인생을 설계합니다</p>
-          <p className="hero-tagline">이때까지 없었던 당신만을 위한 특별한 레포트</p>
+          <p className="hero-tagline">지금까지 없었던 당신만을 위한 특별한 레포트</p>
         </div>
       </section>
 
@@ -193,9 +193,16 @@ function BlueprintIntroPage() {
 
           {/* Price Section */}
           <div className="price-section">
-            <span className="original-price">150,000원</span>
-            <span className="current-price">99,000원</span>
-            <span className="discount-badge">34% OFF</span>
+            <p className="price-message">
+              일 년을 점치는 운세는 잊혀지지만,<br />
+              평생을 설계하는 블루프린트는 남습니다.<br />
+              단 한 번의 선택으로, 인생의 나침반을 소장하세요.
+            </p>
+            <div className="price-row">
+              <span className="original-price">150,000원</span>
+              <span className="current-price">99,000원</span>
+              <span className="discount-badge">34% OFF</span>
+            </div>
           </div>
 
           {/* CTA Button */}

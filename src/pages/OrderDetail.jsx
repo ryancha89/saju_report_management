@@ -8,6 +8,7 @@ import LoveFortuneEditor from '../components/LoveFortuneEditor';
 import FiveYearFortuneEditor from '../components/FiveYearFortuneEditor';
 import CoachingEditor from '../components/CoachingEditor';
 import GyeokgukSuggestionModal from '../components/GyeokgukSuggestionModal';
+import DecadeInterpretationEditor from '../components/DecadeInterpretationEditor';
 import './OrderDetail.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -1162,6 +1163,12 @@ function OrderDetail() {
   const [chapter3Loading, setChapter3Loading] = useState(false);
   const [chapter3Error, setChapter3Error] = useState(null);
 
+  // 대운 해석 편집 상태 (격국/억부/조후)
+  const [editingDecadeInterpretation, setEditingDecadeInterpretation] = useState(null); // { decadeIndex, area, ganji }
+  const [decadeInterpretationText, setDecadeInterpretationText] = useState('');
+  const [decadeInterpretationSaving, setDecadeInterpretationSaving] = useState(false);
+  const [decadeAiGenerating, setDecadeAiGenerating] = useState(false);
+
   // 챕터4 상태 (5년운세 - 격국/억부/조후/합형충파해)
   const [fiveYearFortuneData, setFiveYearFortuneData] = useState(null);
 
@@ -1826,6 +1833,182 @@ function OrderDetail() {
     } catch (err) {
       console.error('챕터3 생성 및 저장 실패:', err);
     }
+  };
+
+  // 대운 해석 편집 시작
+  const startEditingDecadeInterpretation = (decadeIndex, area, ganji, currentText) => {
+    setEditingDecadeInterpretation({ decadeIndex, area, ganji });
+    setDecadeInterpretationText(currentText || '');
+  };
+
+  // 대운 해석 편집 취소
+  const cancelEditingDecadeInterpretation = () => {
+    setEditingDecadeInterpretation(null);
+    setDecadeInterpretationText('');
+  };
+
+  // 대운 해석 저장
+  const saveDecadeInterpretation = async (useFinal = false, text = null) => {
+    if (!editingDecadeInterpretation) return;
+
+    const interpretationText = text !== null ? text : decadeInterpretationText;
+
+    setDecadeInterpretationSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/update_decade_interpretation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          decade_index: editingDecadeInterpretation.decadeIndex,
+          ganji: editingDecadeInterpretation.ganji,
+          analysis_area: editingDecadeInterpretation.area,
+          primary_interpretation: useFinal ? undefined : interpretationText,
+          final_interpretation: useFinal ? interpretationText : undefined,
+          use_ai_for_final: false
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '해석 저장에 실패했습니다.');
+      }
+
+      // chapter3Data 업데이트
+      if (chapter3Data?.decade_flow) {
+        const updatedDecadeFlow = chapter3Data.decade_flow.map((decade, idx) => {
+          if (idx === editingDecadeInterpretation.decadeIndex) {
+            const area = editingDecadeInterpretation.area;
+
+            // 천간/지지 격국은 sky_analysis/earth_analysis 직접 업데이트
+            if (area === 'gyeokguk_sky') {
+              return {
+                ...decade,
+                sky_analysis: data.interpretation.effective_interpretation,
+                has_custom_interpretation: true
+              };
+            } else if (area === 'gyeokguk_earth') {
+              return {
+                ...decade,
+                earth_analysis: data.interpretation.effective_interpretation,
+                has_custom_interpretation: true
+              };
+            }
+
+            // 억부/조후 등은 기존 방식
+            return {
+              ...decade,
+              interpretations: {
+                ...decade.interpretations,
+                [area]: data.interpretation
+              },
+              has_custom_interpretation: true
+            };
+          }
+          return decade;
+        });
+        setChapter3Data({
+          ...chapter3Data,
+          decade_flow: updatedDecadeFlow
+        });
+      }
+
+      cancelEditingDecadeInterpretation();
+      alert('해석이 저장되었습니다.');
+    } catch (err) {
+      console.error('해석 저장 실패:', err);
+      alert(err.message);
+    } finally {
+      setDecadeInterpretationSaving(false);
+    }
+  };
+
+  // AI로 해석 재작성
+  const regenerateDecadeInterpretationWithAi = async (text = null) => {
+    const interpretationText = text !== null ? text : decadeInterpretationText;
+
+    if (!editingDecadeInterpretation || !interpretationText.trim()) {
+      alert('1차 해석을 먼저 입력해주세요.');
+      return;
+    }
+
+    setDecadeAiGenerating(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_decade_interpretation_ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          decade_index: editingDecadeInterpretation.decadeIndex,
+          ganji: editingDecadeInterpretation.ganji,
+          analysis_area: editingDecadeInterpretation.area,
+          primary_interpretation: interpretationText
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'AI 해석 생성에 실패했습니다.');
+      }
+
+      // chapter3Data 업데이트
+      if (chapter3Data?.decade_flow) {
+        const area = editingDecadeInterpretation.area;
+        const updatedDecadeFlow = chapter3Data.decade_flow.map((decade, idx) => {
+          if (idx === editingDecadeInterpretation.decadeIndex) {
+            // 천간/지지 격국은 sky_analysis/earth_analysis 직접 업데이트
+            if (area === 'gyeokguk_sky') {
+              return {
+                ...decade,
+                sky_analysis: data.interpretation.effective_interpretation || data.interpretation.final_interpretation,
+                has_custom_interpretation: true
+              };
+            } else if (area === 'gyeokguk_earth') {
+              return {
+                ...decade,
+                earth_analysis: data.interpretation.effective_interpretation || data.interpretation.final_interpretation,
+                has_custom_interpretation: true
+              };
+            }
+            return {
+              ...decade,
+              interpretations: {
+                ...decade.interpretations,
+                [area]: data.interpretation
+              },
+              has_custom_interpretation: true
+            };
+          }
+          return decade;
+        });
+        setChapter3Data({
+          ...chapter3Data,
+          decade_flow: updatedDecadeFlow
+        });
+      }
+
+      // 편집 종료 (새로운 결과 확인을 위해)
+      setEditingDecadeInterpretation(null);
+      alert('AI가 해석을 재작성했습니다. 수정 버튼을 눌러 결과를 확인하세요.');
+    } catch (err) {
+      console.error('AI 해석 생성 실패:', err);
+      alert(err.message);
+    } finally {
+      setDecadeAiGenerating(false);
+    }
+  };
+
+  // 영역 라벨 매핑
+  const AREA_LABELS = {
+    gyeokguk: '격국',
+    eokbu: '억부',
+    johu: '조후'
   };
 
   // 챕터4 생성 API 호출 (현재 대운 운세)
@@ -4388,7 +4571,9 @@ function OrderDetail() {
                                   <div className="eokbu-johu-timeline">
                                     {chapter3Data.decade_flow?.map((decade, idx) => {
                                       const strengthChange = decade.strength?.change || 0;
-                                      const johuScore = decade.johu?.score || 50;
+                                      const tempScore = decade.temperature?.decade_score || 50;
+                                      const tempActual = decade.temperature?.decade_actual_temp;
+                                      const tempLabel = decade.temperature?.decade_label;
                                       const lifeAreas = decade.life_areas || {};
 
                                       const getStrengthClass = () => {
@@ -4401,11 +4586,16 @@ function OrderDetail() {
                                         return 'none';
                                       };
 
-                                      const getJohuClass = () => {
-                                        if (johuScore >= 70) return 'good';
-                                        if (johuScore >= 40) return 'normal';
-                                        return 'poor';
+                                      // 온도 레벨 결정 (0-100 점수 기준)
+                                      const getTempLevel = () => {
+                                        if (tempScore <= 20) return { level: '매우 추움', icon: '❄️', class: 'very-cold' };
+                                        if (tempScore <= 40) return { level: '추움', icon: '🌨️', class: 'cold' };
+                                        if (tempScore <= 65) return { level: '적당함', icon: '🌤️', class: 'moderate' };
+                                        if (tempScore <= 85) return { level: '더움', icon: '☀️', class: 'hot' };
+                                        return { level: '매우 더움', icon: '🔥', class: 'very-hot' };
                                       };
+
+                                      const tempInfo = getTempLevel();
 
                                       // 억부 레벨에 따른 이모지
                                       const getStrengthEmoji = () => {
@@ -4447,29 +4637,13 @@ function OrderDetail() {
                                             <div className="ej-strength-score">{decadeScore}점</div>
                                           </div>
 
-                                          {/* 조후 충족도 */}
-                                          <div className={`ej-johu ${getJohuClass()}`}>
+                                          {/* 온도 (조후) */}
+                                          <div className={`ej-johu ${tempInfo.class}`}>
                                             <div className="ej-johu-main">
-                                              <span className="ej-johu-icon">{johuScore >= 70 ? '☀️' : johuScore >= 40 ? '🌤️' : '❄️'}</span>
-                                              <span className="ej-johu-text">{decade.johu?.level || '보통'}</span>
+                                              <span className="ej-johu-icon">{tempInfo.icon}</span>
+                                              <span className="ej-johu-text">{tempLabel || tempInfo.level}</span>
                                             </div>
-                                            <div className="ej-johu-score">{johuScore}점</div>
-                                          </div>
-
-                                          {/* 생활영역 미니 점수 */}
-                                          <div className="ej-life-areas">
-                                            <div className="life-area-mini" title="관계운">
-                                              <span className="area-icon">❤️</span>
-                                              <span className="area-score">{lifeAreas.relationship || '-'}</span>
-                                            </div>
-                                            <div className="life-area-mini" title="건강운">
-                                              <span className="area-icon">💪</span>
-                                              <span className="area-score">{lifeAreas.health || '-'}</span>
-                                            </div>
-                                            <div className="life-area-mini" title="행복지수">
-                                              <span className="area-icon">😊</span>
-                                              <span className="area-score">{lifeAreas.happiness || '-'}</span>
-                                            </div>
+                                            <div className="ej-johu-score">{tempActual !== undefined ? `${tempActual}°C` : `${tempScore}점`}</div>
                                           </div>
                                         </div>
                                       );
@@ -4487,10 +4661,12 @@ function OrderDetail() {
                                       <span className="legend-badge extreme">💧 극신약</span>
                                     </div>
                                     <div className="legend-group">
-                                      <span className="legend-title">조후 (계절균형):</span>
-                                      <span className="legend-badge good">☀️ 좋음 (70+)</span>
-                                      <span className="legend-badge normal">🌤️ 보통 (40-69)</span>
-                                      <span className="legend-badge poor">❄️ 부족 (&lt;40)</span>
+                                      <span className="legend-title">온도 (조후):</span>
+                                      <span className="legend-badge very-cold">❄️ 매우 추움 (0-20)</span>
+                                      <span className="legend-badge cold">🌨️ 추움 (21-40)</span>
+                                      <span className="legend-badge moderate">🌤️ 적당함 (41-65)</span>
+                                      <span className="legend-badge hot">☀️ 더움 (66-85)</span>
+                                      <span className="legend-badge very-hot">🔥 매우 더움 (86-100)</span>
                                     </div>
                                     <div className="legend-group">
                                       <span className="legend-title">생활영역:</span>
@@ -4561,99 +4737,277 @@ function OrderDetail() {
                                   </div>
                                 </div>
 
-                                {/* AI 운세 해석 - 새 구조 (sky_analysis, earth_analysis) 또는 기존 구조 (ai_description) */}
-                                {chapter3Data.decade_flow?.some(d => d.sky_analysis || d.ai_description) && (
-                                  <div className="decade-ai-descriptions">
+                                {/* 대운별 운세 해석 (격국/억부/조후 통합) */}
+                                {chapter3Data.decade_flow && (
+                                  <div className="decade-interpretations-section">
                                     <h5>🔮 대운별 운세 해석</h5>
-                                    <div className="ai-descriptions-list">
+                                    <p className="section-description">각 대운의 격국(천간/지지), 억부, 조후 해석을 확인하고 수정할 수 있습니다.</p>
+                                    <div className="interpretations-list">
                                       {chapter3Data.decade_flow?.map((decade, idx) => (
-                                        (decade.sky_analysis || decade.ai_description) && (
-                                          <div
-                                            key={idx}
-                                            className={`ai-description-card ${decade.is_current ? 'current' : ''}`}
-                                          >
-                                            <div className="ai-card-header">
-                                              <span className="ai-card-ganji">{decade.ganji}</span>
-                                              <span className="ai-card-age">{decade.start_age}~{decade.end_age}세</span>
-                                              {decade.is_current && <span className="ai-card-current">현재</span>}
-                                              {/* 종합 판정 배지 */}
-                                              <span className={`overall-rating-badge ${getOverallRatingClass(decade)}`}>
-                                                {getOverallRatingText(decade)}
-                                              </span>
+                                        <div key={idx} className={`interpretation-card ${decade.is_current ? 'current' : ''}`}>
+                                          <div className="interpretation-card-header">
+                                            <span className="card-ganji">{decade.ganji}</span>
+                                            <span className="card-age">{decade.start_age}~{decade.end_age}세</span>
+                                            {decade.is_current && <span className="card-current-badge">현재</span>}
+                                            {decade.has_custom_interpretation && <span className="card-custom-badge">수정됨</span>}
+                                            {/* 종합 판정 배지 */}
+                                            <span className={`overall-rating-badge ${getOverallRatingClass(decade)}`}>
+                                              {getOverallRatingText(decade)}
+                                            </span>
+                                          </div>
+
+                                          {/* 키워드 */}
+                                          {decade.keywords?.length > 0 && (
+                                            <div className="decade-keywords-section">
+                                              {decade.keywords.map((kw, kIdx) => (
+                                                <span key={kIdx} className="keyword-badge">{kw}</span>
+                                              ))}
                                             </div>
+                                          )}
 
-                                            {/* 새 구조: 키워드, 천간/지지 분석, 영역별 조언 */}
-                                            {decade.sky_analysis ? (
-                                              <div className="ai-card-body-new">
-                                                {/* 키워드 */}
-                                                {decade.keywords?.length > 0 && (
-                                                  <div className="decade-keywords-admin">
-                                                    {decade.keywords.map((kw, kIdx) => (
-                                                      <span key={kIdx} className="keyword-badge">{kw}</span>
-                                                    ))}
-                                                  </div>
-                                                )}
+                                          <div className="interpretation-areas">
+                                            {/* 격국 - 천간 */}
+                                            {(() => {
+                                              const area = 'gyeokguk_sky';
+                                              const interp = decade.interpretations?.[area];
+                                              const isEditing = editingDecadeInterpretation?.decadeIndex === idx && editingDecadeInterpretation?.area === area;
+                                              const displayText = interp?.effective_interpretation || decade.sky_analysis;
 
-                                                {/* 천간 분석 */}
-                                                <div className={`analysis-block sky ${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
-                                                  <div className="analysis-block-header">
-                                                    <span className="block-char">{decade.sky}</span>
-                                                    <span className="block-title">천간 분석</span>
+                                              return (
+                                                <div className={`interpretation-area gyeokguk-sky-area ${interp?.has_custom ? 'custom' : ''}`}>
+                                                  <div className="area-header">
+                                                    <span className="area-label">
+                                                      <span className="block-char">{decade.sky}</span> 천간 격국
+                                                    </span>
                                                     <span className={`single-rating-badge ${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
                                                       {getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).text}
                                                     </span>
+                                                    {interp?.has_custom && <span className="custom-indicator">수정됨</span>}
+                                                    {!isEditing && (
+                                                      <button
+                                                        className="btn-edit-area"
+                                                        onClick={() => startEditingDecadeInterpretation(
+                                                          idx,
+                                                          area,
+                                                          decade.ganji,
+                                                          interp?.primary_interpretation || displayText || ''
+                                                        )}
+                                                      >
+                                                        <Edit3 size={12} /> 수정
+                                                      </button>
+                                                    )}
                                                   </div>
-                                                  <p>{decade.sky_analysis}</p>
-                                                </div>
 
-                                                {/* 지지 분석 */}
-                                                {decade.earth_analysis && (
-                                                  <div className={`analysis-block earth ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
-                                                    <div className="analysis-block-header">
-                                                      <span className="block-char">{decade.earth}</span>
-                                                      <span className="block-title">지지 분석</span>
-                                                      <span className={`single-rating-badge ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
-                                                        {getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).text}
-                                                      </span>
+                                                  {isEditing ? (
+                                                    <DecadeInterpretationEditor
+                                                      initialText={interp?.primary_interpretation || displayText || ''}
+                                                      placeholder="천간 격국 해석을 입력하세요..."
+                                                      onSavePrimary={(text) => saveDecadeInterpretation(false, text)}
+                                                      onSaveFinal={(text) => saveDecadeInterpretation(true, text)}
+                                                      onAiRewrite={(text) => regenerateDecadeInterpretationWithAi(text)}
+                                                      onCancel={cancelEditingDecadeInterpretation}
+                                                      isSaving={decadeInterpretationSaving}
+                                                      isAiGenerating={decadeAiGenerating}
+                                                    />
+                                                  ) : (
+                                                    <div className="area-content">
+                                                      <p>{displayText || '해석이 없습니다.'}</p>
                                                     </div>
-                                                    <p>{decade.earth_analysis}</p>
-                                                  </div>
-                                                )}
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
 
-                                                {/* 영역별 조언 */}
-                                                {decade.life_areas && Object.keys(decade.life_areas).length > 0 && (
-                                                  <div className="life-areas-admin">
-                                                    {decade.life_areas.career && (
-                                                      <div className="life-area-item"><strong>💼 사업:</strong> {decade.life_areas.career}</div>
-                                                    )}
-                                                    {decade.life_areas.wealth && (
-                                                      <div className="life-area-item"><strong>💰 재물:</strong> {decade.life_areas.wealth}</div>
-                                                    )}
-                                                    {decade.life_areas.relationship && (
-                                                      <div className="life-area-item"><strong>❤️ 관계:</strong> {decade.life_areas.relationship}</div>
-                                                    )}
-                                                    {decade.life_areas.health && (
-                                                      <div className="life-area-item"><strong>🏥 건강:</strong> {decade.life_areas.health}</div>
+                                            {/* 격국 - 지지 */}
+                                            {(() => {
+                                              const area = 'gyeokguk_earth';
+                                              const interp = decade.interpretations?.[area];
+                                              const isEditing = editingDecadeInterpretation?.decadeIndex === idx && editingDecadeInterpretation?.area === area;
+                                              const displayText = interp?.effective_interpretation || decade.earth_analysis;
+
+                                              return (
+                                                <div className={`interpretation-area gyeokguk-earth-area ${interp?.has_custom ? 'custom' : ''}`}>
+                                                  <div className="area-header">
+                                                    <span className="area-label">
+                                                      <span className="block-char">{decade.earth}</span> 지지 격국
+                                                    </span>
+                                                    <span className={`single-rating-badge ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
+                                                      {getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).text}
+                                                    </span>
+                                                    {interp?.has_custom && <span className="custom-indicator">수정됨</span>}
+                                                    {!isEditing && (
+                                                      <button
+                                                        className="btn-edit-area"
+                                                        onClick={() => startEditingDecadeInterpretation(
+                                                          idx,
+                                                          area,
+                                                          decade.ganji,
+                                                          interp?.primary_interpretation || displayText || ''
+                                                        )}
+                                                      >
+                                                        <Edit3 size={12} /> 수정
+                                                      </button>
                                                     )}
                                                   </div>
-                                                )}
 
-                                                {/* 조언 & 주의 */}
-                                                {decade.advice && (
-                                                  <div className="advice-admin">💡 <strong>조언:</strong> {decade.advice}</div>
+                                                  {isEditing ? (
+                                                    <DecadeInterpretationEditor
+                                                      initialText={interp?.primary_interpretation || displayText || ''}
+                                                      placeholder="지지 격국 해석을 입력하세요..."
+                                                      onSavePrimary={(text) => saveDecadeInterpretation(false, text)}
+                                                      onSaveFinal={(text) => saveDecadeInterpretation(true, text)}
+                                                      onAiRewrite={(text) => regenerateDecadeInterpretationWithAi(text)}
+                                                      onCancel={cancelEditingDecadeInterpretation}
+                                                      isSaving={decadeInterpretationSaving}
+                                                      isAiGenerating={decadeAiGenerating}
+                                                    />
+                                                  ) : (
+                                                    <div className="area-content">
+                                                      <p>{displayText || '해석이 없습니다.'}</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+
+                                            {/* 억부 */}
+                                            {(() => {
+                                              const area = 'eokbu';
+                                              const interp = decade.interpretations?.[area];
+                                              const isEditing = editingDecadeInterpretation?.decadeIndex === idx && editingDecadeInterpretation?.area === area;
+
+                                              return (
+                                                <div className={`interpretation-area eokbu-area ${interp?.has_custom ? 'custom' : ''}`}>
+                                                  <div className="area-header">
+                                                    <span className="area-label">억부 (신강/신약)</span>
+                                                    {(decade.eokbu_display || decade.strength) && (
+                                                      <span className={`strength-mini-badge ${decade.strength?.level === 'balanced' ? 'balanced' : decade.strength?.level?.includes('strong') ? 'strong' : 'weak'}`}>
+                                                        {decade.eokbu_display || decade.strength?.level_name || decade.strength?.level}
+                                                      </span>
+                                                    )}
+                                                    {interp?.has_custom && <span className="custom-indicator">수정됨</span>}
+                                                    {!isEditing && (
+                                                      <button
+                                                        className="btn-edit-area"
+                                                        onClick={() => startEditingDecadeInterpretation(
+                                                          idx,
+                                                          area,
+                                                          decade.ganji,
+                                                          interp?.primary_interpretation || interp?.effective_interpretation || ''
+                                                        )}
+                                                      >
+                                                        <Edit3 size={12} /> 수정
+                                                      </button>
+                                                    )}
+                                                  </div>
+
+                                                  {isEditing ? (
+                                                    <DecadeInterpretationEditor
+                                                      initialText={interp?.primary_interpretation || interp?.effective_interpretation || ''}
+                                                      placeholder="억부 해석을 입력하세요..."
+                                                      onSavePrimary={(text) => saveDecadeInterpretation(false, text)}
+                                                      onSaveFinal={(text) => saveDecadeInterpretation(true, text)}
+                                                      onAiRewrite={(text) => regenerateDecadeInterpretationWithAi(text)}
+                                                      onCancel={cancelEditingDecadeInterpretation}
+                                                      isSaving={decadeInterpretationSaving}
+                                                      isAiGenerating={decadeAiGenerating}
+                                                    />
+                                                  ) : (
+                                                    <div className="area-content">
+                                                      <p>{interp?.effective_interpretation || decade.strength?.description || '해석이 없습니다.'}</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+
+                                            {/* 조후 */}
+                                            {(() => {
+                                              const area = 'johu';
+                                              const interp = decade.interpretations?.[area];
+                                              const isEditing = editingDecadeInterpretation?.decadeIndex === idx && editingDecadeInterpretation?.area === area;
+                                              const isEspeciallyGood = decade.temperature?.is_especially_good;
+
+                                              return (
+                                                <div className={`interpretation-area johu-area ${interp?.has_custom ? 'custom' : ''} ${isEspeciallyGood ? 'especially-good' : ''}`}>
+                                                  <div className="area-header">
+                                                    <span className="area-label">조후 (기후/온도)</span>
+                                                    {(decade.johu_display || decade.temperature) && (
+                                                      <span className={`temp-mini-badge ${decade.temperature?.level === 'moderate' || decade.temperature?.level === 'optimal' ? 'optimal' : decade.temperature?.level?.includes('hot') ? 'hot' : 'cold'}`}>
+                                                        {decade.johu_display || `${decade.temperature?.level_name || decade.temperature?.level}${decade.temp_actual !== undefined ? ` (${decade.temp_actual}°C)` : ''}`}
+                                                      </span>
+                                                    )}
+                                                    {isEspeciallyGood && <span className="especially-good-badge">⭐ 특히 좋음</span>}
+                                                    {interp?.has_custom && <span className="custom-indicator">수정됨</span>}
+                                                    {!isEditing && (
+                                                      <button
+                                                        className="btn-edit-area"
+                                                        onClick={() => startEditingDecadeInterpretation(
+                                                          idx,
+                                                          area,
+                                                          decade.ganji,
+                                                          interp?.primary_interpretation || interp?.effective_interpretation || ''
+                                                        )}
+                                                      >
+                                                        <Edit3 size={12} /> 수정
+                                                      </button>
+                                                    )}
+                                                  </div>
+
+                                                  {isEditing ? (
+                                                    <DecadeInterpretationEditor
+                                                      initialText={interp?.primary_interpretation || interp?.effective_interpretation || ''}
+                                                      placeholder="조후 해석을 입력하세요..."
+                                                      onSavePrimary={(text) => saveDecadeInterpretation(false, text)}
+                                                      onSaveFinal={(text) => saveDecadeInterpretation(true, text)}
+                                                      onAiRewrite={(text) => regenerateDecadeInterpretationWithAi(text)}
+                                                      onCancel={cancelEditingDecadeInterpretation}
+                                                      isSaving={decadeInterpretationSaving}
+                                                      isAiGenerating={decadeAiGenerating}
+                                                    />
+                                                  ) : (
+                                                    <div className="area-content">
+                                                      {isEspeciallyGood && decade.temperature?.especially_good_reason && (
+                                                        <p className="especially-good-reason">⭐ {decade.temperature.especially_good_reason}</p>
+                                                      )}
+                                                      <p>{interp?.effective_interpretation || decade.temperature?.description || '해석이 없습니다.'}</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })()}
+
+                                            {/* 영역별 조언 */}
+                                            {decade.life_areas && Object.keys(decade.life_areas).length > 0 && (
+                                              <div className="life-areas-summary">
+                                                {decade.life_areas.career && (
+                                                  <div className="life-area-item"><strong>💼 사업:</strong> {decade.life_areas.career}</div>
                                                 )}
-                                                {decade.caution && (
-                                                  <div className="caution-admin">⚠️ <strong>주의:</strong> {decade.caution}</div>
+                                                {decade.life_areas.wealth && (
+                                                  <div className="life-area-item"><strong>💰 재물:</strong> {decade.life_areas.wealth}</div>
+                                                )}
+                                                {decade.life_areas.relationship && (
+                                                  <div className="life-area-item"><strong>❤️ 관계:</strong> {decade.life_areas.relationship}</div>
+                                                )}
+                                                {decade.life_areas.health && (
+                                                  <div className="life-area-item"><strong>🏥 건강:</strong> {decade.life_areas.health}</div>
                                                 )}
                                               </div>
-                                            ) : (
-                                              /* 기존 구조: ai_description */
-                                              <div className="ai-card-body">
-                                                <p>{decade.ai_description}</p>
+                                            )}
+
+                                            {/* 조언 & 주의 */}
+                                            {(decade.advice || decade.caution) && (
+                                              <div className="advice-caution-summary">
+                                                {decade.advice && (
+                                                  <div className="advice-item">💡 <strong>조언:</strong> {decade.advice}</div>
+                                                )}
+                                                {decade.caution && (
+                                                  <div className="caution-item">⚠️ <strong>주의:</strong> {decade.caution}</div>
+                                                )}
                                               </div>
                                             )}
                                           </div>
-                                        )
+                                        </div>
                                       ))}
                                     </div>
                                   </div>
