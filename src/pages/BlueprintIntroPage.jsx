@@ -8,6 +8,11 @@ function BlueprintIntroPage() {
   const location = useLocation();
   const [openFaq, setOpenFaq] = useState(null);
 
+  // URL에서 plan 파라미터 읽기
+  const params = new URLSearchParams(location.search);
+  const initialPlan = params.get('plan') === 'lite' ? 'lite' : 'full';
+  const [selectedPlan, setSelectedPlan] = useState(initialPlan);
+
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -23,32 +28,77 @@ function BlueprintIntroPage() {
 
   const handleStartClick = () => {
     const params = new URLSearchParams(location.search);
-    params.set('product', 'blueprint');
+    params.set('product', selectedPlan === 'full' ? 'blueprint' : 'blueprint_lite');
     navigate(`/user-info?${params.toString()}`);
   };
 
-  const features = [
-    {
-      title: '나의 아이덴티티 잠재력 분석',
-      desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
+  // 플랜 정보
+  const plans = {
+    full: {
+      name: 'FULL',
+      title: '인생 청사진',
+      subtitle: '평생 대운 + 5개년 전략',
+      originalPrice: 150000,
+      currentPrice: 99000,
+      discount: 34
     },
-    {
-      title: '평생 대운 분석, 평생 소장',
-      desc: '10년 단위의 대운 흐름으로 인생의 큰 전환점과 기회를 예측합니다.'
-    },
-    {
-      title: '5개년 전략 로드맵',
-      desc: '향후 5년간의 연도별 운세와 구체적인 행동 전략을 제시합니다.'
-    },
-    {
-      title: '커리어/재물/연애운',
-      desc: '직업, 재정, 연애 각 영역별 맞춤 분석과 조언을 드립니다.'
-    },
-    {
-      title: '맞춤 개운법 가이드',
-      desc: '나에게 맞는 색상, 방향, 숫자 등 실생활 개운 팁을 알려드립니다.'
+    lite: {
+      name: 'LITE',
+      title: '3년 플랜',
+      subtitle: '현재/다음 대운 + 3개년 운세',
+      originalPrice: 90000,
+      currentPrice: 59000,
+      discount: 34
     }
-  ];
+  };
+
+  const currentPlan = plans[selectedPlan];
+
+  // 플랜별 features
+  const featuresData = {
+    full: [
+      {
+        title: '나의 아이덴티티 잠재력 분석',
+        desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
+      },
+      {
+        title: '평생 대운 분석, 평생 소장',
+        desc: '10년 단위의 대운 흐름으로 인생의 큰 전환점과 기회를 예측합니다.'
+      },
+      {
+        title: '5개년 전략 로드맵',
+        desc: '향후 5년간의 연도별 운세와 구체적인 행동 전략을 제시합니다.'
+      },
+      {
+        title: '커리어/재물/연애운',
+        desc: '직업, 재정, 연애 각 영역별 맞춤 분석과 조언을 드립니다.'
+      },
+      {
+        title: '맞춤 개운법 가이드',
+        desc: '나에게 맞는 색상, 방향, 숫자 등 실생활 개운 팁을 알려드립니다.'
+      }
+    ],
+    lite: [
+      {
+        title: '나의 아이덴티티 잠재력 분석',
+        desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
+      },
+      {
+        title: '현재 & 다음 대운 분석',
+        desc: '현재 대운과 다음 대운의 흐름을 중점적으로 분석합니다.'
+      },
+      {
+        title: '3개년 전략 로드맵',
+        desc: '올해부터 3년간의 연도별 운세와 구체적인 행동 전략을 제시합니다.'
+      },
+      {
+        title: '맞춤 개운법 가이드',
+        desc: '나에게 맞는 색상, 방향, 숫자 등 실생활 개운 팁을 알려드립니다.'
+      }
+    ]
+  };
+
+  const features = featuresData[selectedPlan];
 
   const reviews = [
     {
@@ -193,16 +243,41 @@ function BlueprintIntroPage() {
 
           {/* Price Section */}
           <div className="price-section">
-            <p className="price-message">
-              일 년을 점치는 운세는 잊혀지지만,<br />
-              평생을 설계하는 블루프린트는 남습니다.<br />
-              단 한 번의 선택으로, 인생의 나침반을 소장하세요.
-            </p>
-            <div className="price-row">
-              <span className="original-price">150,000원</span>
-              <span className="current-price">99,000원</span>
-              <span className="discount-badge">34% OFF</span>
+            <div className="plan-toggle-container">
+              <button
+                className={`plan-toggle-btn ${selectedPlan === 'full' ? 'active' : ''}`}
+                onClick={() => setSelectedPlan('full')}
+              >
+                <span className="plan-badge">FULL</span>
+                <span className="plan-title">인생 청사진</span>
+                <span className="plan-subtitle">평생 대운 + 5개년 전략</span>
+                <span className="plan-price">99,000원</span>
+              </button>
+              <button
+                className={`plan-toggle-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
+                onClick={() => setSelectedPlan('lite')}
+              >
+                <span className="plan-badge lite">LITE</span>
+                <span className="plan-title">3년 플랜</span>
+                <span className="plan-subtitle">현재/다음 대운 + 3개년 운세</span>
+                <span className="plan-price">59,000원</span>
+              </button>
             </div>
+            <p className="price-message">
+              {selectedPlan === 'full' ? (
+                <>
+                  일 년을 점치는 운세는 잊혀지지만,<br />
+                  평생을 설계하는 블루프린트는 남습니다.<br />
+                  단 한 번의 선택으로, 인생의 나침반을 소장하세요.
+                </>
+              ) : (
+                <>
+                  지금 당장 필요한 것에 집중하세요.<br />
+                  현재와 다음 대운, 3개년 운세를<br />
+                  합리적인 가격에 만나보세요.
+                </>
+              )}
+            </p>
           </div>
 
           {/* CTA Button */}

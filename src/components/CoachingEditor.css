@@ -291,6 +291,20 @@
   color: #dc2626;
 }
 
+.coaching-item-actions .btn-icon.btn-move {
+  color: #9ca3af;
+}
+
+.coaching-item-actions .btn-icon.btn-move:hover:not(:disabled) {
+  background: #ede9fe;
+  color: #8b5cf6;
+}
+
+.coaching-item-actions .btn-icon.btn-move:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .coaching-item-actions .toggle-icon {
   display: flex;
   align-items: center;

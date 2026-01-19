@@ -8,6 +8,7 @@ function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [footerOpen, setFooterOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('full'); // 'full' or 'lite'
 
   // 페이지 진입 시 추적 데이터 저장
   useEffect(() => {
@@ -36,6 +37,7 @@ function LandingPage() {
 
     // Blueprint 상품은 소개 페이지로 이동
     if (productId === 'blueprint') {
+      params.set('plan', selectedPlan);
       navigate(`/blueprint?${params.toString()}`);
       return;
     }
@@ -44,20 +46,40 @@ function LandingPage() {
     navigate(`/user-info?${params.toString()}`);
   };
 
+  // 플랜별 데이터
+  const blueprintPlans = {
+    full: {
+      price: '99,000',
+      originalPrice: '150,000',
+      subtitle: '평생 대운 + 5개년 전략',
+      features: ['나의 아이덴티티 잠재력 분석', '평생 대운 흐름 분석', '5개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
+    },
+    lite: {
+      price: '59,000',
+      originalPrice: '90,000',
+      subtitle: '현재/다음 대운 + 3개년 운세',
+      features: ['나의 아이덴티티 잠재력 분석', '현재 & 다음 대운 분석', '3개년 전략 로드맵', '맞춤 개운법 가이드']
+    }
+  };
+
+  const currentBlueprintPlan = blueprintPlans[selectedPlan];
+
   const reports = [
     {
       id: 'blueprint',
       title: 'The Blueprint',
       subtitleSmall: '인생 청사진',
-      subtitle: '당신만을 위한 인생 최적화 가이드',
-      description: '평생 대운과 5개년도의 전략 리포트로 인생의 방향과 중요한 전환점을 제시합니다.',
+      subtitle: currentBlueprintPlan.subtitle,
+      description: selectedPlan === 'full'
+        ? '평생 대운과 5개년도의 전략 리포트로 인생의 방향과 중요한 전환점을 제시합니다.'
+        : '현재와 다음 대운, 3개년 운세로 지금 필요한 방향을 제시합니다.',
       icon: Map,
       image: '/img/theblueprint2.png',
-      price: '99,000',
-      originalPrice: '150,000',
+      price: currentBlueprintPlan.price,
+      originalPrice: currentBlueprintPlan.originalPrice,
       badge: 'PREMIUM',
       gradient: 'from-dark to-gold',
-      features: ['나의 아이덴티티 잠재력 분석', '평생 대운 흐름 분석', '5개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
+      features: currentBlueprintPlan.features
     }
   ];
 
@@ -115,9 +137,31 @@ function LandingPage() {
                   <div className="card-text">
                     <h4 className="card-title">{report.title}</h4>
                     {report.subtitleSmall && <p className="card-subtitle-small">{report.subtitleSmall}</p>}
-                    <p className="card-subtitle">{report.subtitle}</p>
-                    <p className="card-description">{report.description}</p>
                   </div>
+
+                  {/* Plan Toggle */}
+                  {report.id === 'blueprint' && (
+                    <div className="plan-toggle">
+                      <button
+                        className={`plan-btn ${selectedPlan === 'full' ? 'active' : ''}`}
+                        onClick={() => setSelectedPlan('full')}
+                      >
+                        <span className="plan-btn-badge">FULL</span>
+                        <span className="plan-btn-name">인생 청사진</span>
+                        <span className="plan-btn-desc">평생 대운 + 5개년</span>
+                        <span className="plan-btn-price">99,000원</span>
+                      </button>
+                      <button
+                        className={`plan-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
+                        onClick={() => setSelectedPlan('lite')}
+                      >
+                        <span className="plan-btn-badge lite">LITE</span>
+                        <span className="plan-btn-name">3년 플랜</span>
+                        <span className="plan-btn-desc">현재/다음 대운 + 3개년</span>
+                        <span className="plan-btn-price">59,000원</span>
+                      </button>
+                    </div>
+                  )}
 
                   <ul className="feature-list">
                     {report.features.map((feature, idx) => (
@@ -129,11 +173,6 @@ function LandingPage() {
                   </ul>
 
                   <div className="card-bottom">
-                    <div className="price-section">
-                      <span className="original-price">{report.originalPrice}원</span>
-                      <span className="current-price">{report.price}원</span>
-                    </div>
-
                     <button className="order-button" onClick={() => handleStartClick(report.id)}>
                       <span>시작하기</span>
                       <ArrowRight size={18} />

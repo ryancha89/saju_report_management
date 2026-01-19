@@ -1038,3 +1038,60 @@
 .five-year-fortune-editor .btn-ai-area .spinning {
   animation: spin 1s linear infinite;
 }
+
+/* 데이터 없음 메시지 */
+.five-year-fortune-editor .no-data-message {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
+.five-year-fortune-editor .no-data-message p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* 종합 운세 영역 */
+.five-year-fortune-editor .overall-area {
+  border-left: 4px solid #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.five-year-fortune-editor .overall-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.five-year-fortune-editor .overall-summary {
+  font-size: 0.85rem;
+  color: #374151;
+  background: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #d1fae5;
+  margin: 0;
+  font-weight: 500;
+}
+
+.five-year-fortune-editor .overall-interpretation {
+  background: linear-gradient(135deg, #fefce8, #fef9c3) !important;
+  border: 1px solid #fde047 !important;
+}
+
+.five-year-fortune-editor .no-interpretation-message {
+  background: #f0fdf4;
+  border: 1px dashed #86efac;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+
+.five-year-fortune-editor .no-interpretation-message p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #059669;
+}

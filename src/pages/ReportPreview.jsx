@@ -15,15 +15,19 @@ function ReportPreview({ isAdminPreview = false }) {
   const [downloading, setDownloading] = useState(false);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const [currentDecadePage, setCurrentDecadePage] = useState(1); // 0: 요약, 1~N: 개별 대운 (기본값: 첫 대운)
+  const [currentFiveYearPage, setCurrentFiveYearPage] = useState(1); // 1~5: 연도별 페이지
   const dropdownRef = useRef(null);
 
-  // 챕터 정보
+  // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
+  const yearCount = reportData?.order?.report_type === 'blueprint_lite' ? 3 : 5;
+
+  // 챕터 정보 (yearCount에 따라 동적으로 변경)
   const chapterInfo = {
     1: { title: '사주정보' },
     2: { title: '나의 아이덴티티' },
     3: { title: '나의 잠재력과 사회적 역할' },
     4: { title: '대운 흐름 분석' },
-    5: { title: '향후 5년간의 운세' },
+    5: { title: `향후 ${yearCount}년간의 운세` },
     6: { title: '재물운' },
     7: { title: '직업운/사회운' },
     8: { title: '연애운/배우자운' },
@@ -957,7 +961,7 @@ function ReportPreview({ isAdminPreview = false }) {
     );
   };
 
-  // 챕터 5 - 향후 5년의 운세 (격국, 천간, 지지운 기반)
+  // 챕터 5 - 향후 N년의 운세 (격국, 천간, 지지운 기반)
   const renderFiveYearFortune = () => {
     const yearlyFortune = reportData?.yearly_fortune;
     const content = getChapterContent(5);
@@ -971,7 +975,7 @@ function ReportPreview({ isAdminPreview = false }) {
       return (
         <div className="five-year-fortune-preview">
           <div className="fortune-header">
-            <h5>향후 5년 운세 흐름</h5>
+            <h5>향후 {yearCount}년 운세 흐름</h5>
             <p className="fortune-desc">격국·천간·지지운을 기반으로 한 연도별 종합 분석</p>
           </div>
 
@@ -986,34 +990,38 @@ function ReportPreview({ isAdminPreview = false }) {
 
               {/* 핵심 분석 요소 */}
               <div className="fortune-analysis-grid">
-                {yearData.gyeokguk && (
+                {(yearData.gyeokguk || yearData.sky_outcome?.gyeokguk || yearData.earth_outcome?.gyeokguk) && (
                   <div className="analysis-item">
                     <span className="analysis-label">격국</span>
-                    <span className="analysis-value">{yearData.gyeokguk}</span>
+                    <span className="analysis-value">{yearData.gyeokguk || yearData.sky_outcome?.gyeokguk || yearData.earth_outcome?.gyeokguk}</span>
                   </div>
                 )}
-                {yearData.chungan && (
+                {(yearData.chungan || yearData.sky_outcome?.reason || yearData.sky_outcome?.result) && (
                   <div className="analysis-item highlight">
                     <span className="analysis-label">천간운</span>
-                    <span className={`analysis-value ${getElementClass(yearData.sky)}`}>{yearData.chungan}</span>
+                    <span className={`analysis-value ${getElementClass(yearData.sky)}`}>
+                      {yearData.chungan || yearData.sky_outcome?.reason || yearData.sky_outcome?.result}
+                    </span>
                   </div>
                 )}
-                {yearData.jiji && (
+                {(yearData.jiji || yearData.earth_outcome?.reason || yearData.earth_outcome?.result) && (
                   <div className="analysis-item highlight">
                     <span className="analysis-label">지지운</span>
-                    <span className={`analysis-value ${getElementClass(yearData.earth)}`}>{yearData.jiji}</span>
+                    <span className={`analysis-value ${getElementClass(yearData.earth)}`}>
+                      {yearData.jiji || yearData.earth_outcome?.reason || yearData.earth_outcome?.result}
+                    </span>
                   </div>
                 )}
-                {yearData.eokbu && (
+                {(yearData.eokbu || yearData.strength?.analysis || yearData.strength?.decade_level) && (
                   <div className="analysis-item">
                     <span className="analysis-label">억부</span>
-                    <span className="analysis-value">{yearData.eokbu}</span>
+                    <span className="analysis-value">{yearData.eokbu || yearData.strength?.analysis || yearData.strength?.decade_level}</span>
                   </div>
                 )}
-                {yearData.johu && (
+                {(yearData.johu_text || yearData.temperature?.description || yearData.johu?.analysis || yearData.temperature?.decade_label) && (
                   <div className="analysis-item">
                     <span className="analysis-label">조후</span>
-                    <span className="analysis-value">{yearData.johu}</span>
+                    <span className="analysis-value">{yearData.johu_text || yearData.temperature?.description || yearData.johu?.analysis || yearData.temperature?.decade_label}</span>
                   </div>
                 )}
                 {yearData.sibiunsung && (

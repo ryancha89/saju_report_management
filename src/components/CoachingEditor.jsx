@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { RefreshCw, Plus, Trash2, Sparkles, Edit3, Save, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
+import { RefreshCw, Plus, Trash2, Sparkles, Edit3, Save, MessageSquare, ChevronDown, ChevronRight, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react';
 import './CoachingEditor.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -12,8 +12,11 @@ const getCacheKey = (orderId) => `coaching_${orderId}`;
 function CoachingItem({
   item,
   index,
+  totalItems,
   onUpdate,
   onDelete,
+  onMoveUp,
+  onMoveDown,
   onRegenerateItem,
   isRegenerating,
   userName
@@ -78,6 +81,22 @@ function CoachingItem({
         <div className="coaching-item-actions" onClick={(e) => e.stopPropagation()}>
           {!isEditing && (
             <>
+              <button
+                className="btn-icon btn-move"
+                onClick={() => onMoveUp(index)}
+                disabled={index === 0}
+                title="위로 이동"
+              >
+                <ArrowUp size={14} />
+              </button>
+              <button
+                className="btn-icon btn-move"
+                onClick={() => onMoveDown(index)}
+                disabled={index === totalItems - 1}
+                title="아래로 이동"
+              >
+                <ArrowDown size={14} />
+              </button>
               <button
                 className="btn-icon"
                 onClick={() => setIsEditing(true)}
@@ -400,6 +419,38 @@ const CoachingEditor = forwardRef(function CoachingEditor({
     }
   };
 
+  // 항목 위로 이동
+  const handleMoveUp = (index) => {
+    if (index === 0) return;
+
+    const newItems = [...coachingItems];
+    [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+    // ID 재할당
+    const reindexedItems = newItems.map((item, i) => ({ ...item, id: i + 1 }));
+    setCoachingItems(reindexedItems);
+    saveToCache(reindexedItems);
+
+    if (onChange) {
+      onChange(reindexedItems);
+    }
+  };
+
+  // 항목 아래로 이동
+  const handleMoveDown = (index) => {
+    if (index === coachingItems.length - 1) return;
+
+    const newItems = [...coachingItems];
+    [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+    // ID 재할당
+    const reindexedItems = newItems.map((item, i) => ({ ...item, id: i + 1 }));
+    setCoachingItems(reindexedItems);
+    saveToCache(reindexedItems);
+
+    if (onChange) {
+      onChange(reindexedItems);
+    }
+  };
+
   // 새 항목 추가
   const handleAddItem = () => {
     const newItem = {
@@ -530,8 +581,11 @@ const CoachingEditor = forwardRef(function CoachingEditor({
               key={item.id || index}
               item={item}
               index={index}
+              totalItems={coachingItems.length}
               onUpdate={handleUpdateItem}
               onDelete={handleDeleteItem}
+              onMoveUp={handleMoveUp}
+              onMoveDown={handleMoveDown}
               onRegenerateItem={handleRegenerateItem}
               isRegenerating={regeneratingItem === index}
               userName={userName}
