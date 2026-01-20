@@ -1682,35 +1682,8 @@ function ReportPreview({ isAdminPreview = false }) {
                 <span className="chapter-label">Chapter {currentChapter}</span>
                 <h2 className="chapter-title-overlay">{chapterInfo[currentChapter].title}</h2>
               </div>
-              <div className="image-navigation-bar">
-                <button
-                  className={`image-nav-btn prev ${currentChapter === 1 ? 'disabled' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (currentChapter > 1) {
-                      setCurrentChapter(currentChapter - 1);
-                      setShowChapterImage(false); // 이전 챕터 내용으로 이동
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                  }}
-                  disabled={currentChapter === 1}
-                >
-                  <ChevronLeft size={24} />
-                  <span>이전</span>
-                </button>
-                <div className="image-page-indicator">
-                  {currentChapter} / {totalChapters}
-                </div>
-                <button
-                  className="image-nav-btn next"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowChapterImage(false); // 챕터 커버 닫고 내용 표시
-                  }}
-                >
-                  <span>다음</span>
-                  <ChevronRight size={24} />
-                </button>
+              <div className="scroll-indicator">
+                <ChevronDown size={28} />
               </div>
             </div>
           ) : (
@@ -1728,42 +1701,43 @@ function ReportPreview({ isAdminPreview = false }) {
           )}
         </div>
 
-        {/* Chapter Navigation Dots */}
-        <div className="chapter-dots">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-            <button
-              key={num}
-              className={`chapter-dot ${currentChapter === num ? 'active' : ''}`}
-              onClick={() => selectChapter(num)}
-              title={chapterInfo[num].title}
-            >
-              <span className="dot-number">{num}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Navigation Arrows */}
-        <div className="chapter-navigation">
+        {/* Chapter Pagination (Bottom) */}
+        <div className="chapter-pagination">
           <button
-            className={`nav-btn prev ${currentChapter === 1 ? 'disabled' : ''}`}
+            className="chapter-page-arrow"
             onClick={goToPrevChapter}
             disabled={currentChapter === 1}
           >
-            <ChevronLeft size={24} />
-            <span>이전</span>
+            <ChevronLeft size={20} />
           </button>
-
-          <div className="nav-page-info">
-            {currentChapter} / {totalChapters}
+          <div className="chapter-page-numbers">
+            {(() => {
+              let start = Math.max(1, currentChapter - 2);
+              let end = Math.min(totalChapters, start + 4);
+              if (end - start < 4) {
+                start = Math.max(1, end - 4);
+              }
+              const pages = [];
+              for (let i = start; i <= end; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    className={`chapter-page-num ${currentChapter === i ? 'active' : ''}`}
+                    onClick={() => selectChapter(i)}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
           </div>
-
           <button
-            className={`nav-btn next ${currentChapter === totalChapters ? 'disabled' : ''}`}
+            className="chapter-page-arrow"
             onClick={goToNextChapter}
             disabled={currentChapter === totalChapters}
           >
-            <span>다음</span>
-            <ChevronRight size={24} />
+            <ChevronRight size={20} />
           </button>
         </div>
 

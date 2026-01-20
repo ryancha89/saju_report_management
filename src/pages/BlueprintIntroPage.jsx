@@ -312,13 +312,6 @@ function BlueprintIntroPage() {
                   <p>입력하신 이메일로 웹 리포트 링크와 PDF 파일이 함께 발송됩니다.</p>
                 </div>
               </div>
-              <div className="process-item">
-                <div className="process-number">4</div>
-                <div className="process-content">
-                  <h4>추가 질문 답변</h4>
-                  <p>주문 시 남겨주신 추가 질문에 대해 별도로 답변을 발송해드립니다.</p>
-                </div>
-              </div>
             </div>
             <div className="process-contact">
               문의 <a href="mailto:help@ftorch.com">help@ftorch.com</a>

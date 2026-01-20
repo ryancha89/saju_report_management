@@ -1756,6 +1756,23 @@ function OrderDetail() {
       }
 
       setChapter1Data(data.chapter);
+
+      // 생성 후 즉시 DB에 저장 (chapter2 = 아이덴티티)
+      if (data.chapter?.content) {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_number: 2,  // 아이덴티티는 chapter2
+            content: data.chapter.content,
+            basis: data.chapter.basis || basis1Data
+          })
+        });
+        console.log('[generateChapter1] 챕터2(아이덴티티) DB 저장 완료');
+      }
     } catch (err) {
       setChapter1Error(err.message);
     } finally {
@@ -1784,6 +1801,23 @@ function OrderDetail() {
       }
 
       setChapter2Data(data.chapter);
+
+      // 생성 후 즉시 DB에 저장 (chapter3 = 잠재력)
+      if (data.chapter?.content) {
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_number: 3,  // 잠재력은 chapter3
+            content: data.chapter.content,
+            basis: data.chapter.basis || basis2Data
+          })
+        });
+        console.log('[generateChapter2] 챕터3(잠재력) DB 저장 완료');
+      }
     } catch (err) {
       setChapter2Error(err.message);
     } finally {
@@ -1812,6 +1846,28 @@ function OrderDetail() {
       }
 
       setChapter3Data(data.chapter);
+
+      // 생성 후 즉시 DB에 저장 (chapter4 = 대운흐름)
+      if (data.chapter?.content || data.chapter?.decade_flow) {
+        const basisWithDecadeFlow = {
+          ...(data.chapter.basis || basis3Data || {}),
+          decade_flow: data.chapter.decade_flow
+        };
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_number: 4,  // 대운흐름은 chapter4
+            content: data.chapter.content,
+            basis: basisWithDecadeFlow
+          })
+        });
+        console.log('[generateChapter3] 챕터4(대운흐름) DB 저장 완료');
+      }
+
       return data.chapter;
     } catch (err) {
       setChapter3Error(err.message);
@@ -2380,6 +2436,7 @@ function OrderDetail() {
   const fetchSavedReport = async () => {
     setSavedReportLoading(true);
     try {
+      console.log('[fetchSavedReport] Fetching report for order:', id);
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/report_output`, {
         headers: {
           'Content-Type': 'application/json',
@@ -2388,8 +2445,10 @@ function OrderDetail() {
       });
 
       const data = await response.json();
+      console.log('[fetchSavedReport] Response:', { ok: response.ok, success: data.success, hasReportOutput: !!data.report_output, data });
 
       if (response.ok && data.success && data.report_output) {
+        console.log('[fetchSavedReport] Setting savedReport with secure_token:', data.report_output.secure_token);
         setSavedReport(data.report_output);
 
         // 저장된 데이터로 챕터 상태 복원 (챕터 번호 +1: 기본정보가 1번)
@@ -2463,9 +2522,11 @@ function OrderDetail() {
           const coachingItems = data.report_output.coaching.items || [];
           setCoachingData(coachingItems);
         }
+      } else {
+        console.log('[fetchSavedReport] No report found or error:', { ok: response.ok, success: data.success, error: data.error });
       }
     } catch (err) {
-      console.error('저장된 레포트 조회 실패:', err);
+      console.error('[fetchSavedReport] 저장된 레포트 조회 실패:', err);
     } finally {
       setSavedReportLoading(false);
     }
@@ -2478,6 +2539,14 @@ function OrderDetail() {
 
   // 전체 레포트 저장 (데이터 직접 전달)
   const saveFullReportWithData = async (ch1Data, ch2Data, ch3Data, ch4Data, ch6LoveData) => {
+    console.log('[saveFullReportWithData] 저장 시작 - order:', id);
+    console.log('[saveFullReportWithData] 데이터 확인:', {
+      ch1Data_hasContent: !!ch1Data?.content,
+      ch2Data_hasContent: !!ch2Data?.content,
+      ch3Data_hasContent: !!ch3Data?.content,
+      ch4Data_hasContent: !!ch4Data?.content,
+      ch6LoveData_hasContent: !!ch6LoveData?.content
+    });
     try {
       // 챕터 번호가 +1 됨 (기본정보가 1번이므로)
       // ch1Data(아이덴티티) -> chapter2, ch2Data(잠재력) -> chapter3
@@ -2503,14 +2572,17 @@ function OrderDetail() {
       });
 
       const data = await response.json();
+      console.log('[saveFullReportWithData] 응답:', { ok: response.ok, success: data.success, hasReportOutput: !!data.report_output, secureToken: data.report_output?.secure_token });
 
       if (response.ok && data.success) {
+        console.log('[saveFullReportWithData] 저장 성공! secure_token:', data.report_output?.secure_token);
         setSavedReport(data.report_output);
       } else {
+        console.error('[saveFullReportWithData] 저장 실패:', data.error);
         throw new Error(data.error || '레포트 저장에 실패했습니다.');
       }
     } catch (err) {
-      console.error('레포트 저장 실패:', err);
+      console.error('[saveFullReportWithData] 에러:', err);
       throw err;
     }
   };
@@ -2574,14 +2646,36 @@ function OrderDetail() {
       setGeneratingChapter(1);
       if (forceRegenerate || !chapter1Data?.content) {
         setChapter1Loading(true);
-        const res1 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter1`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data1 = await res1.json();
-        if (res1.ok && data1.success) {
-          setChapter1Data(data1.chapter);
-          newChapter1Data = data1.chapter;
+        try {
+          console.log('[generateAllChapters] 챕터1 (아이덴티티) 생성 시작');
+          const res1 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter1`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const data1 = await res1.json();
+          console.log('[generateAllChapters] 챕터1 응답:', { ok: res1.ok, success: data1.success, hasContent: !!data1.chapter?.content });
+          if (res1.ok && data1.success) {
+            setChapter1Data(data1.chapter);
+            newChapter1Data = data1.chapter;
+
+            // 즉시 DB에 저장 (chapter2 = 아이덴티티)
+            if (data1.chapter?.content) {
+              await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                body: JSON.stringify({
+                  chapter_number: 2,
+                  content: data1.chapter.content,
+                  basis: data1.chapter.basis
+                })
+              });
+              console.log('[generateAllChapters] 챕터1(아이덴티티) DB 저장 완료');
+            }
+          } else {
+            console.error('[generateAllChapters] 챕터1 생성 실패:', data1.error);
+          }
+        } catch (err) {
+          console.error('[generateAllChapters] 챕터1 생성 에러:', err);
         }
         setChapter1Loading(false);
       }
@@ -2590,14 +2684,36 @@ function OrderDetail() {
       setGeneratingChapter(2);
       if (forceRegenerate || !chapter2Data?.content) {
         setChapter2Loading(true);
-        const res2 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data2 = await res2.json();
-        if (res2.ok && data2.success) {
-          setChapter2Data(data2.chapter);
-          newChapter2Data = data2.chapter;
+        try {
+          console.log('[generateAllChapters] 챕터2 (잠재력) 생성 시작');
+          const res2 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const data2 = await res2.json();
+          console.log('[generateAllChapters] 챕터2 응답:', { ok: res2.ok, success: data2.success, hasContent: !!data2.chapter?.content });
+          if (res2.ok && data2.success) {
+            setChapter2Data(data2.chapter);
+            newChapter2Data = data2.chapter;
+
+            // 즉시 DB에 저장 (chapter3 = 잠재력)
+            if (data2.chapter?.content) {
+              await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                body: JSON.stringify({
+                  chapter_number: 3,
+                  content: data2.chapter.content,
+                  basis: data2.chapter.basis
+                })
+              });
+              console.log('[generateAllChapters] 챕터2(잠재력) DB 저장 완료');
+            }
+          } else {
+            console.error('[generateAllChapters] 챕터2 생성 실패:', data2.error);
+          }
+        } catch (err) {
+          console.error('[generateAllChapters] 챕터2 생성 에러:', err);
         }
         setChapter2Loading(false);
       }
@@ -2606,14 +2722,40 @@ function OrderDetail() {
       setGeneratingChapter(3);
       if (forceRegenerate || !chapter3Data?.content) {
         setChapter3Loading(true);
-        const res3 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data3 = await res3.json();
-        if (res3.ok && data3.success) {
-          setChapter3Data(data3.chapter);
-          newChapter3Data = data3.chapter;
+        try {
+          console.log('[generateAllChapters] 챕터3 (대운흐름) 생성 시작');
+          const res3 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const data3 = await res3.json();
+          console.log('[generateAllChapters] 챕터3 응답:', { ok: res3.ok, success: data3.success, hasContent: !!data3.chapter?.content });
+          if (res3.ok && data3.success) {
+            setChapter3Data(data3.chapter);
+            newChapter3Data = data3.chapter;
+
+            // 즉시 DB에 저장 (chapter4 = 대운흐름)
+            if (data3.chapter?.content || data3.chapter?.decade_flow) {
+              const basisWithDecadeFlow = {
+                ...(data3.chapter.basis || {}),
+                decade_flow: data3.chapter.decade_flow
+              };
+              await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                body: JSON.stringify({
+                  chapter_number: 4,
+                  content: data3.chapter.content,
+                  basis: basisWithDecadeFlow
+                })
+              });
+              console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
+            }
+          } else {
+            console.error('[generateAllChapters] 챕터3 생성 실패:', data3.error);
+          }
+        } catch (err) {
+          console.error('[generateAllChapters] 챕터3 생성 에러:', err);
         }
         setChapter3Loading(false);
       }
@@ -2926,7 +3068,33 @@ function OrderDetail() {
 
       // 전체 저장 (새로 생성된 데이터 사용)
       setGeneratingChapter('saving');
-      await saveFullReportWithData(newChapter1Data, newChapter2Data, newChapter3Data, newChapter4Data, newChapter6Data);
+
+      // 저장 전 데이터 검증 로그
+      const missingChapters = [];
+      if (!newChapter1Data?.content) missingChapters.push('챕터1(아이덴티티)');
+      if (!newChapter2Data?.content) missingChapters.push('챕터2(잠재력)');
+      if (!newChapter3Data?.content) missingChapters.push('챕터3(대운흐름)');
+      if (!newChapter4Data?.content) missingChapters.push('챕터4(5년운세)');
+
+      if (missingChapters.length > 0) {
+        console.warn('[generateAllChapters] ⚠️ 누락된 챕터 데이터:', missingChapters.join(', '));
+      }
+
+      console.log('[generateAllChapters] 전체 레포트 저장 시작...', {
+        ch1: !!newChapter1Data?.content,
+        ch2: !!newChapter2Data?.content,
+        ch3: !!newChapter3Data?.content,
+        ch4: !!newChapter4Data?.content,
+        ch6: !!newChapter6Data?.content
+      });
+      try {
+        await saveFullReportWithData(newChapter1Data, newChapter2Data, newChapter3Data, newChapter4Data, newChapter6Data);
+        console.log('[generateAllChapters] 전체 레포트 저장 완료!');
+      } catch (saveErr) {
+        console.error('[generateAllChapters] 전체 레포트 저장 실패:', saveErr);
+        alert(`레포트 저장 실패: ${saveErr.message}`);
+        throw saveErr;
+      }
 
       // 주문 상태를 pending으로 변경
       if (order.status !== 'pending' && order.status !== 'completed') {
@@ -2935,7 +3103,7 @@ function OrderDetail() {
 
     } catch (err) {
       console.error('전체 레포트 생성 실패:', err);
-      alert('레포트 생성 중 오류가 발생했습니다.');
+      alert(`레포트 생성 중 오류가 발생했습니다: ${err.message}`);
     } finally {
       setSavingReport(false);
       setGeneratingChapter(null);

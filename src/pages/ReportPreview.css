@@ -647,25 +647,23 @@ body:has(.report-page) {
 
 /* Chapter Image Overlay */
 .chapter-image-overlay {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   width: 100%;
-  max-width: 470px;
-  height: 100vh;
-  height: 100dvh;
+  min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #000000;
-  z-index: 100;
   overflow: hidden;
   cursor: pointer;
 }
 
 .chapter-intro-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -728,6 +726,21 @@ body:has(.report-page) {
     0 0 40px rgba(0, 0, 0, 0.8);
   letter-spacing: 1px;
   white-space: nowrap;
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 10;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
 }
 
 .image-navigation-bar {
@@ -874,47 +887,74 @@ body:has(.report-page) {
   color: #94a3b8;
 }
 
-/* Chapter Navigation Dots */
-.chapter-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px;
-  flex-wrap: wrap;
-  background: #000000;
-}
-
-.chapter-dot {
+/* ===== Chapter Pagination (Bottom) ===== */
+.chapter-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  gap: 8px;
+  padding: 16px;
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chapter-page-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.chapter-dot:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+.chapter-page-arrow:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.chapter-dot.active {
-  background: rgba(255, 244, 200, 0.2);
-  border-color: rgb(255, 244, 200);
+.chapter-page-arrow:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
 }
 
-.dot-number {
+.chapter-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chapter-page-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.9rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.chapter-dot.active .dot-number {
+.chapter-page-num:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chapter-page-num.active {
   color: rgb(255, 244, 200);
+  background: rgba(255, 244, 200, 0.15);
+  border-color: rgba(255, 244, 200, 0.3);
+  font-weight: 600;
 }
 
 /* Navigation Arrows */
@@ -2933,13 +2973,20 @@ h3.coaching-item-topic:active {
     gap: 8px;
   }
 
-  .chapter-dots {
+  .chapter-pagination {
+    padding: 12px;
     gap: 6px;
   }
 
-  .chapter-dot {
-    width: 36px;
-    height: 36px;
+  .chapter-page-arrow {
+    width: 32px;
+    height: 32px;
+  }
+
+  .chapter-page-num {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
   }
 
   .chapter-image-text .chapter-label {

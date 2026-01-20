@@ -39,7 +39,6 @@ const STEPS = [
   { id: 'gender', label: '성별을 알려주세요', placeholder: '' },
   { id: 'email', label: '리포트를 받을 이메일을 알려주세요', placeholder: '이메일을 입력해주세요' },
   { id: 'phone', label: '연락처를 알려주세요', placeholder: '010-0000-0000' },
-  { id: 'questions', label: '리포트에서 알고 싶은 내용이 있나요?', placeholder: '' },
   { id: 'preview', label: '사주팔자 확인 및 결제', placeholder: '' },
 ];
 
@@ -159,8 +158,7 @@ function UserInfoPage() {
       case 4: return formData.gender.length > 0;
       case 5: return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       case 6: return formData.phone.replace(/\D/g, '').length === 11; // 전화번호 11자리
-      case 7: return true; // 질문 단계 - 선택사항
-      case 8: return true; // 미리보기 + 결제 단계
+      case 7: return true; // 미리보기 + 결제 단계
       default: return false;
     }
   };
@@ -326,7 +324,7 @@ function UserInfoPage() {
 
   // 미리보기 단계 진입 시 사주 데이터 로드
   useEffect(() => {
-    if (currentStep === 8 && !sajuData && !sajuLoading) {
+    if (currentStep === 7 && !sajuData && !sajuLoading) {
       fetchSajuData();
     }
   }, [currentStep]);
@@ -709,66 +707,7 @@ function UserInfoPage() {
           </div>
         );
 
-      case 7: // 추가 질문 입력 (최대 2개, 선택사항)
-        return (
-          <div className="input-group questions-group">
-            <p className="questions-hint">
-              리포트 제작 후 추가로 궁금한 점이 있으시면<br />
-              질문을 남겨주세요 (선택사항)
-            </p>
-            <p className="questions-sub-hint">
-              입력하신 질문은 리포트 발송 후 별도로 답변드립니다
-            </p>
-            {formData.questions.map((question, index) => (
-              <div key={index} className="question-input-row">
-                <span className="question-number">{index + 1}</span>
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => {
-                    const newQuestions = [...formData.questions];
-                    newQuestions[index] = e.target.value;
-                    setFormData({ ...formData, questions: newQuestions });
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      if (index < 1) {
-                        // 다음 질문 입력창으로 포커스 이동
-                        const nextInput = e.target.parentElement.nextElementSibling?.querySelector('input');
-                        if (nextInput) nextInput.focus();
-                      } else {
-                        // 마지막 질문에서 Enter 시 다음 단계로
-                        if (isEditing) {
-                          finishEditing();
-                        } else {
-                          autoNext();
-                        }
-                      }
-                    }
-                  }}
-                  placeholder={`추가 질문 ${index + 1}을 입력해주세요`}
-                  className="text-input question-input"
-                  maxLength={150}
-                  autoFocus={index === 0}
-                />
-              </div>
-            ))}
-            <button
-              className="skip-questions-btn"
-              onClick={() => {
-                if (isEditing) {
-                  finishEditing();
-                } else {
-                  autoNext();
-                }
-              }}
-            >
-              {formData.questions.some(q => q.trim()) ? '다음' : '건너뛰기'}
-            </button>
-          </div>
-        );
-
-      case 8: // 사주 미리보기 + 결제
+      case 7: // 사주 미리보기 + 결제
         return (
           <div className="saju-preview">
             {sajuLoading ? (
@@ -854,12 +793,6 @@ function UserInfoPage() {
                     <span className="label">연락처</span>
                     <span className="value">{formData.phoneDisplay}</span>
                   </div>
-                  {formData.questions.some(q => q.trim()) && (
-                    <div className="completed-item" onClick={() => goToStep(7)}>
-                      <span className="label">추가질문</span>
-                      <span className="value">{formData.questions.filter(q => q.trim()).length}개</span>
-                    </div>
-                  )}
                 </div>
               </>
             ) : (
