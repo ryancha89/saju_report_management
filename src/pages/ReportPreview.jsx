@@ -15,6 +15,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const [downloading, setDownloading] = useState(false);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const [currentDecadePage, setCurrentDecadePage] = useState(1); // 0: 요약, 1~N: 개별 대운 (기본값: 첫 대운)
+  const [showChapterImage, setShowChapterImage] = useState(false); // 챕터 이미지 표시 여부
   const dropdownRef = useRef(null);
 
   // 챕터 정보
@@ -56,6 +57,15 @@ function ReportPreview({ isAdminPreview = false }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 챕터가 변경될 때 이미지 표시 여부 설정 (챕터 1-9)
+  useEffect(() => {
+    if (currentChapter >= 1 && currentChapter <= 9) {
+      setShowChapterImage(true);
+    } else {
+      setShowChapterImage(false);
+    }
+  }, [currentChapter]);
 
   const fetchReport = async () => {
     setLoading(true);
@@ -1281,6 +1291,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const goToPrevChapter = () => {
     if (currentChapter > 1) {
       setCurrentChapter(currentChapter - 1);
+      setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -1288,6 +1299,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const goToNextChapter = () => {
     if (currentChapter < totalChapters) {
       setCurrentChapter(currentChapter + 1);
+      setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -1295,6 +1307,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const selectChapter = (num) => {
     setCurrentChapter(num);
     setShowChapterDropdown(false);
+    setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1373,15 +1386,55 @@ function ReportPreview({ isAdminPreview = false }) {
 
         {/* Chapter Content */}
         <div className="chapter-display">
-          <div className="chapter-title-bar">
-            <div className="chapter-title-info">
-              <span className="chapter-number">Chapter {currentChapter}</span>
-              <h2 className="chapter-title">{chapterInfo[currentChapter].title}</h2>
+          {showChapterImage && currentChapter >= 1 && currentChapter <= 9 ? (
+            <div className="chapter-image-overlay">
+              <img
+                src={`/img/ch_${currentChapter}_img.jpg`}
+                alt={`Chapter ${currentChapter}`}
+                className="chapter-intro-image"
+                onClick={() => setShowChapterImage(false)}
+              />
+              <div className="image-navigation-bar">
+                <button
+                  className={`image-nav-btn prev ${currentChapter === 1 ? 'disabled' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (currentChapter > 1) goToPrevChapter();
+                  }}
+                  disabled={currentChapter === 1}
+                >
+                  <ChevronLeft size={24} />
+                  <span>이전</span>
+                </button>
+                <div className="image-tap-hint" onClick={() => setShowChapterImage(false)}>
+                  탭하여 내용 보기
+                </div>
+                <button
+                  className={`image-nav-btn next ${currentChapter === totalChapters ? 'disabled' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (currentChapter < totalChapters) goToNextChapter();
+                  }}
+                  disabled={currentChapter === totalChapters}
+                >
+                  <span>다음</span>
+                  <ChevronRight size={24} />
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="chapter-content">
-            {renderChapterContent()}
-          </div>
+          ) : (
+            <>
+              <div className="chapter-title-bar">
+                <div className="chapter-title-info">
+                  <span className="chapter-number">Chapter {currentChapter}</span>
+                  <h2 className="chapter-title">{chapterInfo[currentChapter].title}</h2>
+                </div>
+              </div>
+              <div className="chapter-content">
+                {renderChapterContent()}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Chapter Navigation Dots */}
