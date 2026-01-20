@@ -16,6 +16,9 @@ function ReportPreview({ isAdminPreview = false }) {
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const [currentDecadePage, setCurrentDecadePage] = useState(1); // 0: 요약, 1~N: 개별 대운 (기본값: 첫 대운)
   const [currentFiveYearPage, setCurrentFiveYearPage] = useState(1); // 1~5: 연도별 페이지
+  const [currentFortuneYearPage, setCurrentFortuneYearPage] = useState(1); // 재물운 연도별 페이지
+  const [currentCareerYearPage, setCurrentCareerYearPage] = useState(1); // 직업운 연도별 페이지
+  const [currentLoveYearPage, setCurrentLoveYearPage] = useState(1); // 연애운 연도별 페이지
   const dropdownRef = useRef(null);
 
   // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
@@ -153,18 +156,56 @@ function ReportPreview({ isAdminPreview = false }) {
           .sort((a, b) => (a[1].year || parseInt(a[0]) || 0) - (b[1].year || parseInt(b[0]) || 0));
       }
     }
-    // 연애운 (챕터 7) - love_fortune.yearlyLoveFortunes 또는 직접 연도별 데이터
+    // 연애운 (챕터 7) - love_fortune에서 연도별 데이터 추출
     if (chapterNum === 7 && reportData.love_fortune) {
-      const yearlyData = reportData.love_fortune.yearlyLoveFortunes || reportData.love_fortune;
-      if (yearlyData && typeof yearlyData === 'object') {
-        // 배열인 경우
-        if (Array.isArray(yearlyData)) {
-          return yearlyData.map((item, idx) => [String(idx), item]);
+      const loveData = reportData.love_fortune;
+      const cachedYears = loveData.cached_analysis?.years || [];
+
+      // yearlyLoveFortunes는 배열 형태
+      const yearlyArray = loveData.yearlyLoveFortunes;
+
+      if (Array.isArray(yearlyArray) && yearlyArray.length > 0) {
+        // 배열 형태: [{year: 2026, generated_content: "...", ...}, ...]
+        return yearlyArray
+          .filter(item => item && item.year && item.year >= 2000)
+          .map((item) => {
+            // cached_analysis에서 해당 연도의 추가 데이터 찾기
+            const cachedYear = cachedYears.find(c => c && c.year === item.year);
+            return [String(item.year), { ...(cachedYear || {}), ...item }];
+          })
+          .sort((a, b) => a[1].year - b[1].year);
+      }
+
+      // 객체 형태 (연도가 키인 경우): { "2026": {...}, "2027": {...} }
+      if (typeof loveData === 'object' && !Array.isArray(loveData)) {
+        const yearEntries = Object.entries(loveData)
+          .filter(([key, value]) => {
+            const yearNum = parseInt(key);
+            return value && typeof value === 'object' &&
+                   !isNaN(yearNum) &&
+                   yearNum >= 2000 &&
+                   key !== 'cached_analysis' &&
+                   key !== 'yearlyLoveFortunes' &&
+                   key !== 'baseAnalysis';
+          })
+          .map(([year, data]) => {
+            const cachedYear = cachedYears.find(c => c && String(c.year) === String(year));
+            const yearNum = parseInt(year);
+            return [year, { ...(cachedYear || {}), ...data, year: yearNum }];
+          })
+          .sort((a, b) => a[1].year - b[1].year);
+
+        if (yearEntries.length > 0) {
+          return yearEntries;
         }
-        // 객체인 경우
-        return Object.entries(yearlyData)
-          .filter(([key, value]) => value && typeof value === 'object')
-          .sort((a, b) => (a[1].year || parseInt(a[0]) || 0) - (b[1].year || parseInt(b[0]) || 0));
+      }
+
+      // fallback: cached_analysis.years만 있는 경우
+      if (cachedYears.length > 0 && cachedYears[0]?.year >= 2000) {
+        return cachedYears
+          .filter(item => item && item.year && item.year >= 2000)
+          .map((item) => [String(item.year), { ...item }])
+          .sort((a, b) => a[1].year - b[1].year);
       }
     }
     return null;
@@ -194,39 +235,155 @@ function ReportPreview({ isAdminPreview = false }) {
       return <p className="no-content">아직 생성된 내용이 없습니다.</p>;
     }
 
+    // 챕터별 페이지 상태 및 setter
+    const getPageState = () => {
+      if (chapterNum === 5) return [currentFortuneYearPage, setCurrentFortuneYearPage];
+      if (chapterNum === 6) return [currentCareerYearPage, setCurrentCareerYearPage];
+      if (chapterNum === 7) return [currentLoveYearPage, setCurrentLoveYearPage];
+      return [1, () => {}];
+    };
+
+    const [currentPage, setCurrentPage] = getPageState();
+    const totalYears = yearsData?.length || 0;
+
+    // 페이지 네비게이션
+    const goToPrevYear = () => {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    const goToNextYear = () => {
+      if (currentPage < totalYears) {
+        setCurrentPage(currentPage + 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    const goToYear = (idx) => {
+      setCurrentPage(idx + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // 현재 선택된 연도 (1-indexed → 0-indexed)
+    const yearIdx = currentPage - 1;
+    const currentYearEntry = yearsData?.[yearIdx];
+
+    if (!currentYearEntry && !baseFortune) {
+      return <p className="no-content">연도 데이터가 없습니다.</p>;
+    }
+
+    const [yearKey, yearData] = currentYearEntry || ['', {}];
+    const year = yearData.year ?? (parseInt(yearKey) || yearKey);
+    const content = yearData.generated_content || yearData.content;
+    const ganji = yearData.ganji || yearData.year_ganji;
+    const decade = yearData.decade;
+
+    // 챕터 타이틀
+    const chapterTitles = { 5: '재물운', 6: '직업운/사회운', 7: '연애운/배우자운' };
+
     return (
       <div className="yearly-fortune-container">
-        {/* 기본 설명 (재물운/직업운) */}
-        {baseFortune && (
+        {/* 상단 연도 요약 테이블 */}
+        {yearsData && yearsData.length > 0 && (
+          <div className="year-summary-section">
+            <div className="year-summary-table-wrapper">
+              <table className="year-summary-table">
+                <thead>
+                  <tr>
+                    {yearsData.map(([key, data], idx) => {
+                      const y = data.year ?? (parseInt(key) || key);
+                      const isCurrent = idx === 0;
+                      return (
+                        <th
+                          key={idx}
+                          className={`${isCurrent ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
+                          onClick={() => goToYear(idx)}
+                        >
+                          {y}년
+                          {isCurrent && <span className="current-label">올해</span>}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* ganji 데이터가 하나라도 있는 경우에만 표시 */}
+                  {yearsData.some(([, data]) => data.ganji || data.year_ganji) && (
+                    <tr>
+                      {yearsData.map(([key, data], idx) => {
+                        const g = data.ganji || data.year_ganji || '';
+                        const sky = g?.charAt?.(0) || '';
+                        const earth = g?.charAt?.(1) || '';
+                        return (
+                          <td
+                            key={idx}
+                            className={`ganji-cell ${idx === 0 ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
+                            onClick={() => goToYear(idx)}
+                          >
+                            <div className="ganji-row">
+                              <span className={`ganji-char ${getElementClass(sky)}`}>{sky}</span>
+                              <span className={`ganji-char ${getElementClass(earth)}`}>{earth}</span>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 기본 설명 (재물운/직업운) - 첫 페이지에만 표시 */}
+        {baseFortune && currentPage === 1 && (
           <div className="base-fortune-intro">
             {renderContent(baseFortune)}
           </div>
         )}
 
-        {/* 연도별 운세 */}
-        {yearsData && yearsData.map(([yearKey, yearData]) => {
-          const year = yearData.year || yearKey;
-          const content = yearData.generated_content || yearData.content;
-          const ganji = yearData.ganji || yearData.year_ganji;
-          const decade = yearData.decade;
-
-          return (
-            <div key={yearKey} className="year-fortune-card">
-              <div className="year-fortune-header">
-                <div className="year-info">
-                  <span className="year-number">{year}년</span>
-                  {ganji && <span className="year-ganji">{ganji}</span>}
-                </div>
-                {decade && (
-                  <span className="decade-text">{decade.ganji} 대운</span>
-                )}
+        {/* 선택된 연도 상세 */}
+        {currentYearEntry && (
+          <div className="year-fortune-card">
+            <div className="year-fortune-header">
+              <div className="year-info">
+                <span className="year-number">{year}년</span>
+                {ganji && <span className={`year-ganji ${getElementClass(ganji?.charAt?.(0))}`}>{ganji}</span>}
               </div>
-              <div className="year-fortune-content">
-                {content ? renderContent(content) : <p className="no-content">내용 없음</p>}
-              </div>
+              {decade && (
+                <span className="decade-text">{decade.ganji} 대운</span>
+              )}
             </div>
-          );
-        })}
+            <div className="year-fortune-content">
+              {content ? renderContent(content) : <p className="no-content">내용 없음</p>}
+            </div>
+          </div>
+        )}
+
+        {/* 연도 네비게이션 */}
+        {totalYears > 1 && (
+          <div className="year-page-navigation">
+            <button
+              className={`year-nav-btn prev ${currentPage <= 1 ? 'disabled' : ''}`}
+              onClick={goToPrevYear}
+              disabled={currentPage <= 1}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="year-page-info">
+              {currentPage} / {totalYears}
+            </div>
+            <button
+              className={`year-nav-btn next ${currentPage >= totalYears ? 'disabled' : ''}`}
+              onClick={goToNextYear}
+              disabled={currentPage >= totalYears}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -972,6 +1129,36 @@ function ReportPreview({ isAdminPreview = false }) {
 
     // yearly_fortune 데이터가 있는 경우
     if (yearlyFortune && Array.isArray(yearlyFortune) && yearlyFortune.length > 0) {
+      const totalYears = yearlyFortune.length;
+
+      // 연도별 페이지 네비게이션
+      const goToPrevYear = () => {
+        if (currentFiveYearPage > 1) {
+          setCurrentFiveYearPage(currentFiveYearPage - 1);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+
+      const goToNextYear = () => {
+        if (currentFiveYearPage < totalYears) {
+          setCurrentFiveYearPage(currentFiveYearPage + 1);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+
+      const goToYear = (idx) => {
+        setCurrentFiveYearPage(idx + 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      // 현재 선택된 연도 (1-indexed → 0-indexed)
+      const yearIdx = currentFiveYearPage - 1;
+      const yearData = yearlyFortune[yearIdx];
+
+      if (!yearData) {
+        return <p className="no-content">연도 데이터가 없습니다.</p>;
+      }
+
       return (
         <div className="five-year-fortune-preview">
           <div className="fortune-header">
@@ -979,73 +1166,150 @@ function ReportPreview({ isAdminPreview = false }) {
             <p className="fortune-desc">격국·천간·지지운을 기반으로 한 연도별 종합 분석</p>
           </div>
 
-          {yearlyFortune.map((yearData, idx) => (
-            <div key={idx} className={`year-fortune-item ${yearData.is_current ? 'current' : ''}`}>
-              <div className="year-fortune-header">
-                <div className="year-info">
-                  <span className="year-number">{yearData.year}년</span>
-                  <span className={`year-ganji ${getElementClass(yearData.sky)}`}>{yearData.ganji}</span>
+          {/* 상단 연도 요약 테이블 */}
+          <div className="year-summary-section">
+            <div className="year-summary-table-wrapper">
+              <table className="year-summary-table">
+                <thead>
+                  <tr>
+                    {yearlyFortune.map((y, idx) => (
+                      <th
+                        key={idx}
+                        className={`${y.is_current ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
+                        onClick={() => goToYear(idx)}
+                      >
+                        {y.year}년
+                        {y.is_current && <span className="current-label">올해</span>}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {yearlyFortune.map((y, idx) => {
+                      const sajuData = reportData?.saju_data;
+                      const rawDayGan = sajuData?.cheongan?.day || sajuData?.day?.sky || '';
+                      const dayGan = hangulToHanja(rawDayGan);
+                      const skyHanja = hangulToHanja(y.sky || '');
+                      const earthHanja = hangulToHanja(y.earth || '');
+                      const skySipsin = y.sky_sipsin || getSipsung(dayGan, skyHanja, false);
+                      const earthSipsin = y.earth_sipsin || getSipsung(dayGan, earthHanja, true);
+                      return (
+                        <td
+                          key={idx}
+                          className={`ganji-cell ${y.is_current ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
+                          onClick={() => goToYear(idx)}
+                        >
+                          <div className="ganji-row">
+                            <span className={`ganji-char ${getElementClass(y.sky)}`}>{y.sky}</span>
+                            <span className={`ganji-char ${getElementClass(y.earth)}`}>{y.earth}</span>
+                          </div>
+                          <div className="sipsin-row">
+                            <span className="sipsin-text">{skySipsin || '-'}</span>
+                            <span className="sipsin-text">{earthSipsin || '-'}</span>
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 선택된 연도 상세 */}
+          <div className={`year-fortune-item ${yearData.is_current ? 'current' : ''}`}>
+            <div className="year-fortune-header">
+              <div className="year-info">
+                <span className="year-number">{yearData.year}년</span>
+                <span className={`year-ganji ${getElementClass(yearData.sky)}`}>{yearData.ganji}</span>
+              </div>
+            </div>
+
+            {/* 핵심 분석 요소 */}
+            <div className="fortune-analysis-grid">
+              {(yearData.sky_outcome?.gyeokguk || yearData.sky_gyeokguk) && (
+                <div className="analysis-item">
+                  <span className="analysis-label">천간 격국</span>
+                  <span className="analysis-value">{yearData.sky_outcome?.gyeokguk || yearData.sky_gyeokguk}</span>
                 </div>
-              </div>
-
-              {/* 핵심 분석 요소 */}
-              <div className="fortune-analysis-grid">
-                {(yearData.gyeokguk || yearData.sky_outcome?.gyeokguk || yearData.earth_outcome?.gyeokguk) && (
-                  <div className="analysis-item">
-                    <span className="analysis-label">격국</span>
-                    <span className="analysis-value">{yearData.gyeokguk || yearData.sky_outcome?.gyeokguk || yearData.earth_outcome?.gyeokguk}</span>
-                  </div>
-                )}
-                {(yearData.chungan || yearData.sky_outcome?.reason || yearData.sky_outcome?.result) && (
-                  <div className="analysis-item highlight">
-                    <span className="analysis-label">천간운</span>
-                    <span className={`analysis-value ${getElementClass(yearData.sky)}`}>
-                      {yearData.chungan || yearData.sky_outcome?.reason || yearData.sky_outcome?.result}
-                    </span>
-                  </div>
-                )}
-                {(yearData.jiji || yearData.earth_outcome?.reason || yearData.earth_outcome?.result) && (
-                  <div className="analysis-item highlight">
-                    <span className="analysis-label">지지운</span>
-                    <span className={`analysis-value ${getElementClass(yearData.earth)}`}>
-                      {yearData.jiji || yearData.earth_outcome?.reason || yearData.earth_outcome?.result}
-                    </span>
-                  </div>
-                )}
-                {(yearData.eokbu || yearData.strength?.analysis || yearData.strength?.decade_level) && (
-                  <div className="analysis-item">
-                    <span className="analysis-label">억부</span>
-                    <span className="analysis-value">{yearData.eokbu || yearData.strength?.analysis || yearData.strength?.decade_level}</span>
-                  </div>
-                )}
-                {(yearData.johu_text || yearData.temperature?.description || yearData.johu?.analysis || yearData.temperature?.decade_label) && (
-                  <div className="analysis-item">
-                    <span className="analysis-label">조후</span>
-                    <span className="analysis-value">{yearData.johu_text || yearData.temperature?.description || yearData.johu?.analysis || yearData.temperature?.decade_label}</span>
-                  </div>
-                )}
-                {yearData.sibiunsung && (
-                  <div className="analysis-item">
-                    <span className="analysis-label">십이운성</span>
-                    <span className="analysis-value">{yearData.sibiunsung}</span>
-                  </div>
-                )}
-                {yearData.sibisinsal && (
-                  <div className="analysis-item">
-                    <span className="analysis-label">십이신살</span>
-                    <span className="analysis-value">{yearData.sibisinsal}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* AI 분석 내용 */}
-              {yearData.ai_analysis && (
-                <div className="fortune-content">
-                  {renderContent(yearData.ai_analysis)}
+              )}
+              {(yearData.earth_outcome?.gyeokguk || yearData.earth_gyeokguk) && (
+                <div className="analysis-item">
+                  <span className="analysis-label">지지 격국</span>
+                  <span className="analysis-value">{yearData.earth_outcome?.gyeokguk || yearData.earth_gyeokguk}</span>
+                </div>
+              )}
+              {(yearData.chungan || yearData.sky_outcome?.reason || yearData.sky_outcome?.result) && (
+                <div className="analysis-item">
+                  <span className="analysis-label">천간운</span>
+                  <span className={`analysis-value ${getElementClass(yearData.sky)}`}>
+                    {yearData.chungan || yearData.sky_outcome?.reason || yearData.sky_outcome?.result}
+                  </span>
+                </div>
+              )}
+              {(yearData.jiji || yearData.earth_outcome?.reason || yearData.earth_outcome?.result) && (
+                <div className="analysis-item">
+                  <span className="analysis-label">지지운</span>
+                  <span className={`analysis-value ${getElementClass(yearData.earth)}`}>
+                    {yearData.jiji || yearData.earth_outcome?.reason || yearData.earth_outcome?.result}
+                  </span>
+                </div>
+              )}
+              {(yearData.eokbu || yearData.strength?.analysis || yearData.strength?.decade_level) && (
+                <div className="analysis-item">
+                  <span className="analysis-label">억부</span>
+                  <span className="analysis-value">{yearData.eokbu || yearData.strength?.analysis || yearData.strength?.decade_level}</span>
+                </div>
+              )}
+              {(yearData.johu_text || yearData.temperature?.description || yearData.johu?.analysis || yearData.temperature?.decade_label) && (
+                <div className="analysis-item">
+                  <span className="analysis-label">조후</span>
+                  <span className="analysis-value">{yearData.johu_text || yearData.temperature?.description || yearData.johu?.analysis || yearData.temperature?.decade_label}</span>
+                </div>
+              )}
+              {yearData.sibiunsung && (
+                <div className="analysis-item">
+                  <span className="analysis-label">십이운성</span>
+                  <span className="analysis-value">{yearData.sibiunsung}</span>
+                </div>
+              )}
+              {yearData.sibisinsal && (
+                <div className="analysis-item">
+                  <span className="analysis-label">십이신살</span>
+                  <span className="analysis-value">{yearData.sibisinsal}</span>
                 </div>
               )}
             </div>
-          ))}
+
+            {/* AI 분석 내용 */}
+            {yearData.ai_analysis && (
+              <div className="fortune-content">
+                {renderContent(yearData.ai_analysis)}
+              </div>
+            )}
+          </div>
+
+          {/* 연도 내부 네비게이션 */}
+          <div className="year-page-navigation">
+            <button
+              className={`year-nav-btn prev ${currentFiveYearPage <= 1 ? 'disabled' : ''}`}
+              onClick={goToPrevYear}
+              disabled={currentFiveYearPage <= 1}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="year-page-info">
+              {currentFiveYearPage} / {totalYears}
+            </div>
+            <button
+              className={`year-nav-btn next ${currentFiveYearPage >= totalYears ? 'disabled' : ''}`}
+              onClick={goToNextYear}
+              disabled={currentFiveYearPage >= totalYears}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
         </div>
       );
     }
@@ -1065,6 +1329,19 @@ function ReportPreview({ isAdminPreview = false }) {
       '午': '오', '未': '미', '申': '신', '酉': '유', '戌': '술', '亥': '해'
     };
     return map[char] || '';
+  };
+
+  // 한글 → 한자 변환
+  const hangulToHanja = (char) => {
+    const map = {
+      // 천간
+      '갑': '甲', '을': '乙', '병': '丙', '정': '丁', '무': '戊',
+      '기': '己', '경': '庚', '신': '辛', '임': '壬', '계': '癸',
+      // 지지
+      '자': '子', '축': '丑', '인': '寅', '묘': '卯', '진': '辰', '사': '巳',
+      '오': '午', '미': '未', '신': '申', '유': '酉', '술': '戌', '해': '亥'
+    };
+    return map[char] || char;
   };
 
   // 십성 계산 (일간 기준)

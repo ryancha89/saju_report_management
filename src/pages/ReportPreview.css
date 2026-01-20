@@ -2258,6 +2258,13 @@ body:has(.report-page) {
   padding-bottom: 20px;
   margin-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.year-fortune-item:not(:first-child) {
+  page-break-before: always;
+  break-before: page;
 }
 
 .year-fortune-item:last-child {
@@ -2268,6 +2275,152 @@ body:has(.report-page) {
 .year-fortune-item.current {
   padding-left: 12px;
   border-left: 3px solid rgb(255, 244, 200);
+}
+
+/* 연도 요약 섹션 */
+.year-summary-section {
+  margin-bottom: 28px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.year-summary-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.year-summary-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 8px;
+  font-size: 0.85rem;
+}
+
+.year-summary-table th,
+.year-summary-table td {
+  padding: 12px 16px;
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+}
+
+.year-summary-table th {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+.year-summary-table td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.year-summary-table th.clickable,
+.year-summary-table td.clickable {
+  cursor: pointer;
+}
+
+.year-summary-table th.clickable:hover,
+.year-summary-table td.clickable:hover {
+  background: rgba(255, 244, 200, 0.12);
+  transform: translateY(-2px);
+}
+
+.year-summary-table th.selected,
+.year-summary-table td.selected {
+  background: rgba(255, 244, 200, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 244, 200, 0.4);
+}
+
+.year-summary-table th.current {
+  background: rgba(255, 244, 200, 0.1);
+  color: rgb(255, 244, 200);
+}
+
+.year-summary-table th .current-label {
+  display: block;
+  font-size: 0.6rem;
+  color: rgb(255, 244, 200);
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+.year-summary-table .ganji-cell {
+  padding: 14px 12px;
+}
+
+.year-summary-table .ganji-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.year-summary-table .ganji-char {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.year-summary-table .sipsin-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.year-summary-table .sipsin-text {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* 연도 페이지 네비게이션 */
+.year-page-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.year-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.year-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 244, 200, 0.15);
+  border-color: rgba(255, 244, 200, 0.3);
+}
+
+.year-nav-btn:disabled,
+.year-nav-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.year-page-info {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 60px;
+  text-align: center;
 }
 
 .year-fortune-header {
@@ -2326,24 +2479,31 @@ body:has(.report-page) {
   padding: 12px 0;
 }
 
-.fortune-analysis-item {
-  padding: 10px;
+.fortune-analysis-item,
+.analysis-item {
+  padding: 12px;
   text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
-.fortune-analysis-label {
+.fortune-analysis-label,
+.analysis-label {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #94a3b8;
-  text-transform: uppercase;
+  color: rgb(255, 244, 200);
+  opacity: 0.7;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
+  display: block;
 }
 
-.fortune-analysis-value {
+.fortune-analysis-value,
+.analysis-value {
   font-size: 0.9rem;
   font-weight: 700;
   color: #ffffff;
+  display: block;
 }
 
 .fortune-analysis-value.success {
