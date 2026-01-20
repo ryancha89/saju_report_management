@@ -2046,6 +2046,9 @@ function OrderDetail() {
       return;
     }
 
+    // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
+    const yearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
+
     setRegeneratingAllChapters(true);
     try {
       const results = [];
@@ -2054,7 +2057,8 @@ function OrderDetail() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
         });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -2092,7 +2096,8 @@ function OrderDetail() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
         });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -2126,13 +2131,13 @@ function OrderDetail() {
         console.error('직업운 생성 실패:', err);
       }
 
-      // 연애운 - API 직접 호출 (5년 각 연도별 생성) 및 저장
+      // 연애운 - API 직접 호출 (N년 각 연도별 생성) 및 저장
       try {
         const currentYear = new Date().getFullYear();
         const yearlyLoveFortunes = [];
 
-        // 먼저 base analysis 데이터 가져오기
-        const baseRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/love_fortune_data`, {
+        // 먼저 base analysis 데이터 가져오기 (year_count 전달)
+        const baseRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/love_fortune_data?year_count=${yearCount}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
         });
@@ -2140,7 +2145,7 @@ function OrderDetail() {
         const baseAnalysis = baseData.data?.base_analysis || {};
         const cachedAnalysis = baseData.data || {};
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < yearCount; i++) {
           const targetYear = currentYear + i;
           const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
             method: 'POST',
@@ -2172,7 +2177,7 @@ function OrderDetail() {
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
             body: JSON.stringify({ love_fortune_data: loveData })
           });
-          results.push(`연애운 ✓ (${yearlyLoveFortunes.length}/5)`);
+          results.push(`연애운 ✓ (${yearlyLoveFortunes.length}/${yearCount})`);
         } else {
           results.push('연애운 ✗');
         }
@@ -2219,15 +2224,18 @@ function OrderDetail() {
   // 레포트 챕터 설정 - 번호와 라벨 포함
   const getReportChapters = (reportType) => {
     const currentYear = new Date().getFullYear();
+    // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
+    const yearCount = reportType === 'blueprint_lite' ? 3 : 5;
+
     // 공통 챕터 정의 (번호, 라벨 포함) - 기본정보가 1번, 아이덴티티가 2번부터 시작
     const baseChapter = { id: 'saju_info', number: 1, label: '기본정보', title: '사주정보', icon: '📋', category: 'info' };
     const chapter1 = { id: 'chapter1', number: 2, label: '아이덴티티', title: '나의 아이덴티티', icon: '🧭', category: 'analysis' };
     const chapter2 = { id: 'chapter2', number: 3, label: '잠재력', title: '나의 잠재력과 사회적 역할', icon: '🏛️', category: 'analysis' };
     const chapter3 = { id: 'chapter3', number: 4, label: '대운흐름', title: '대운 흐름 분석', icon: '📊', category: 'luck' };
-    const chapter4 = { id: 'chapter4', number: 5, label: '5년운세', title: '향후 5년간의 운세', icon: '🔮', category: 'luck' };
-    const chapter5 = { id: 'chapter5', number: 6, label: '재물운', title: '재물운 (향후 5년)', icon: '💰', category: 'luck' };
-    const chapter6 = { id: 'chapter6', number: 7, label: '직업운', title: '직업운/사회운 (향후 5년)', icon: '💼', category: 'luck' };
-    const chapter7 = { id: 'chapter7', number: 8, label: '연애운', title: '연애운/배우자운 (향후 5년)', icon: '💕', category: 'luck' };
+    const chapter4 = { id: 'chapter4', number: 5, label: `${yearCount}개년운세`, title: `향후 ${yearCount}년간의 운세`, icon: '🔮', category: 'luck' };
+    const chapter5 = { id: 'chapter5', number: 6, label: '재물운', title: `재물운 (향후 ${yearCount}년)`, icon: '💰', category: 'luck' };
+    const chapter6 = { id: 'chapter6', number: 7, label: '직업운', title: `직업운/사회운 (향후 ${yearCount}년)`, icon: '💼', category: 'luck' };
+    const chapter7 = { id: 'chapter7', number: 8, label: '연애운', title: `연애운/배우자운 (향후 ${yearCount}년)`, icon: '💕', category: 'luck' };
     const chapter8 = { id: 'chapter8', number: 9, label: '코칭', title: '상담사의 코칭', icon: '💬', category: 'coaching' };
 
     switch (reportType) {
@@ -2300,6 +2308,7 @@ function OrderDetail() {
           { id: 'advice', number: 13, label: '조언', title: '커리어 조언', icon: '💡', category: 'detail' },
         ];
       case 'blueprint':
+      case 'blueprint_lite':
         return [
           baseChapter,
           chapter1,
@@ -2507,15 +2516,16 @@ function OrderDetail() {
   };
 
   // 챕터 정보 (아이콘, 제목) - 생성 진행 표시용
+  const progressYearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
   const chapterInfo = {
     validating: { icon: '🔍', title: '사주 검증' },
     1: { icon: '🧭', title: '나의 아이덴티티' },
     2: { icon: '🏛️', title: '나의 잠재력과 사회적 역할' },
     3: { icon: '📊', title: '대운 흐름 분석' },
-    4: { icon: '🔮', title: '향후 5년간의 운세' },
-    5: { icon: '💰', title: '재물운 (향후 5년)' },
-    6: { icon: '💼', title: '직업운/사회운 (향후 5년)' },
-    7: { icon: '💕', title: '연애운/배우자운 (향후 5년)' },
+    4: { icon: '🔮', title: `향후 ${progressYearCount}년간의 운세` },
+    5: { icon: '💰', title: `재물운 (향후 ${progressYearCount}년)` },
+    6: { icon: '💼', title: `직업운/사회운 (향후 ${progressYearCount}년)` },
+    7: { icon: '💕', title: `연애운/배우자운 (향후 ${progressYearCount}년)` },
     8: { icon: '💬', title: '상담사의 코칭' },
     saving: { icon: '💾', title: '레포트 저장' }
   };
@@ -2555,6 +2565,9 @@ function OrderDetail() {
     let newChapter3Data = chapter3Data;
     let newChapter4Data = fiveYearFortuneData;
     let newChapter6Data = loveFortuneData;
+
+    // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
+    const yearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
 
     try {
       // 챕터1 생성
@@ -2605,13 +2618,13 @@ function OrderDetail() {
         setChapter3Loading(false);
       }
 
-      // 챕터4 생성 (향후 5년간의 운세 - 세운)
+      // 챕터4 생성 (향후 N년간의 운세 - 세운)
       setGeneratingChapter(4);
       if (forceRegenerate || !fiveYearFortuneData?.content) {
         setChapter4Loading(true);
         try {
-          // 먼저 5년운세 기본 데이터 로드
-          const dataRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/five_year_fortune_data`, {
+          // 먼저 N년운세 기본 데이터 로드
+          const dataRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/five_year_fortune_data?year_count=${yearCount}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
@@ -2628,12 +2641,83 @@ function OrderDetail() {
               });
               const yearData = await yearRes.json();
               if (yearRes.ok) {
+                const yearIndex = baseData.data.years.findIndex(y => y.year === yearInfo.year);
+
+                // 분석 컨텍스트 구성
+                const analysisContext = {
+                  sky_outcome: yearData.sky_outcome || {},
+                  earth_outcome: yearData.earth_outcome || {},
+                  strength: yearData.strength || {},
+                  temperature: yearData.temperature || {},
+                  johu: yearData.johu || {}
+                };
+
+                // 각 분석 영역별 AI 해석 생성
+                const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu', 'overall'];
+                const interpretations = {};
+
+                for (const area of areas) {
+                  let primaryText = '';
+                  switch (area) {
+                    case 'gyeokguk_sky':
+                      primaryText = analysisContext.sky_outcome?.reason || analysisContext.sky_outcome?.result || `${yearInfo.ganji} 천간 분석`;
+                      break;
+                    case 'gyeokguk_earth':
+                      primaryText = analysisContext.earth_outcome?.reason || analysisContext.earth_outcome?.result || `${yearInfo.ganji} 지지 분석`;
+                      break;
+                    case 'eokbu':
+                      primaryText = analysisContext.strength?.analysis || analysisContext.strength?.description || `${yearInfo.ganji} 억부 분석`;
+                      break;
+                    case 'johu':
+                      primaryText = analysisContext.temperature?.description || analysisContext.johu?.analysis || `${yearInfo.ganji} 조후 분석`;
+                      break;
+                    case 'overall':
+                      primaryText = [
+                        analysisContext.sky_outcome?.reason,
+                        analysisContext.earth_outcome?.reason,
+                        analysisContext.strength?.analysis,
+                        analysisContext.temperature?.description
+                      ].filter(Boolean).join('\n') || `${yearInfo.ganji} 종합 분석`;
+                      break;
+                  }
+
+                  try {
+                    const aiRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_yearly_interpretation_ai`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                      body: JSON.stringify({
+                        year: yearInfo.year,
+                        year_index: yearIndex,
+                        ganji: yearInfo.ganji,
+                        analysis_area: area,
+                        primary_interpretation: primaryText,
+                        analysis_context: analysisContext,
+                        is_overall_synthesis: area === 'overall'
+                      })
+                    });
+                    const aiData = await aiRes.json();
+                    if (aiRes.ok && aiData.interpretation) {
+                      interpretations[area] = aiData.interpretation;
+                    }
+                  } catch (aiErr) {
+                    console.warn(`${area} AI 해석 생성 실패 (${yearInfo.year}):`, aiErr);
+                  }
+                }
+
                 yearsData.push({
                   year: yearInfo.year,
                   ganji: yearInfo.ganji,
                   generated_content: yearData.generated_content,
                   sky_outcome: yearData.sky_outcome,
                   earth_outcome: yearData.earth_outcome,
+                  // 억부/조후 분석 데이터 추가
+                  strength: yearData.strength,
+                  temperature: yearData.temperature,
+                  johu: yearData.johu,
+                  life_areas: yearData.life_areas,
+                  combined_score: yearData.combined_score,
+                  // AI 생성된 해석 추가
+                  interpretations: interpretations,
                   manager_edit: { fortune_level: 'normal' }
                 });
               }
@@ -2661,7 +2745,7 @@ function OrderDetail() {
             });
           }
         } catch (err) {
-          console.error('5년운세 생성 실패:', err);
+          console.error(`${yearCount}년운세 생성 실패:`, err);
         }
         setChapter4Loading(false);
       }
@@ -2669,10 +2753,11 @@ function OrderDetail() {
       // 챕터5 (재물운) - API 직접 호출
       setGeneratingChapter(5);
       try {
-        console.log('[generateAllChapters] 재물운 생성 시작');
+        console.log(`[generateAllChapters] 재물운 생성 시작 (${yearCount}년)`);
         const res5 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
         });
         const data5 = await res5.json();
         console.log('[generateAllChapters] 재물운 생성 응답:', data5);
@@ -2711,10 +2796,11 @@ function OrderDetail() {
       // 챕터6 (직업운) - API 직접 호출
       setGeneratingChapter(6);
       try {
-        console.log('[generateAllChapters] 직업운 생성 시작');
+        console.log(`[generateAllChapters] 직업운 생성 시작 (${yearCount}년)`);
         const res6 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
         });
         const data6 = await res6.json();
         console.log('[generateAllChapters] 직업운 생성 응답:', data6);
@@ -2750,15 +2836,15 @@ function OrderDetail() {
         console.error('직업운 생성/저장 실패:', err);
       }
 
-      // 챕터7 (연애운) - API 직접 호출 (5년 각 연도별 생성)
+      // 챕터7 (연애운) - API 직접 호출 (N년 각 연도별 생성)
       setGeneratingChapter(7);
       try {
-        console.log('[generateAllChapters] 연애운 생성 시작');
+        console.log(`[generateAllChapters] 연애운 생성 시작 (${yearCount}년)`);
         const currentYear = new Date().getFullYear();
         const yearlyLoveFortunes = [];
 
-        // 먼저 base analysis 데이터 가져오기
-        const baseRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/love_fortune_data`, {
+        // 먼저 base analysis 데이터 가져오기 (year_count 전달)
+        const baseRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/love_fortune_data?year_count=${yearCount}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
         });
@@ -2766,8 +2852,8 @@ function OrderDetail() {
         const baseAnalysis = baseData.data?.base_analysis || {};
         const cachedAnalysis = baseData.data || {};
 
-        // 5년간 각 연도별 연애운 생성
-        for (let i = 0; i < 5; i++) {
+        // N년간 각 연도별 연애운 생성
+        for (let i = 0; i < yearCount; i++) {
           const targetYear = currentYear + i;
           const res7 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
             method: 'POST',
@@ -5064,7 +5150,7 @@ function OrderDetail() {
                           ) : (
                             <div className="chapter4-generate">
                               <p className="chapter4-description">
-                                향후 5년간의 운세 흐름을 분석합니다.
+                                향후 {progressYearCount}년간의 운세 흐름을 분석합니다.
                               </p>
                               <p className="chapter4-subdescription">
                                 격국 성패, 억부, 조후, 합형충파해를 종합 분석합니다. 먼저 사주 검증을 실행해주세요.
@@ -5110,7 +5196,7 @@ function OrderDetail() {
                           ) : (
                             <div className="chapter5-generate">
                               <p className="chapter5-description">
-                                향후 5년간의 재물운을 분석합니다.
+                                향후 {progressYearCount}년간의 재물운을 분석합니다.
                               </p>
                               <p className="chapter5-subdescription">
                                 격국 성패 분석 결과를 바탕으로 AI가 상세 재물운을 생성합니다. 먼저 사주 검증을 실행해주세요.
@@ -5179,6 +5265,7 @@ function OrderDetail() {
                             validationResult={validationResult}
                             initialData={loveFortuneData}
                             onChange={(data) => setLoveFortuneData(data)}
+                            yearCount={progressYearCount}
                           />
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter8' ? (

@@ -335,7 +335,8 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
   orderId,
   validationResult,
   initialData,
-  onChange
+  onChange,
+  yearCount: propYearCount  // year_count prop 추가 (blueprint_lite는 3년, 나머지는 5년)
 }, ref) {
   const currentYear = new Date().getFullYear();
   const [loveFortuneData, setLoveFortuneData] = useState([]);
@@ -344,6 +345,9 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
   const [regeneratingYear, setRegeneratingYear] = useState(null);
   const [regeneratingAll, setRegeneratingAll] = useState(false);
   const dataLoaded = useRef(false);
+
+  // yearCount 결정 (prop > validationResult > 기본값 5)
+  const yearCount = propYearCount || (validationResult?.order_info?.report_type === 'blueprint_lite' ? 3 : 5);
 
   const userName = validationResult?.order_info?.name || '고객';
   const zodiacDay = validationResult?.saju_data?.zodiac_day || '';
@@ -370,8 +374,8 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
   const loadLoveFortuneData = async () => {
     setLoading(true);
     try {
-      console.log('[LoveFortuneEditor] Fetching API data for order:', orderId);
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/love_fortune_data`, {
+      console.log('[LoveFortuneEditor] Fetching API data for order:', orderId, 'yearCount:', yearCount);
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/love_fortune_data?year_count=${yearCount}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -30,7 +30,8 @@ body:has(.user-info-page) {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
   object-fit: cover;
   z-index: 0;
   pointer-events: none;
@@ -43,8 +44,9 @@ body:has(.user-info-page) {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  height: 100vh;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1;
   pointer-events: none;
 }
@@ -57,7 +59,7 @@ body:has(.user-info-page) {
   display: flex;
   flex-direction: column;
   color: #ffffff;
-  background: #000;
+  background: transparent;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -73,8 +75,7 @@ body:has(.user-info-page) {
   justify-content: space-between;
   padding: 12px 20px;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+  background: transparent;
 }
 
 .back-btn {
@@ -109,11 +110,13 @@ body:has(.user-info-page) {
 .step-dot.active {
   width: 24px;
   border-radius: 4px;
-  background: #d4af37;
+  background: linear-gradient(135deg, #f4d03f 0%, #d4af37 100%);
+  box-shadow: 0 0 12px rgba(244, 208, 63, 0.6);
 }
 
 .step-dot.completed {
-  background: rgba(212, 175, 55, 0.6);
+  background: rgba(244, 208, 63, 0.7);
+  box-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
 }
 
 /* Main Content */
@@ -171,46 +174,49 @@ body:has(.user-info-page) {
 .time-input {
   width: 100%;
   padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 12px;
   color: #ffffff;
   font-size: 1.15rem;
   outline: none;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .text-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
-/* 브라우저 자동완성(autofill) 스타일 오버라이드 - 투명 배경 유지 */
+/* 브라우저 자동완성(autofill) 스타일 오버라이드 */
 .text-input:-webkit-autofill,
 .text-input:-webkit-autofill:hover,
 .text-input:-webkit-autofill:focus,
 .text-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.15) inset !important;
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff !important;
-  background-color: transparent !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
   transition: background-color 9999s ease-out, -webkit-box-shadow 9999s ease-out;
 }
 
 /* Firefox autofill 스타일 */
 .text-input:autofill {
-  background-color: transparent !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
 }
 
 .text-input:focus,
 .date-input:focus,
 .time-input:focus {
-  border-color: rgba(212, 175, 55, 0.6);
-  background: rgba(212, 175, 55, 0.08);
+  border-color: rgba(212, 175, 55, 0.8);
+  background: rgba(255, 255, 255, 0.2);
   box-shadow:
-    0 0 0 3px rgba(212, 175, 55, 0.15),
-    0 4px 20px rgba(212, 175, 55, 0.1);
+    0 0 0 3px rgba(212, 175, 55, 0.25),
+    0 4px 20px rgba(0, 0, 0, 0.3);
   outline: none;
 }
 
@@ -225,10 +231,18 @@ body:has(.user-info-page) {
   gap: 12px;
 }
 
-.questions-hint {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 8px;
+.questions-group .questions-hint {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 6px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.questions-group .questions-sub-hint {
+  font-size: 0.8rem;
+  color: rgba(244, 208, 63, 0.8);
+  margin-bottom: 16px;
   text-align: center;
 }
 
@@ -238,17 +252,18 @@ body:has(.user-info-page) {
   gap: 12px;
 }
 
-.question-number {
+.question-input-row .question-number {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(212, 175, 55, 0.2);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(244, 208, 63, 0.5);
   border-radius: 50%;
-  color: #d4af37;
+  color: #f4e078;
+  text-shadow: 0 0 6px rgba(244, 208, 63, 0.4);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -260,20 +275,30 @@ body:has(.user-info-page) {
 .skip-questions-btn {
   width: 100%;
   margin-top: 16px;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
-  border: none;
-  border-radius: 12px;
-  color: #1a1a2e;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 18px 24px;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
 }
 
 .skip-questions-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
 .skip-questions-btn:active {
@@ -293,26 +318,39 @@ body:has(.user-info-page) {
 
 .confirm-btn {
   padding: 16px 24px;
-  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
-  border: none;
-  border-radius: 12px;
-  color: #1a1a2e;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
+  border-radius: 14px;
+  color: #ffffff;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
 }
 
 .confirm-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
 .confirm-btn:disabled {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.4);
+  text-shadow: none;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* Birthdate Input Row */
@@ -334,8 +372,10 @@ body:has(.user-info-page) {
 
 .calendar-btn {
   padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 12px;
   color: #ffffff;
   font-size: 1rem;
@@ -343,16 +383,19 @@ body:has(.user-info-page) {
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .calendar-btn.active {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: #d4af37;
-  color: #d4af37;
+  background: rgba(212, 175, 55, 0.4);
+  border-color: #f4d03f;
+  color: #f4e078;
+  text-shadow: 0 0 10px rgba(244, 208, 63, 0.5);
 }
 
 .calendar-btn.leap-btn {
@@ -367,7 +410,10 @@ body:has(.user-info-page) {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -394,8 +440,10 @@ body:has(.user-info-page) {
 
 .time-unknown-btn {
   padding: 16px 24px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 12px;
   color: #ffffff;
   font-size: 1.05rem;
@@ -403,16 +451,19 @@ body:has(.user-info-page) {
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .time-unknown-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .time-unknown-btn.active {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: #d4af37;
-  color: #d4af37;
+  background: rgba(212, 175, 55, 0.4);
+  border-color: #f4d03f;
+  color: #f4e078;
+  text-shadow: 0 0 10px rgba(244, 208, 63, 0.5);
 }
 
 /* City Input */
@@ -452,11 +503,14 @@ body:has(.user-info-page) {
 
 .time-adjustment-info {
   padding: 12px 16px;
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(212, 175, 55, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(244, 208, 63, 0.5);
   border-radius: 8px;
   font-size: 0.9rem;
-  color: #d4af37;
+  color: #f4e078;
+  text-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
   text-align: center;
 }
 
@@ -470,8 +524,11 @@ body:has(.user-info-page) {
   flex: 1;
   max-width: 120px;
   padding: 14px 24px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   color: #ffffff;
   font-size: 1rem;
@@ -481,14 +538,16 @@ body:has(.user-info-page) {
 }
 
 .gender-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .gender-btn.active {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: #d4af37;
-  color: #d4af37;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  background: rgba(212, 175, 55, 0.4);
+  border-color: #f4d03f;
+  color: #f4e078;
+  text-shadow: 0 0 10px rgba(244, 208, 63, 0.5);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
 }
 
 /* Completed Steps - Stacking Effect (bottom to top) */
@@ -515,7 +574,10 @@ body:has(.user-info-page) {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -534,13 +596,15 @@ body:has(.user-info-page) {
 }
 
 .completed-item:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
   transform: scale(1.02);
 }
 
 .completed-item .label {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 }
 
 .completed-item .value {
@@ -549,7 +613,7 @@ body:has(.user-info-page) {
   font-weight: 600;
 }
 
-/* 수정 중 완료 버튼 - 결제 버튼과 동일한 스타일 */
+/* 수정 중 완료 버튼 - 부각된 스타일 */
 .next-step-btn {
   width: 100%;
   display: flex;
@@ -558,21 +622,29 @@ body:has(.user-info-page) {
   gap: 10px;
   padding: 18px 24px;
   margin-top: 24px;
-  border: none;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
   border-radius: 14px;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #d4af37 0%, #c9a227 100%);
-  color: #1a1a2e;
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+  color: #ffffff;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
 }
 
 .next-step-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
-  background: linear-gradient(135deg, #e0bc45 0%, #d4af37 100%);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
 .next-step-btn:active:not(:disabled) {
@@ -581,7 +653,9 @@ body:has(.user-info-page) {
 
 .next-step-btn:disabled {
   background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  text-shadow: none;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -604,15 +678,21 @@ body:has(.user-info-page) {
 .next-btn {
   width: 100%;
   padding: 18px 32px;
-  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
-  border: none;
-  border-radius: 12px;
-  color: #1a1a2e;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
+  border-radius: 14px;
+  color: #ffffff;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
   justify-content: center;
   gap: 8px;
   transition: all 0.3s ease;
@@ -620,13 +700,20 @@ body:has(.user-info-page) {
 
 .next-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
 .next-btn:disabled {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.4);
+  text-shadow: none;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .next-btn .spinning {
@@ -700,6 +787,7 @@ body:has(.user-info-page) {
   min-height: 100vh;
   padding: 40px 24px;
   text-align: center;
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .order-complete-icon {
@@ -725,22 +813,38 @@ body:has(.user-info-page) {
   color: #ffffff;
   margin-bottom: 20px;
   animation: fadeIn 0.5s ease-out 0.2s both;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .order-complete-message {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.95);
   line-height: 1.7;
   margin-bottom: 16px;
   animation: fadeIn 0.5s ease-out 0.3s both;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
 }
 
 .order-complete-wait {
-  font-size: 1rem;
-  color: #d4af37;
-  font-weight: 600;
+  font-size: 1.1rem;
+  color: #f4e078;
+  text-shadow: 0 0 15px rgba(244, 208, 63, 0.6);
+  font-weight: 700;
   margin-bottom: 32px;
-  animation: fadeIn 0.5s ease-out 0.4s both;
+  padding: 14px 28px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(244, 208, 63, 0.3);
+  border-radius: 30px;
+  animation: fadeIn 0.5s ease-out 0.4s both, pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(244, 208, 63, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(244, 208, 63, 0.5);
+  }
 }
 
 .order-complete-email {
@@ -748,59 +852,72 @@ body:has(.user-info-page) {
   flex-direction: column;
   gap: 8px;
   padding: 20px 32px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  background: rgba(20, 20, 30, 0.8);
+  border: 1px solid rgba(244, 208, 63, 0.3);
+  border-radius: 16px;
   margin-bottom: 32px;
   animation: fadeIn 0.5s ease-out 0.5s both;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .order-complete-email span {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .order-complete-email strong {
   font-size: 1.1rem;
-  color: #ffffff;
+  color: #f4e078;
+  text-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
 }
 
 .order-complete-home-btn {
-  padding: 16px 48px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
+  padding: 18px 48px;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
+  border-radius: 14px;
   color: #ffffff;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   animation: fadeIn 0.5s ease-out 0.6s both;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
 }
 
 .order-complete-home-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
   transform: translateY(-2px);
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
 /* 가상계좌 정보 */
 .vbank-info {
   width: 100%;
   max-width: 320px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  background: rgba(20, 20, 30, 0.8);
+  border: 1px solid rgba(244, 208, 63, 0.3);
+  border-radius: 16px;
+  padding: 24px;
   margin-bottom: 24px;
   animation: fadeIn 0.5s ease-out 0.4s both;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .vbank-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(244, 208, 63, 0.15);
 }
 
 .vbank-row:last-of-type {
@@ -809,34 +926,41 @@ body:has(.user-info-page) {
 
 .vbank-label {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
 }
 
 .vbank-value {
   font-size: 1rem;
   color: #ffffff;
   font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .vbank-value.account-number {
   font-family: monospace;
   letter-spacing: 1px;
+  color: #f4e078;
+  text-shadow: 0 0 8px rgba(244, 208, 63, 0.3);
 }
 
 .vbank-value.price {
-  color: #d4af37;
+  color: #f4e078;
+  text-shadow: 0 0 10px rgba(244, 208, 63, 0.5);
+  font-size: 1.1rem;
 }
 
 .vbank-warning {
   margin-top: 16px;
-  padding: 12px;
-  background: rgba(249, 115, 22, 0.15);
-  border: 1px solid rgba(249, 115, 22, 0.3);
-  border-radius: 8px;
+  padding: 14px;
+  background: rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  border-radius: 10px;
   font-size: 0.85rem;
-  color: #fb923c;
+  color: #fbbf24;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.5;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 가상계좌 아이콘 색상 */
@@ -909,10 +1033,11 @@ body:has(.user-info-page) {
 .preview-user-info {
   text-align: center;
   padding: 20px;
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(244, 208, 63, 0.4);
   border-radius: 16px;
   margin-bottom: -16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .preview-user-name {
@@ -927,7 +1052,8 @@ body:has(.user-info-page) {
 }
 
 .preview-user-name svg {
-  color: #d4af37;
+  color: #f4e078;
+  filter: drop-shadow(0 0 8px rgba(244, 208, 63, 0.5));
 }
 
 .preview-user-details {
@@ -996,8 +1122,9 @@ body:has(.user-info-page) {
 }
 
 .saju-pillars .pillar-row.cheongan .pillar-cell {
-  background: rgba(212, 175, 55, 0.15);
-  color: #d4af37;
+  background: rgba(212, 175, 55, 0.25);
+  color: #f4e078;
+  text-shadow: 0 0 10px rgba(244, 208, 63, 0.5);
   font-size: 1.8rem;
   font-weight: 700;
   padding: 16px 8px;
@@ -1032,17 +1159,19 @@ body:has(.user-info-page) {
 }
 
 .preview-ilgan-info strong {
-  color: #d4af37;
+  color: #f4e078;
+  text-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
   font-size: 1.1rem;
 }
 
 /* 상품 정보 & 결제 버튼 섹션 */
 .preview-product-section {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.8) 0%, rgba(15, 15, 25, 0.85) 100%);
+  border: 1px solid rgba(244, 208, 63, 0.35);
   border-radius: 20px;
   padding: 24px;
   margin-top: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .preview-product-info {
@@ -1072,25 +1201,43 @@ body:has(.user-info-page) {
   justify-content: center;
   gap: 12px;
   padding: 18px 24px;
-  background: linear-gradient(135deg, #d4af37 0%, #c9a227 100%);
-  border: none;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
   border-radius: 14px;
-  color: #1a1a2e;
+  color: #ffffff;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
 }
 
 .preview-payment-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
-  background: linear-gradient(135deg, #e0bc45 0%, #d4af37 100%);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
 .preview-payment-btn:active {
   transform: translateY(0);
+}
+
+.preview-payment-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  text-shadow: none;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .preview-payment-btn svg {
@@ -1122,7 +1269,8 @@ body:has(.user-info-page) {
 
 .preview-completed-info .info-label {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
 }
 
 .preview-completed-info .info-value {

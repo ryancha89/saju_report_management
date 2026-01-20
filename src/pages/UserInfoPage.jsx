@@ -15,7 +15,15 @@ const PRODUCT_INFO = {
     id: 'blueprint',
     name: 'The Blueprint: 당신만을 위한 인생 최적화 가이드',
     description: '평생 대운과 5개년도의 전략 리포트',
-    price: 99000
+    price: 99000,
+    yearCount: 5
+  },
+  blueprint_lite: {
+    id: 'blueprint_lite',
+    name: 'The Blueprint Lite: 3년 플랜',
+    description: '현재/다음 대운과 3개년 운세 리포트',
+    price: 59000,
+    yearCount: 3
   },
   new_year: { id: 'new_year', name: '2026 신년운세 리포트', price: 29000 },
   love: { id: 'love', name: '연애운 리포트', price: 29000 },
@@ -71,7 +79,7 @@ function UserInfoPage() {
     phone: '',
     phoneDisplay: '', // 화면 표시용 (010-0000-0000)
     calendarType: 'solar', // solar, lunar, lunarLeap
-    questions: ['', '', ''], // 최대 3개 질문 (선택사항)
+    questions: ['', ''], // 최대 2개 추가질문 (선택사항)
   });
 
   // 페이지 진입 시 추적 데이터 초기화 (직접 접근 시)
@@ -701,10 +709,16 @@ function UserInfoPage() {
           </div>
         );
 
-      case 7: // 질문 입력 (최대 3개, 선택사항)
+      case 7: // 추가 질문 입력 (최대 2개, 선택사항)
         return (
           <div className="input-group questions-group">
-            <p className="questions-hint">리포트에 반영할 질문을 입력해주세요 (선택사항)</p>
+            <p className="questions-hint">
+              리포트 제작 후 추가로 궁금한 점이 있으시면<br />
+              질문을 남겨주세요 (선택사항)
+            </p>
+            <p className="questions-sub-hint">
+              입력하신 질문은 리포트 발송 후 별도로 답변드립니다
+            </p>
             {formData.questions.map((question, index) => (
               <div key={index} className="question-input-row">
                 <span className="question-number">{index + 1}</span>
@@ -718,7 +732,7 @@ function UserInfoPage() {
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      if (index < 2) {
+                      if (index < 1) {
                         // 다음 질문 입력창으로 포커스 이동
                         const nextInput = e.target.parentElement.nextElementSibling?.querySelector('input');
                         if (nextInput) nextInput.focus();
@@ -732,9 +746,9 @@ function UserInfoPage() {
                       }
                     }
                   }}
-                  placeholder={`질문 ${index + 1}을 입력해주세요`}
+                  placeholder={`추가 질문 ${index + 1}을 입력해주세요`}
                   className="text-input question-input"
-                  maxLength={100}
+                  maxLength={150}
                   autoFocus={index === 0}
                 />
               </div>
@@ -842,7 +856,7 @@ function UserInfoPage() {
                   </div>
                   {formData.questions.some(q => q.trim()) && (
                     <div className="completed-item" onClick={() => goToStep(7)}>
-                      <span className="label">질문</span>
+                      <span className="label">추가질문</span>
                       <span className="value">{formData.questions.filter(q => q.trim()).length}개</span>
                     </div>
                   )}
@@ -877,7 +891,7 @@ function UserInfoPage() {
             muted
             playsInline
           >
-            <source src="/img/2026_video_03.mp4" type="video/mp4" />
+            <source src={(productId === 'blueprint' || productId === 'blueprint_lite') ? '/theblueprint.mp4' : '/img/2026_video_03.mp4'} type="video/mp4" />
           </video>
 
           <div className="overlay" />
@@ -950,7 +964,7 @@ function UserInfoPage() {
           muted
           playsInline
         >
-          <source src="/img/2026_video_03.mp4" type="video/mp4" />
+          <source src={(productId === 'blueprint' || productId === 'blueprint_lite') ? '/theblueprint.mp4' : '/img/2026_video_03.mp4'} type="video/mp4" />
         </video>
 
         <div className="overlay" />

@@ -488,14 +488,99 @@ function YearFiveYearFortuneEditor({
     }
   };
 
-  // 전체 AI 재작성 (4개 영역 모두)
+  // 종합 운세 AI 재작성 (4개 영역 해석을 종합하여 격국 중심 재해석)
+  const handleAiRewriteOverall = async () => {
+    setAiGeneratingArea('overall');
+    console.log('=== 종합 운세 AI 생성 시작 ===');
+
+    try {
+      // 4개 영역의 기존 해석 수집
+      const skyInterp = getEffectiveInterpretation('gyeokguk_sky') || safeRenderReason(yearData.sky_outcome?.reason) || '';
+      const earthInterp = getEffectiveInterpretation('gyeokguk_earth') || safeRenderReason(yearData.earth_outcome?.reason) || '';
+      const eokbuInterp = getEffectiveInterpretation('eokbu') || strengthData.analysis || strengthData.description || '';
+      const johuInterp = getEffectiveInterpretation('johu') || temperatureData.description || '';
+
+      // 종합 프롬프트 텍스트 구성
+      const combinedText = `
+[${yearData.year}년 ${yearData.ganji} 운세 종합]
+
+【천간 격국 (${yearData.sky_outcome?.result || '분석중'})】
+${skyInterp}
+
+【지지 격국 (${yearData.earth_outcome?.result || '분석중'})】
+${earthInterp}
+
+【억부 (${strengthData.decade_level || strengthData.level || '분석중'})】
+${eokbuInterp}
+
+【조후 (${temperatureData.decade_label || temperatureData.level || '분석중'})】
+${johuInterp}
+
+위 4가지 분석을 종합하여, 특히 격국(천간/지지 성패)을 중심으로 ${yearData.year}년 전체 운세를 해석해주세요.
+      `.trim();
+
+      const analysisContext = {
+        sky_outcome: yearData.sky_outcome || {},
+        earth_outcome: yearData.earth_outcome || {},
+        strength: yearData.strength || {},
+        temperature: yearData.temperature || {},
+        johu: yearData.johu || {},
+        life_areas: yearData.life_areas || {},
+        combined_score: yearData.combined_score,
+        relations: yearData.relations || [],
+        // 4개 영역 해석 추가
+        interpretations: {
+          gyeokguk_sky: skyInterp,
+          gyeokguk_earth: earthInterp,
+          eokbu: eokbuInterp,
+          johu: johuInterp
+        }
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_yearly_interpretation_ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          year: yearData.year,
+          year_index: yearIndex,
+          ganji: yearData.ganji,
+          analysis_area: 'overall',
+          primary_interpretation: combinedText,
+          analysis_context: analysisContext,
+          is_overall_synthesis: true  // 종합 해석임을 표시
+        })
+      });
+
+      const data = await response.json();
+      console.log('종합 운세 AI 응답:', data);
+
+      if (response.ok) {
+        console.log('종합 운세 AI 생성 성공');
+        onInterpretationChange(yearData.year, 'overall', data.interpretation);
+      } else {
+        console.error('종합 운세 AI 생성 실패:', data.error);
+        alert('종합 운세 AI 생성 실패: ' + (data.error || '알 수 없는 오류'));
+      }
+    } catch (err) {
+      console.error('종합 운세 AI 생성 오류:', err);
+      alert('종합 운세 AI 생성 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setAiGeneratingArea(null);
+    }
+  };
+
+  // 전체 AI 재작성 (5개 영역 모두)
   const handleAiRewriteAll = async () => {
-    const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu'];
+    const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu', 'overall'];
     const areaLabels = {
       'gyeokguk_sky': '천간 격국',
       'gyeokguk_earth': '지지 격국',
       'eokbu': '억부',
-      'johu': '조후'
+      'johu': '조후',
+      'overall': '종합 운세'
     };
 
     // 각 영역의 기본 텍스트 가져오기
@@ -509,6 +594,9 @@ function YearFiveYearFortuneEditor({
           return strengthData.description || strengthData.analysis || `${yearData.ganji} 억부 분석`;
         case 'johu':
           return temperatureData.description || temperatureData.analysis || `${yearData.ganji} 조후 분석`;
+        case 'overall':
+          // 종합 운세는 앞의 4개 해석을 종합한 텍스트
+          return `${yearData.ganji}년 종합 운세 - 격국, 억부, 조후를 종합하여 분석`;
         default:
           return '';
       }
@@ -563,7 +651,7 @@ function YearFiveYearFortuneEditor({
       }
 
       console.log('=== 전체 AI 재작성 완료 ===');
-      alert('4개 영역 AI 재작성이 완료되었습니다.');
+      alert('5개 영역 AI 재작성이 완료되었습니다.');
     } catch (err) {
       console.error('전체 AI 재작성 오류:', err);
       alert('전체 AI 재작성 중 오류가 발생했습니다.');
@@ -1010,6 +1098,68 @@ function YearFiveYearFortuneEditor({
                   onCancel={() => setEditingArea(null)}
                   isSaving={savingArea === 'johu'}
                   isAiGenerating={aiGeneratingArea === 'johu'}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 종합 운세 */}
+          <div className="interpretation-area overall-area">
+            <div className="area-header">
+              <span className="area-label">📊 {yearData.year}년 종합 운세</span>
+              <span className={`overall-rating-badge ${getOverallRating(yearData)}`}>
+                {getOverallRatingText(getOverallRating(yearData))}
+              </span>
+              {editingArea !== 'overall' && (
+                <div className="area-action-buttons">
+                  <button
+                    className="btn btn-ai-area"
+                    onClick={() => handleAiRewriteOverall()}
+                    disabled={aiGeneratingArea !== null}
+                    title="격국 중심 종합 AI 해석 생성"
+                  >
+                    {aiGeneratingArea === 'overall' ? <Loader size={12} className="spinning" /> : <Wand2 size={12} />}
+                  </button>
+                  <button
+                    className="btn btn-edit-area"
+                    onClick={() => setEditingArea('overall')}
+                    title="해석 수정"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="area-content overall-content">
+              <p className="overall-summary">
+                천간 {getSingleRating(skyResult, skyScore).text} /
+                지지 {getSingleRating(earthResult, earthScore).text} /
+                억부 {strengthData.decade_level || strengthData.level || '분석중'} /
+                조후 {temperatureData.decade_label || temperatureData.level || '분석중'}
+              </p>
+              {/* 저장된 종합 해석 표시 */}
+              {getEffectiveInterpretation('overall') ? (
+                <div className="saved-interpretation overall-interpretation">
+                  <p className="interpretation-text">{getEffectiveInterpretation('overall')}</p>
+                </div>
+              ) : (
+                <div className="no-interpretation-message">
+                  <p>종합 운세 해석이 없습니다. AI 버튼을 클릭하여 격국 중심 종합 해석을 생성하세요.</p>
+                </div>
+              )}
+              {/* 편집 모드 */}
+              {editingArea === 'overall' && (
+                <AreaInterpretationEditor
+                  area="overall"
+                  areaLabel="종합 운세"
+                  interpretation={getInterpretation('overall')}
+                  defaultText={yearData.generated_content || ''}
+                  onSavePrimary={(text) => handleSavePrimary('overall', text)}
+                  onSaveFinal={(text) => handleSaveFinal('overall', text)}
+                  onAiRewrite={(text) => handleAiRewriteOverall()}
+                  onCancel={() => setEditingArea(null)}
+                  isSaving={savingArea === 'overall'}
+                  isAiGenerating={aiGeneratingArea === 'overall'}
                 />
               )}
             </div>
@@ -1557,8 +1707,8 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
         console.warn(`연애운 생성 실패 (${year}):`, e);
       }
 
-      // 5. 4개 영역 AI 해석 재생성 (gyeokguk_sky, gyeokguk_earth, eokbu, johu)
-      const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu'];
+      // 5. 5개 영역 AI 해석 재생성 (gyeokguk_sky, gyeokguk_earth, eokbu, johu, overall)
+      const areas = ['gyeokguk_sky', 'gyeokguk_earth', 'eokbu', 'johu', 'overall'];
       const yearIndex = fiveYearData.findIndex(d => d.year === year);
       const analysisContext = {
         sky_outcome: data.sky_outcome || yearData?.sky_outcome || {},
@@ -1829,16 +1979,8 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="five-year-fortune-editor loading">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <span>5년 운세 데이터를 불러오는 중...</span>
-        </div>
-      </div>
-    );
-  }
+  // 로딩 중에도 기본 UI는 보여주되, 데이터가 없으면 생성 버튼만 표시
+  // (불필요한 로딩 메시지 제거)
 
   return (
     <div className="five-year-fortune-editor">
@@ -1881,20 +2023,30 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
       </div>
 
       <div className="five-year-fortune-list">
-        {fiveYearData.map((yearData, index) => (
-          <YearFiveYearFortuneEditor
-            key={yearData.year}
-            yearData={yearData}
-            yearIndex={index}
-            onUpdate={handleYearUpdate}
-            onRegenerate={handleRegenerateYear}
-            isRegenerating={regeneratingYear === yearData.year}
-            userName={userName}
-            orderId={orderId}
-            interpretations={yearlyInterpretations}
-            onInterpretationChange={handleInterpretationChange}
-          />
-        ))}
+        {fiveYearData.length === 0 && !loading ? (
+          <div className="no-data-message">
+            <p>5년 운세 데이터가 없습니다. "전체 운세 생성" 버튼을 클릭하여 생성하세요.</p>
+          </div>
+        ) : fiveYearData.length === 0 && loading ? (
+          <div className="no-data-message">
+            <p>데이터를 불러오는 중입니다...</p>
+          </div>
+        ) : (
+          fiveYearData.map((yearData, index) => (
+            <YearFiveYearFortuneEditor
+              key={yearData.year}
+              yearData={yearData}
+              yearIndex={index}
+              onUpdate={handleYearUpdate}
+              onRegenerate={handleRegenerateYear}
+              isRegenerating={regeneratingYear === yearData.year}
+              userName={userName}
+              orderId={orderId}
+              interpretations={yearlyInterpretations}
+              onInterpretationChange={handleInterpretationChange}
+            />
+          ))
+        )}
       </div>
     </div>
   );
