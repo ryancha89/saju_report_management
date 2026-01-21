@@ -3958,6 +3958,44 @@ function OrderDetail() {
                               </div>
                             </div>
                           </div>
+
+                          {/* 격국 정보 */}
+                          {validationResult.saju_data?.geju && (
+                            <div className="geju-section">
+                              <h5>격국 분석</h5>
+                              <div className="geju-grid">
+                                <div className="geju-item">
+                                  <div className="geju-label">천간격국</div>
+                                  <div className="geju-value">
+                                    <span className="geju-name">{validationResult.saju_data.geju.sky_type || '미정'}</span>
+                                  </div>
+                                </div>
+                                <div className="geju-item">
+                                  <div className="geju-label">지지격국</div>
+                                  <div className="geju-value">
+                                    <span className="geju-name">{validationResult.saju_data.geju.earth_type || '미정'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {validationResult.saju_data.geju.primary?.reason && (
+                                <div className="geju-reason">
+                                  <div className="reason-label">주요 격국 판단 근거</div>
+                                  <div className="reason-text">{validationResult.saju_data.geju.primary.reason}</div>
+                                </div>
+                              )}
+                              {validationResult.saju_data.geju.results && validationResult.saju_data.geju.results.length > 1 && (
+                                <div className="geju-all-results">
+                                  <div className="geju-all-results-title">모든 격국 정보 ({validationResult.saju_data.geju.results.length}개)</div>
+                                  {validationResult.saju_data.geju.results.map((result, idx) => (
+                                    <div key={idx} className="geju-result-item">
+                                      <span className="result-name">{result.geju_name}</span>
+                                      <span className="result-reason">{result.reason}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter1' ? (
                         <div className="chapter1-content">

@@ -2597,6 +2597,113 @@
   letter-spacing: 4px;
 }
 
+/* 격국 분석 섹션 */
+.geju-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.geju-section h5 {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0 0 16px 0;
+}
+
+.geju-section > .geju-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.geju-section > .geju-grid > .geju-item {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-height: 80px;
+  height: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0 !important;
+}
+
+.geju-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.geju-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.geju-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.geju-reason {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.reason-label {
+  font-size: 0.75rem;
+  color: #16a34a;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.reason-text {
+  font-size: 0.9rem;
+  color: #166534;
+  line-height: 1.6;
+}
+
+.geju-all-results {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.geju-all-results-title {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.geju-result-item {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid #6366f1;
+}
+
+.result-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.result-reason {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
 .chapter-placeholder {
   text-align: center;
   padding: 60px 20px;
