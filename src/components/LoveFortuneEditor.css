@@ -727,6 +727,182 @@
   color: #374151;
 }
 
+/* 단락별 콘텐츠 섹션 스타일 */
+.generated-content-section.sectioned {
+  background: white;
+  border: 1px solid #f9a8d4;
+}
+
+.love-section {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.love-section:last-child {
+  margin-bottom: 0;
+}
+
+.love-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+}
+
+.love-section .section-icon {
+  font-size: 1.1rem;
+}
+
+.love-section .section-label {
+  font-weight: 700;
+  color: #374151;
+}
+
+.love-section .section-desc {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  flex: 1;
+}
+
+.love-section .btn-section-edit {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.love-section .btn-section-edit:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.love-section .btn-section-edit.editing {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.love-section .section-content {
+  padding: 14px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #374151;
+  background: white;
+}
+
+.love-section .empty-content {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* 섹션 편집 영역 */
+.love-section .section-edit-area {
+  padding: 14px;
+  background: #f9fafb;
+}
+
+.love-section .section-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+
+.love-section .section-textarea:focus {
+  outline: none;
+  border-color: #ec4899;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.love-section .section-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.love-section .btn-section-cancel {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.love-section .btn-section-cancel:hover {
+  background: #f3f4f6;
+}
+
+.love-section .btn-section-save {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.love-section .btn-section-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
+}
+
+/* 섹션별 테마 색상 - 인연이 찾아오는 방식 (sky) */
+.love-section.section-sky .section-header {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.love-section.section-sky .section-label {
+  color: #92400e;
+}
+
+/* 섹션별 테마 색상 - 마음속 감정의 흐름 (earth) */
+.love-section.section-earth .section-header {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+}
+
+.love-section.section-earth .section-label {
+  color: #be185d;
+}
+
+/* 섹션별 테마 색상 - 연애 컨디션 (johu) */
+.love-section.section-johu .section-header {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+}
+
+.love-section.section-johu .section-label {
+  color: #9f1239;
+}
+
+/* 섹션별 테마 색상 - 올해 연애운 총정리 (summary) */
+.love-section.section-summary .section-header {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+}
+
+.love-section.section-summary .section-label {
+  color: #7c3aed;
+}
+
 /* 재생성 버튼 */
 .year-love-fortune-actions {
   display: flex;

@@ -141,7 +141,7 @@ body:has(.report-page) {
 .report-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -481,8 +481,98 @@ body:has(.report-page) {
   line-height: 1.3;
 }
 
+/* 십이신살 행 */
+.char-sinsal-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.char-sinsal {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 180, 180, 0.85);
+  line-height: 1.3;
+}
+
 .earth-wrapper {
   margin-top: 8px;
+}
+
+/* 격국 분석 섹션 */
+.geju-section-preview {
+  margin-top: 30px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.geju-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 20px 0;
+  text-align: center;
+  letter-spacing: 2px;
+}
+
+.geju-grid-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.geju-item-preview {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.geju-label-preview {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.geju-value-preview {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+.geju-reasons-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.geju-reason-preview {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.reason-label-preview {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(134, 239, 172, 0.9);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.reason-text-preview {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* 한자 박스 */
@@ -2788,6 +2878,15 @@ body:has(.report-page) {
   background: rgba(255, 244, 200, 0.05);
   border-left: 3px solid rgb(255, 244, 200);
   border-radius: 0 8px 8px 0;
+}
+
+.base-fortune-intro .base-fortune-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: rgb(255, 244, 200);
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 244, 200, 0.2);
 }
 
 .base-fortune-intro .chapter-content-text {

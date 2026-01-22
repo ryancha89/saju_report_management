@@ -3201,9 +3201,10 @@ function OrderDetail() {
       `;
 
       const formattedContent = chapterData.content
-        .replace(/^### (.*?)$/gm, '</p><h3 style="font-size: 15px; color: #f4d03f; margin: 20px 0 10px; padding-left: 10px; border-left: 3px solid #d4af37; page-break-inside: avoid;">$1</h3><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
-        .replace(/^## (.*?)$/gm, '</p><h2 style="font-size: 17px; color: #d4af37; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); page-break-inside: avoid; page-break-after: avoid;">$1</h2><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
-        .replace(/^# (.*?)$/gm, '</p><h1 style="font-size: 20px; color: #ffffff; margin: 28px 0 16px; text-align: center; page-break-inside: avoid;">$1</h1><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
+        .replace(/#{4,}\s*(.*?)\s*#{0,}/g, '<strong style="color: #d4af37;">$1</strong>')
+        .replace(/^###\s*(.*?)\s*#{0,}$/gm, '</p><h3 style="font-size: 15px; color: #f4d03f; margin: 20px 0 10px; padding-left: 10px; border-left: 3px solid #d4af37; page-break-inside: avoid;">$1</h3><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
+        .replace(/^##\s*(.*?)\s*#{0,}$/gm, '</p><h2 style="font-size: 17px; color: #d4af37; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); page-break-inside: avoid; page-break-after: avoid;">$1</h2><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
+        .replace(/^#\s*(.*?)\s*#{0,}$/gm, '</p><h1 style="font-size: 20px; color: #ffffff; margin: 28px 0 16px; text-align: center; page-break-inside: avoid;">$1</h1><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
         .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #d4af37;">$1</strong>')
         .replace(/\n\n/g, '</p><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
         .replace(/\n/g, '<br/>');
@@ -3321,9 +3322,10 @@ function OrderDetail() {
       for (const chapter of chapters) {
         const chapterTitle = chapterTitlesForPdf[chapter.num] || `챕터 ${chapter.num}`;
         const formattedContent = chapter.content
-          .replace(/^### (.*?)$/gm, '</p><h3 style="font-size: 15px; color: #f4d03f; margin: 20px 0 10px; padding-left: 10px; border-left: 3px solid #d4af37; page-break-inside: avoid;">$1</h3><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
-          .replace(/^## (.*?)$/gm, '</p><h2 style="font-size: 17px; color: #d4af37; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); page-break-inside: avoid; page-break-after: avoid;">$1</h2><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
-          .replace(/^# (.*?)$/gm, '</p><h1 style="font-size: 20px; color: #ffffff; margin: 28px 0 16px; text-align: center; page-break-inside: avoid;">$1</h1><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
+          .replace(/#{4,}\s*(.*?)\s*#{0,}/g, '<strong style="color: #d4af37;">$1</strong>')
+          .replace(/^###\s*(.*?)\s*#{0,}$/gm, '</p><h3 style="font-size: 15px; color: #f4d03f; margin: 20px 0 10px; padding-left: 10px; border-left: 3px solid #d4af37; page-break-inside: avoid;">$1</h3><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
+          .replace(/^##\s*(.*?)\s*#{0,}$/gm, '</p><h2 style="font-size: 17px; color: #d4af37; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(212, 175, 55, 0.3); page-break-inside: avoid; page-break-after: avoid;">$1</h2><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
+          .replace(/^#\s*(.*?)\s*#{0,}$/gm, '</p><h1 style="font-size: 20px; color: #ffffff; margin: 28px 0 16px; text-align: center; page-break-inside: avoid;">$1</h1><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
           .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #d4af37;">$1</strong>')
           .replace(/\n\n/g, '</p><p style="margin: 12px 0; color: #ffffff; page-break-inside: avoid;">')
           .replace(/\n/g, '<br/>');
@@ -3939,23 +3941,62 @@ function OrderDetail() {
                           </div>
                           <div className="saju-pillars">
                             <h5>사주팔자</h5>
-                            <div className="pillars-display">
-                              <div className="pillar">
-                                <div className="pillar-label">시주</div>
-                                <div className="pillar-value">{validationResult.saju_data?.zodiac_time || '??'}</div>
-                              </div>
-                              <div className="pillar">
-                                <div className="pillar-label">일주</div>
-                                <div className="pillar-value">{validationResult.saju_data?.zodiac_day || '??'}</div>
-                              </div>
-                              <div className="pillar">
-                                <div className="pillar-label">월주</div>
-                                <div className="pillar-value">{validationResult.saju_data?.zodiac_month || '??'}</div>
-                              </div>
-                              <div className="pillar">
-                                <div className="pillar-label">연주</div>
-                                <div className="pillar-value">{validationResult.saju_data?.zodiac_year || '??'}</div>
-                              </div>
+                            <div className="saju-table-wrapper">
+                              <table className="saju-analysis-table">
+                                <thead>
+                                  <tr>
+                                    <th className="row-header"></th>
+                                    <th>시주</th>
+                                    <th>일주</th>
+                                    <th>월주</th>
+                                    <th>연주</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="sipsung-row">
+                                    <td className="row-label">천간십성</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.cheongan?.time || '-'}</td>
+                                    <td className="sipsung-cell ilgan-marker">일간</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.cheongan?.month || '-'}</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.cheongan?.year || '-'}</td>
+                                  </tr>
+                                  <tr className="cheongan-row">
+                                    <td className="row-label">천간</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.cheongan?.time || '?'}</td>
+                                    <td className="ganji-cell ilgan-cell">{validationResult.saju_data?.cheongan?.day || '?'}</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.cheongan?.month || '?'}</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.cheongan?.year || '?'}</td>
+                                  </tr>
+                                  <tr className="jiji-row">
+                                    <td className="row-label">지지</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.jiji?.time || '?'}</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.jiji?.day || '?'}</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.jiji?.month || '?'}</td>
+                                    <td className="ganji-cell">{validationResult.saju_data?.jiji?.year || '?'}</td>
+                                  </tr>
+                                  <tr className="sipsung-row">
+                                    <td className="row-label">지지십성</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.jiji?.time || '-'}</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.jiji?.day || '-'}</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.jiji?.month || '-'}</td>
+                                    <td className="sipsung-cell">{validationResult.saju_data?.sipsung?.jiji?.year || '-'}</td>
+                                  </tr>
+                                  <tr className="unseong-row">
+                                    <td className="row-label">십이운성</td>
+                                    <td className="unseong-cell">{validationResult.saju_data?.sipyi_unseong?.time || '-'}</td>
+                                    <td className="unseong-cell">{validationResult.saju_data?.sipyi_unseong?.day || '-'}</td>
+                                    <td className="unseong-cell">{validationResult.saju_data?.sipyi_unseong?.month || '-'}</td>
+                                    <td className="unseong-cell">{validationResult.saju_data?.sipyi_unseong?.year || '-'}</td>
+                                  </tr>
+                                  <tr className="sinsal-row">
+                                    <td className="row-label">십이신살</td>
+                                    <td className="sinsal-cell">{validationResult.saju_data?.sipyi_sinsal?.time || '-'}</td>
+                                    <td className="sinsal-cell">{validationResult.saju_data?.sipyi_sinsal?.day || '-'}</td>
+                                    <td className="sinsal-cell">{validationResult.saju_data?.sipyi_sinsal?.month || '-'}</td>
+                                    <td className="sinsal-cell">{validationResult.saju_data?.sipyi_sinsal?.year || '-'}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
                           </div>
 
@@ -3977,21 +4018,20 @@ function OrderDetail() {
                                   </div>
                                 </div>
                               </div>
-                              {validationResult.saju_data.geju.primary?.reason && (
-                                <div className="geju-reason">
-                                  <div className="reason-label">주요 격국 판단 근거</div>
-                                  <div className="reason-text">{validationResult.saju_data.geju.primary.reason}</div>
-                                </div>
-                              )}
-                              {validationResult.saju_data.geju.results && validationResult.saju_data.geju.results.length > 1 && (
-                                <div className="geju-all-results">
-                                  <div className="geju-all-results-title">모든 격국 정보 ({validationResult.saju_data.geju.results.length}개)</div>
-                                  {validationResult.saju_data.geju.results.map((result, idx) => (
-                                    <div key={idx} className="geju-result-item">
-                                      <span className="result-name">{result.geju_name}</span>
-                                      <span className="result-reason">{result.reason}</span>
+                              {(validationResult.saju_data.geju.sky_reason || validationResult.saju_data.geju.earth_reason) && (
+                                <div className="geju-reasons">
+                                  {validationResult.saju_data.geju.sky_reason && (
+                                    <div className="geju-reason">
+                                      <div className="reason-label">천간격국 판단 근거</div>
+                                      <div className="reason-text">{validationResult.saju_data.geju.sky_reason}</div>
                                     </div>
-                                  ))}
+                                  )}
+                                  {validationResult.saju_data.geju.earth_reason && (
+                                    <div className="geju-reason">
+                                      <div className="reason-label">지지격국 판단 근거</div>
+                                      <div className="reason-text">{validationResult.saju_data.geju.earth_reason}</div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -4132,7 +4172,7 @@ function OrderDetail() {
                           )}
 
                           {/* 챕터1 콘텐츠 표시 */}
-                          {chapter1Data && (
+                          {chapter1Data && !chapter1Loading && (
                             <div className="chapter1-result">
                               {/* 명리학적 근거 박스 */}
                               <div className="chapter1-basis-box">
@@ -4206,14 +4246,15 @@ function OrderDetail() {
                                   className="markdown-content"
                                   dangerouslySetInnerHTML={{
                                     __html: chapter1Data.content
+                                      ?.replace(/#{4,}\s*(.*?)\s*#{0,}/g, '<strong>$1</strong>')
                                       ?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                                       ?.replace(/\n\n/g, '</p><p>')
                                       ?.replace(/\n/g, '<br/>')
                                       ?.replace(/^/, '<p>')
                                       ?.replace(/$/, '</p>')
-                                      ?.replace(/### (.*?)(<br\/>|<\/p>)/g, '<h3>$1</h3>')
-                                      ?.replace(/## (.*?)(<br\/>|<\/p>)/g, '<h2>$1</h2>')
-                                      ?.replace(/# (.*?)(<br\/>|<\/p>)/g, '<h1>$1</h1>')
+                                      ?.replace(/###\s*(.*?)\s*#{0,}(<br\/>|<\/p>)/g, '<h3>$1</h3>')
+                                      ?.replace(/##\s*(.*?)\s*#{0,}(<br\/>|<\/p>)/g, '<h2>$1</h2>')
+                                      ?.replace(/(^|<p>)#\s*(.*?)\s*#{0,}(<br\/>|<\/p>)/g, '$1<h1>$2</h1>')
                                   }}
                                 />
                               </div>
@@ -4504,7 +4545,7 @@ function OrderDetail() {
                           )}
 
                           {/* 챕터2 콘텐츠 표시 */}
-                          {chapter2Data && (
+                          {chapter2Data && !chapter2Loading && (
                             <div className="chapter2-result">
                               {/* 명리학적 근거 박스 */}
                               <div className="chapter2-basis-box">
@@ -4579,14 +4620,15 @@ function OrderDetail() {
                                   className="markdown-content"
                                   dangerouslySetInnerHTML={{
                                     __html: chapter2Data.content
+                                      ?.replace(/#{4,}\s*(.*?)\s*#{0,}/g, '<strong>$1</strong>')
                                       ?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                                       ?.replace(/\n\n/g, '</p><p>')
                                       ?.replace(/\n/g, '<br/>')
                                       ?.replace(/^/, '<p>')
                                       ?.replace(/$/, '</p>')
-                                      ?.replace(/### (.*?)(<br\/>|<\/p>)/g, '<h3>$1</h3>')
-                                      ?.replace(/## (.*?)(<br\/>|<\/p>)/g, '<h2>$1</h2>')
-                                      ?.replace(/# (.*?)(<br\/>|<\/p>)/g, '<h1>$1</h1>')
+                                      ?.replace(/###\s*(.*?)\s*#{0,}(<br\/>|<\/p>)/g, '<h3>$1</h3>')
+                                      ?.replace(/##\s*(.*?)\s*#{0,}(<br\/>|<\/p>)/g, '<h2>$1</h2>')
+                                      ?.replace(/(^|<p>)#\s*(.*?)\s*#{0,}(<br\/>|<\/p>)/g, '$1<h1>$2</h1>')
                                   }}
                                 />
                               </div>

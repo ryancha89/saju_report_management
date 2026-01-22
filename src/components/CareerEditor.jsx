@@ -569,10 +569,40 @@ function YearCareerEditor({
           ) : yearData.generated_content ? (
             <div className="generated-content-section">
               <div className="content-title">생성된 직업운</div>
-              <div
-                className="generated-content"
-                dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
-              />
+              {/* 객체인 경우 섹션별로 표시, 문자열인 경우 그대로 표시 */}
+              {typeof yearData.generated_content === 'object' ? (
+                <div className="generated-content sectioned">
+                  {yearData.generated_content.sky && (
+                    <div className="content-section">
+                      <div className="section-label">천간운 (외부 기회)</div>
+                      <p>{yearData.generated_content.sky}</p>
+                    </div>
+                  )}
+                  {yearData.generated_content.earth && (
+                    <div className="content-section">
+                      <div className="section-label">지지운 (내면 역량)</div>
+                      <p>{yearData.generated_content.earth}</p>
+                    </div>
+                  )}
+                  {yearData.generated_content.month && (
+                    <div className="content-section">
+                      <div className="section-label">월지운 (직장 환경)</div>
+                      <p>{yearData.generated_content.month}</p>
+                    </div>
+                  )}
+                  {yearData.generated_content.summary && (
+                    <div className="content-section">
+                      <div className="section-label">종합 조언</div>
+                      <p>{yearData.generated_content.summary}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="generated-content"
+                  dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
+                />
+              )}
             </div>
           ) : (
             <div className="generated-content-section" style={{ background: '#fef3c7', borderColor: '#fcd34d' }}>

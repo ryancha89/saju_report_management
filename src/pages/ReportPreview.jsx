@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader, FileText, User, Calendar, ChevronLeft, ChevronRight, Home, Download, ChevronDown } from 'lucide-react';
+import { Loader, FileText, User, Calendar, ChevronLeft, ChevronRight, Home, Download, ChevronDown, MessageSquarePlus, Edit3, Trash2, X } from 'lucide-react';
 import './ReportPreview.css';
+import '../components/CounselorKeyPoint.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 function ReportPreview({ isAdminPreview = false }) {
   const { token } = useParams();
@@ -21,6 +23,29 @@ function ReportPreview({ isAdminPreview = false }) {
   const [currentLoveYearPage, setCurrentLoveYearPage] = useState(1); // 연애운 연도별 페이지
   const [showChapterImage, setShowChapterImage] = useState(false); // 챕터 이미지 표시 여부
   const dropdownRef = useRef(null);
+
+  // 상담사의 핵심 포인트 관련 상태
+  const [keyPoints, setKeyPoints] = useState({});
+  const [keyPointModalOpen, setKeyPointModalOpen] = useState(false);
+  const [editingKeyPoint, setEditingKeyPoint] = useState(null);
+  const [keyPointPosition, setKeyPointPosition] = useState(0);
+  const [keyPointChapter, setKeyPointChapter] = useState('');
+  const [keyPointContent, setKeyPointContent] = useState('');
+  const [keyPointLabel, setKeyPointLabel] = useState('핵심 포인트');
+  const [keyPointSaving, setKeyPointSaving] = useState(false);
+
+  // 라벨 옵션
+  const keyPointLabelOptions = [
+    { value: '핵심 포인트', icon: '💡' },
+    { value: '코멘트', icon: '💬' },
+    { value: '조언', icon: '🎯' }
+  ];
+
+  // 라벨에 해당하는 아이콘 가져오기
+  const getKeyPointIcon = (label) => {
+    const option = keyPointLabelOptions.find(opt => opt.value === label);
+    return option?.icon || '💡';
+  };
 
   // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
   const yearCount = reportData?.order?.report_type === 'blueprint_lite' ? 3 : 5;
@@ -86,11 +111,143 @@ function ReportPreview({ isAdminPreview = false }) {
         throw new Error(data.error || '레포트를 불러오는데 실패했습니다.');
       }
       setReportData(data.report);
+      // 핵심포인트 설정
+      if (data.report.counselor_key_points) {
+        setKeyPoints(data.report.counselor_key_points);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 핵심포인트 추가
+  const handleAddKeyPoint = async () => {
+    if (!keyPointContent.trim() || !keyPointChapter) return;
+    setKeyPointSaving(true);
+
+    try {
+      const orderId = reportData?.order?.id;
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/counselor_key_points/add`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_key: keyPointChapter,
+            content: keyPointContent,
+            position: keyPointPosition,
+            label: keyPointLabel
+          })
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setKeyPoints(data.key_points);
+        closeKeyPointModal();
+      }
+    } catch (error) {
+      console.error('핵심포인트 추가 실패:', error);
+    } finally {
+      setKeyPointSaving(false);
+    }
+  };
+
+  // 핵심포인트 수정
+  const handleUpdateKeyPoint = async () => {
+    if (!keyPointContent.trim() || !editingKeyPoint) return;
+    setKeyPointSaving(true);
+
+    try {
+      const orderId = reportData?.order?.id;
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/counselor_key_points/update`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_key: keyPointChapter,
+            point_id: editingKeyPoint.id,
+            content: keyPointContent,
+            label: keyPointLabel
+          })
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setKeyPoints(data.key_points);
+        closeKeyPointModal();
+      }
+    } catch (error) {
+      console.error('핵심포인트 수정 실패:', error);
+    } finally {
+      setKeyPointSaving(false);
+    }
+  };
+
+  // 핵심포인트 삭제
+  const handleDeleteKeyPoint = async (chapterKey, pointId) => {
+    if (!confirm('핵심포인트를 삭제하시겠습니까?')) return;
+
+    try {
+      const orderId = reportData?.order?.id;
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/counselor_key_points/delete`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_key: chapterKey,
+            point_id: pointId
+          })
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setKeyPoints(data.key_points);
+      }
+    } catch (error) {
+      console.error('핵심포인트 삭제 실패:', error);
+    }
+  };
+
+  // 핵심포인트 모달 열기 (추가)
+  const openAddKeyPointModal = (chapterKey, position) => {
+    setKeyPointChapter(chapterKey);
+    setKeyPointPosition(position);
+    setKeyPointContent('');
+    setKeyPointLabel('핵심 포인트');
+    setEditingKeyPoint(null);
+    setKeyPointModalOpen(true);
+  };
+
+  // 핵심포인트 모달 열기 (수정)
+  const openEditKeyPointModal = (chapterKey, keyPoint) => {
+    setKeyPointChapter(chapterKey);
+    setKeyPointPosition(keyPoint.position);
+    setKeyPointContent(keyPoint.content);
+    setKeyPointLabel(keyPoint.label || '핵심 포인트');
+    setEditingKeyPoint(keyPoint);
+    setKeyPointModalOpen(true);
+  };
+
+  // 핵심포인트 모달 닫기
+  const closeKeyPointModal = () => {
+    setKeyPointModalOpen(false);
+    setKeyPointContent('');
+    setEditingKeyPoint(null);
+    setKeyPointChapter('');
+    setKeyPointPosition(0);
   };
 
   const handleDownloadPDF = async () => {
@@ -123,10 +280,27 @@ function ReportPreview({ isAdminPreview = false }) {
 
   const renderContent = (content) => {
     if (!content) return <p className="no-content">내용이 없습니다.</p>;
-    const formatted = content
-      .replace(/^### (.*?)$/gm, '<h3>$1</h3>')
-      .replace(/^## (.*?)$/gm, '<h2>$1</h2>')
-      .replace(/^# (.*?)$/gm, '<h1>$1</h1>')
+
+    // content가 객체인 경우 (generated_content가 {sky, earth, month, summary, combined} 등일 때)
+    let textContent = content;
+    if (typeof content === 'object') {
+      // combined가 있으면 사용, 없으면 각 섹션을 합침
+      textContent = content.combined ||
+        [content.sky, content.earth, content.month || content.johu, content.summary]
+          .filter(Boolean)
+          .join('\n\n');
+    }
+
+    if (!textContent || typeof textContent !== 'string') {
+      return <p className="no-content">내용이 없습니다.</p>;
+    }
+
+    const formatted = textContent
+      .replace(/^---+$/gm, '')  // 수평선(---) 제거
+      .replace(/#{4,}\s*(.*?)\s*#{0,}/g, '<strong>$1</strong>')  // #### 내용 #### → 강조(bold)
+      .replace(/^###\s*(.*?)\s*#{0,}$/gm, '<h3>$1</h3>')    // ### 제목 ### 또는 ### 제목
+      .replace(/^##\s*(.*?)\s*#{0,}$/gm, '<h2>$1</h2>')     // ## 제목 ## 또는 ## 제목
+      .replace(/^#\s*(.*?)\s*#{0,}$/gm, '<h1>$1</h1>')      // # 제목 # 또는 # 제목
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br/>');
@@ -138,10 +312,242 @@ function ReportPreview({ isAdminPreview = false }) {
     );
   };
 
+  // 핵심포인트가 포함된 콘텐츠 렌더링 (관리자 모드에서 사용)
+  const renderContentWithKeyPoints = (content, chapterKey) => {
+    if (!content) return <p className="no-content">내용이 없습니다.</p>;
+
+    // 문단 분리
+    const paragraphs = content.split(/\n\n+/).filter(p => p.trim());
+    const chapterKeyPoints = keyPoints[chapterKey] || [];
+
+    // position별로 핵심포인트 그룹핑
+    const keyPointsByPosition = {};
+    chapterKeyPoints.forEach(kp => {
+      const pos = kp.position || 0;
+      if (!keyPointsByPosition[pos]) keyPointsByPosition[pos] = [];
+      keyPointsByPosition[pos].push(kp);
+    });
+
+    const formatParagraph = (text) => {
+      return text
+        .replace(/^---+$/gm, '')
+        .replace(/#{4,}\s*(.*?)\s*#{0,}/g, '<strong>$1</strong>')
+        .replace(/^###\s*(.*?)\s*#{0,}$/gm, '<h3>$1</h3>')
+        .replace(/^##\s*(.*?)\s*#{0,}$/gm, '<h2>$1</h2>')
+        .replace(/^#\s*(.*?)\s*#{0,}$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br/>');
+    };
+
+    return (
+      <div className="chapter-content-text with-key-points">
+        {paragraphs.map((para, idx) => (
+          <div key={idx}>
+            {/* 이 위치의 핵심포인트들 표시 */}
+            {keyPointsByPosition[idx]?.map(kp => (
+              <div key={kp.id} className="key-point-display">
+                <div className="key-point-badge">
+                  <span className="key-point-icon">{getKeyPointIcon(kp.label)}</span>
+                  <span className="key-point-label">상담사의 {kp.label || '핵심 포인트'}</span>
+                </div>
+                <div className="key-point-content">{kp.content}</div>
+                {isAdminPreview && (
+                  <div className="key-point-actions">
+                    <button
+                      className="btn-key-point-action"
+                      onClick={() => openEditKeyPointModal(chapterKey, kp)}
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      className="btn-key-point-action btn-delete"
+                      onClick={() => handleDeleteKeyPoint(chapterKey, kp.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* 관리자 모드: 핵심포인트 추가 버튼 */}
+            {isAdminPreview && (
+              <div
+                className="add-key-point-trigger"
+                onClick={() => openAddKeyPointModal(chapterKey, idx)}
+              >
+                <div className="add-key-point-line"></div>
+                <button className="btn-add-key-point">
+                  <MessageSquarePlus size={14} />
+                  <span>텍스트 추가</span>
+                </button>
+                <div className="add-key-point-line"></div>
+              </div>
+            )}
+
+            {/* 문단 */}
+            <p dangerouslySetInnerHTML={{ __html: formatParagraph(para) }} />
+          </div>
+        ))}
+
+        {/* 마지막 위치의 핵심포인트들 */}
+        {keyPointsByPosition[paragraphs.length]?.map(kp => (
+          <div key={kp.id} className="key-point-display">
+            <div className="key-point-badge">
+              <span className="key-point-icon">{getKeyPointIcon(kp.label)}</span>
+              <span className="key-point-label">상담사의 {kp.label || '핵심 포인트'}</span>
+            </div>
+            <div className="key-point-content">{kp.content}</div>
+            {isAdminPreview && (
+              <div className="key-point-actions">
+                <button
+                  className="btn-key-point-action"
+                  onClick={() => openEditKeyPointModal(chapterKey, kp)}
+                >
+                  <Edit3 size={14} />
+                </button>
+                <button
+                  className="btn-key-point-action btn-delete"
+                  onClick={() => handleDeleteKeyPoint(chapterKey, kp.id)}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* 관리자 모드: 마지막에 핵심포인트 추가 버튼 */}
+        {isAdminPreview && (
+          <div
+            className="add-key-point-trigger"
+            onClick={() => openAddKeyPointModal(chapterKey, paragraphs.length)}
+          >
+            <div className="add-key-point-line"></div>
+            <button className="btn-add-key-point">
+              <MessageSquarePlus size={14} />
+              <span>텍스트 추가</span>
+            </button>
+            <div className="add-key-point-line"></div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 챕터별 핵심포인트 섹션 렌더링 (복잡한 구조의 챕터용)
+  const renderKeyPointsSection = (chapterKey) => {
+    const chapterKeyPoints = keyPoints[chapterKey] || [];
+
+    return (
+      <div className="key-points-section">
+        {/* 저장된 핵심포인트들 표시 */}
+        {chapterKeyPoints.map(kp => (
+          <div key={kp.id} className="key-point-display">
+            <div className="key-point-badge">
+              <span className="key-point-icon">{getKeyPointIcon(kp.label)}</span>
+              <span className="key-point-label">상담사의 {kp.label || '핵심 포인트'}</span>
+            </div>
+            <div className="key-point-content">{kp.content}</div>
+            {isAdminPreview && (
+              <div className="key-point-actions">
+                <button
+                  className="btn-key-point-action"
+                  onClick={() => openEditKeyPointModal(chapterKey, kp)}
+                >
+                  <Edit3 size={14} />
+                </button>
+                <button
+                  className="btn-key-point-action btn-delete"
+                  onClick={() => handleDeleteKeyPoint(chapterKey, kp.id)}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* 관리자 모드: 핵심포인트 추가 버튼 */}
+        {isAdminPreview && (
+          <div
+            className="add-key-point-trigger"
+            onClick={() => openAddKeyPointModal(chapterKey, chapterKeyPoints.length)}
+          >
+            <div className="add-key-point-line"></div>
+            <button className="btn-add-key-point">
+              <MessageSquarePlus size={14} />
+              <span>텍스트 추가</span>
+            </button>
+            <div className="add-key-point-line"></div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const getChapterContent = (num) => {
     if (!reportData?.chapters) return null;
     const chapterKey = `chapter${num}`;
     return reportData.chapters[chapterKey]?.content;
+  };
+
+  // 대운 데이터에서 천간 분석 텍스트 추출 (여러 소스 체크)
+  const getSkyAnalysis = (decade) => {
+    // 1. 직접 sky_analysis 필드
+    if (decade.sky_analysis) return decade.sky_analysis;
+    // 2. ai_sky_gyeokguk 필드
+    if (decade.ai_sky_gyeokguk) return decade.ai_sky_gyeokguk;
+    // 3. interpretations 내 gyeokguk_sky
+    const gyeokgukSky = decade.interpretations?.gyeokguk_sky;
+    if (gyeokgukSky?.effective_interpretation) return gyeokgukSky.effective_interpretation;
+    if (gyeokgukSky?.default_interpretation) return gyeokgukSky.default_interpretation;
+    // 4. interpretations 내 gyeokguk (통합)
+    const gyeokguk = decade.interpretations?.gyeokguk;
+    if (gyeokguk?.effective_interpretation) {
+      // 통합 해석에서 천간 부분 추출 시도
+      const parts = gyeokguk.effective_interpretation.split('\n\n');
+      if (parts.length >= 1) return parts[0];
+    }
+    return null;
+  };
+
+  // 대운 데이터에서 지지 분석 텍스트 추출 (여러 소스 체크)
+  const getEarthAnalysis = (decade) => {
+    // 1. 직접 earth_analysis 필드
+    if (decade.earth_analysis) return decade.earth_analysis;
+    // 2. ai_earth_gyeokguk 필드
+    if (decade.ai_earth_gyeokguk) return decade.ai_earth_gyeokguk;
+    // 3. interpretations 내 gyeokguk_earth
+    const gyeokgukEarth = decade.interpretations?.gyeokguk_earth;
+    if (gyeokgukEarth?.effective_interpretation) return gyeokgukEarth.effective_interpretation;
+    if (gyeokgukEarth?.default_interpretation) return gyeokgukEarth.default_interpretation;
+    // 4. interpretations 내 gyeokguk (통합)
+    const gyeokguk = decade.interpretations?.gyeokguk;
+    if (gyeokguk?.effective_interpretation) {
+      // 통합 해석에서 지지 부분 추출 시도
+      const parts = gyeokguk.effective_interpretation.split('\n\n');
+      if (parts.length >= 2) return parts[1];
+    }
+    return null;
+  };
+
+  // 대운 데이터에서 억부 분석 텍스트 추출
+  const getEokbuAnalysis = (decade) => {
+    if (decade.ai_eokbu) return decade.ai_eokbu;
+    const eokbu = decade.interpretations?.eokbu;
+    if (eokbu?.effective_interpretation) return eokbu.effective_interpretation;
+    if (eokbu?.default_interpretation) return eokbu.default_interpretation;
+    return null;
+  };
+
+  // 대운 데이터에서 조후 분석 텍스트 추출
+  const getJohuAnalysis = (decade) => {
+    if (decade.ai_johu) return decade.ai_johu;
+    const johu = decade.interpretations?.johu;
+    if (johu?.effective_interpretation) return johu.effective_interpretation;
+    if (johu?.default_interpretation) return johu.default_interpretation;
+    return null;
   };
 
   // 챕터 5, 6, 7 연도별 데이터 가져오기 (재물운, 직업운, 연애운)
@@ -350,14 +756,24 @@ function ReportPreview({ isAdminPreview = false }) {
         {/* 기본 설명 (재물운/직업운) - 첫 페이지에만 표시 */}
         {baseFortune && currentPage === 1 && (
           <div className="base-fortune-intro">
+            <h3 className="base-fortune-title">
+              {chapterNum === 5 ? '사주의 전반적 재물운' : chapterNum === 6 ? '사주의 전반적 직업운' : '기본 운세'}
+            </h3>
+            {/* 기본 운세 설명 앞 텍스트 추가 영역 */}
+            {renderKeyPointsSection(`chapter${chapterNum}_base_fortune_top`)}
             {renderContent(baseFortune)}
+            {/* 기본 운세 설명 뒤 텍스트 추가 영역 */}
+            {renderKeyPointsSection(`chapter${chapterNum}_base_fortune_end`)}
           </div>
         )}
 
         {/* 선택된 연도 상세 */}
         {currentYearEntry && (
-          <div className="year-fortune-card">
-            <div className="year-fortune-header">
+          <>
+            {/* 연도별 핵심포인트 섹션 */}
+            {renderKeyPointsSection(`chapter${chapterNum}_year_${year}`)}
+            <div className="year-fortune-card">
+              <div className="year-fortune-header">
               <div className="year-info">
                 <span className="year-number">{year}년</span>
                 {ganji && <span className={`year-ganji ${getElementClass(ganji?.charAt?.(0))}`}>{ganji}</span>}
@@ -369,7 +785,10 @@ function ReportPreview({ isAdminPreview = false }) {
             <div className="year-fortune-content">
               {content ? renderContent(content) : <p className="no-content">내용 없음</p>}
             </div>
+            {/* 연도별 핵심포인트 섹션 (글 끝) */}
+            {renderKeyPointsSection(`chapter${chapterNum}_year_${year}_end`)}
           </div>
+          </>
         )}
 
         {/* 연도 네비게이션 */}
@@ -527,10 +946,10 @@ function ReportPreview({ isAdminPreview = false }) {
     return { class: 'neutral', text: '', icon: '―' };
   };
 
-  // 챕터 3 대운 흐름 렌더링 - 페이지별 분리
+  // 챕터 4 대운 흐름 렌더링 - 페이지별 분리
   const renderDecadeFlow = () => {
     const decadeFlow = reportData?.chapter4_decade_flow;
-    const content = getChapterContent(3);
+    const content = getChapterContent(4);
 
     if (!decadeFlow && !content) {
       return <p className="no-content">아직 생성된 내용이 없습니다.</p>;
@@ -668,6 +1087,8 @@ function ReportPreview({ isAdminPreview = false }) {
         </div>
 
         {/* 선택된 대운 상세 */}
+        {/* 대운별 핵심포인트 섹션 */}
+        {renderKeyPointsSection(`chapter4_decade_${decadeIdx}`)}
         <div className={`decade-item ${getOverallRatingClass(decade)}`}>
           <div className="decade-card-header">
             <span className="decade-age">{decade.start_age}~{decade.end_age}세</span>
@@ -755,7 +1176,11 @@ function ReportPreview({ isAdminPreview = false }) {
             )}
 
             {/* 격국 분석 */}
-            {(decade.sky_analysis || decade.earth_analysis) && (
+            {(() => {
+              const skyAnalysisText = getSkyAnalysis(decade);
+              const earthAnalysisText = getEarthAnalysis(decade);
+              if (!skyAnalysisText && !earthAnalysisText) return null;
+              return (
               <div className="analysis-area gyeokguk-area">
                 <div className="area-section-header">
                   <span className="area-section-icon">🏛️</span>
@@ -763,7 +1188,7 @@ function ReportPreview({ isAdminPreview = false }) {
                   <span className="area-section-subtitle">사회적 성패(출세적 관점)</span>
                 </div>
                 <div className="area-section-content">
-                  {decade.sky_analysis && (
+                  {skyAnalysisText && (
                     <div className="analysis-section sky-section">
                       <div className="analysis-header">
                         <span className={`analysis-icon ${getElementClass(decade.sky)}`}>{decade.sky}</span>
@@ -773,11 +1198,11 @@ function ReportPreview({ isAdminPreview = false }) {
                         </span>
                       </div>
                       <div className="analysis-body">
-                        {renderContent(decade.sky_analysis)}
+                        {renderContent(skyAnalysisText)}
                       </div>
                     </div>
                   )}
-                  {decade.earth_analysis && (
+                  {earthAnalysisText && (
                     <div className="analysis-section earth-section">
                       <div className="analysis-header">
                         <span className={`analysis-icon ${getElementClass(decade.earth)}`}>{decade.earth}</span>
@@ -797,7 +1222,7 @@ function ReportPreview({ isAdminPreview = false }) {
                         </div>
                       )}
                       <div className="analysis-body">
-                        {renderContent(decade.earth_analysis)}
+                        {renderContent(earthAnalysisText)}
                       </div>
                     </div>
                   )}
@@ -815,7 +1240,8 @@ function ReportPreview({ isAdminPreview = false }) {
                   )}
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {/* 억부 분석 */}
             {(() => {
@@ -994,13 +1420,13 @@ function ReportPreview({ isAdminPreview = false }) {
               )}
             </div>
 
-            {decade.ai_description && !decade.sky_analysis && (
+            {decade.ai_description && !getSkyAnalysis(decade) && (
               <div className="decade-desc-body legacy">
                 {renderContent(decade.ai_description)}
               </div>
             )}
 
-            {!decade.sky_analysis && !decade.earth_analysis && !decade.ai_description && (!decade.keywords || decade.keywords.length === 0) && (
+            {!getSkyAnalysis(decade) && !getEarthAnalysis(decade) && !decade.ai_description && (!decade.keywords || decade.keywords.length === 0) && (
               <div className="decade-no-content">
                 <p>AI 분석을 생성해주세요.</p>
               </div>
@@ -1228,6 +1654,8 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
 
           {/* 선택된 연도 상세 */}
+          {/* 연도별 핵심포인트 섹션 */}
+          {renderKeyPointsSection(`chapter5_year_${yearData.year}`)}
           <div className={`year-fortune-item ${yearData.is_current ? 'current' : ''}`}>
             <div className="year-fortune-header">
               <div className="year-info">
@@ -1417,6 +1845,28 @@ function ReportPreview({ isAdminPreview = false }) {
     return unsungTable[dayGan]?.[jiji] || '';
   };
 
+  // 십이신살 계산 (일지 기준)
+  const getSibiSinsal = (dayEarth, targetEarth) => {
+    if (!dayEarth || !targetEarth) return '';
+
+    const sinsalTable = {
+      '申': { '子': '장성살', '丑': '반안살', '寅': '역마살', '卯': '육해살', '辰': '화개살', '巳': '겁살', '午': '재살', '未': '천살', '申': '지살', '酉': '도화살', '戌': '월살', '亥': '망신살' },
+      '子': { '子': '장성살', '丑': '반안살', '寅': '역마살', '卯': '육해살', '辰': '화개살', '巳': '겁살', '午': '재살', '未': '천살', '申': '지살', '酉': '도화살', '戌': '월살', '亥': '망신살' },
+      '辰': { '子': '장성살', '丑': '반안살', '寅': '역마살', '卯': '육해살', '辰': '화개살', '巳': '겁살', '午': '재살', '未': '천살', '申': '지살', '酉': '도화살', '戌': '월살', '亥': '망신살' },
+      '寅': { '午': '장성살', '未': '반안살', '申': '역마살', '酉': '육해살', '戌': '화개살', '亥': '겁살', '子': '재살', '丑': '천살', '寅': '지살', '卯': '도화살', '辰': '월살', '巳': '망신살' },
+      '午': { '午': '장성살', '未': '반안살', '申': '역마살', '酉': '육해살', '戌': '화개살', '亥': '겁살', '子': '재살', '丑': '천살', '寅': '지살', '卯': '도화살', '辰': '월살', '巳': '망신살' },
+      '戌': { '午': '장성살', '未': '반안살', '申': '역마살', '酉': '육해살', '戌': '화개살', '亥': '겁살', '子': '재살', '丑': '천살', '寅': '지살', '卯': '도화살', '辰': '월살', '巳': '망신살' },
+      '巳': { '酉': '장성살', '戌': '반안살', '亥': '역마살', '子': '육해살', '丑': '화개살', '寅': '겁살', '卯': '재살', '辰': '천살', '巳': '지살', '午': '도화살', '未': '월살', '申': '망신살' },
+      '酉': { '酉': '장성살', '戌': '반안살', '亥': '역마살', '子': '육해살', '丑': '화개살', '寅': '겁살', '卯': '재살', '辰': '천살', '巳': '지살', '午': '도화살', '未': '월살', '申': '망신살' },
+      '丑': { '酉': '장성살', '戌': '반안살', '亥': '역마살', '子': '육해살', '丑': '화개살', '寅': '겁살', '卯': '재살', '辰': '천살', '巳': '지살', '午': '도화살', '未': '월살', '申': '망신살' },
+      '亥': { '卯': '장성살', '辰': '반안살', '巳': '역마살', '午': '육해살', '未': '화개살', '申': '겁살', '酉': '재살', '戌': '천살', '亥': '지살', '子': '도화살', '丑': '월살', '寅': '망신살' },
+      '卯': { '卯': '장성살', '辰': '반안살', '巳': '역마살', '午': '육해살', '未': '화개살', '申': '겁살', '酉': '재살', '戌': '천살', '亥': '지살', '子': '도화살', '丑': '월살', '寅': '망신살' },
+      '未': { '卯': '장성살', '辰': '반안살', '巳': '역마살', '午': '육해살', '未': '화개살', '申': '겁살', '酉': '재살', '戌': '천살', '亥': '지살', '子': '도화살', '丑': '월살', '寅': '망신살' }
+    };
+
+    return sinsalTable[dayEarth]?.[targetEarth] || '';
+  };
+
   // 사주정보 렌더링 (챕터 1)
   const renderSajuInfo = () => {
     const order = reportData?.order;
@@ -1458,6 +1908,8 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
         </div>
 
+        {/* 사주팔자 상단 핵심포인트 */}
+        {renderKeyPointsSection('chapter1_saju_chart')}
         <div className="saju-chart-wrapper">
           <div className="saju-chart-title">
             <span className="chart-title-main">사주팔자</span>
@@ -1469,9 +1921,13 @@ function ReportPreview({ isAdminPreview = false }) {
               {pillars.map(({ label, key }) => {
                 const sky = getSky(key);
                 const earth = getEarth(key);
+                const dayEarth = getEarth('day'); // 일지
+
+                // 프론트엔드에서 직접 계산
                 const skySipsung = key === 'day' ? '일간' : getSipsung(dayGan, sky, false);
                 const earthSipsung = getSipsung(dayGan, earth, true);
                 const sibiUnsung = getSibiUnsung(dayGan, earth);
+                const sibiSinsal = getSibiSinsal(dayEarth, earth);
 
                 return (
                   <div key={key} className="saju-pillar">
@@ -1497,6 +1953,9 @@ function ReportPreview({ isAdminPreview = false }) {
                           <span className="char-sipsung">{earthSipsung || '-'}</span>
                           <span className="char-unsung">{sibiUnsung || '-'}</span>
                         </div>
+                        <div className="char-sinsal-row">
+                          <span className="char-sinsal">{sibiSinsal || '-'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1506,6 +1965,55 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
 
         </div>
+
+        {/* 격국 정보 - 백엔드에서 가져옴 */}
+        {(() => {
+          const gejuData = sajuData?.geju;
+          const skyType = gejuData?.sky_type;
+          const earthType = gejuData?.earth_type;
+          const skyReason = gejuData?.sky_reason || gejuData?.primary?.reason;
+          const earthReason = gejuData?.earth_reason;
+
+          if (!skyType && !earthType) return null;
+
+          return (
+            <>
+            {/* 격국 분석 상단 핵심포인트 */}
+            {renderKeyPointsSection('chapter1_geju')}
+            <div className="geju-section-preview">
+              <h4 className="geju-title">격국 분석</h4>
+              <div className="geju-grid-preview">
+                <div className="geju-item-preview">
+                  <span className="geju-label-preview">천간격국</span>
+                  <span className="geju-value-preview">{skyType || '미정'}</span>
+                </div>
+                <div className="geju-item-preview">
+                  <span className="geju-label-preview">지지격국</span>
+                  <span className="geju-value-preview">{earthType || '미정'}</span>
+                </div>
+              </div>
+              {(skyReason || earthReason) && (
+                <div className="geju-reasons-preview">
+                  {skyReason && (
+                    <div className="geju-reason-preview">
+                      <span className="reason-label-preview">천간격국 판단 근거</span>
+                      <p className="reason-text-preview">{skyReason}</p>
+                    </div>
+                  )}
+                  {earthReason && (
+                    <div className="geju-reason-preview">
+                      <span className="reason-label-preview">지지격국 판단 근거</span>
+                      <p className="reason-text-preview">{earthReason}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* 격국 분석 하단 핵심포인트 */}
+            {renderKeyPointsSection('chapter1_geju_end')}
+            </>
+          );
+        })()}
       </div>
     );
   };
@@ -1513,34 +2021,44 @@ function ReportPreview({ isAdminPreview = false }) {
   // 챕터 내용 렌더링
   const renderChapterContent = () => {
     const num = currentChapter;
+    const chapterKey = `chapter${num}`;
+
+    // 챕터 2, 3은 텍스트 콘텐츠 - 문단 사이에 핵심포인트 삽입 가능
+    if (num === 2 || num === 3) {
+      return renderContentWithKeyPoints(getChapterContent(num), chapterKey);
+    }
+
+    // 나머지 챕터들은 복잡한 구조 - 상단에 핵심포인트 섹션 추가
+    let content;
 
     // 챕터 1은 사주정보
     if (num === 1) {
-      return renderSajuInfo();
+      content = renderSajuInfo();
+    }
+    // 챕터 4는 대운 흐름
+    else if (num === 4) {
+      content = renderDecadeFlow();
+    }
+    // 챕터 5는 향후 5년의 운세
+    else if (num === 5) {
+      content = renderFiveYearFortune();
+    }
+    // 챕터 9는 코칭
+    else if (num === 9) {
+      content = renderCoaching();
+    }
+    // 챕터 6, 7, 8은 연도별 데이터 (재물운, 직업운, 연애운)
+    else {
+      content = renderYearlyContent(num - 1);
     }
 
-    // 챕터 2, 3은 기존 방식 (chapter2 = 아이덴티티, chapter3 = 잠재력)
-    if (num === 2 || num === 3) {
-      return renderContent(getChapterContent(num));
-    }
-
-    // 챕터 4는 대운 흐름 (이전 3)
-    if (num === 4) {
-      return renderDecadeFlow();
-    }
-
-    // 챕터 5는 향후 5년의 운세 (이전 4)
-    if (num === 5) {
-      return renderFiveYearFortune();
-    }
-
-    // 챕터 9는 코칭 (이전 8)
-    if (num === 9) {
-      return renderCoaching();
-    }
-
-    // 챕터 6, 7, 8은 연도별 데이터 (재물운, 직업운, 연애운) - 이전 5, 6, 7
-    return renderYearlyContent(num - 1);
+    // 복잡한 구조의 챕터에 핵심포인트 섹션 추가 (상단)
+    return (
+      <>
+        {renderKeyPointsSection(chapterKey)}
+        {content}
+      </>
+    );
   };
 
   // 코칭 렌더링
@@ -1742,6 +2260,63 @@ function ReportPreview({ isAdminPreview = false }) {
         </div>
 
       </div>
+
+      {/* 핵심포인트 편집 모달 */}
+      {keyPointModalOpen && (
+        <div className="key-point-modal-overlay" onClick={closeKeyPointModal}>
+          <div className="key-point-modal" onClick={e => e.stopPropagation()}>
+            <div className="key-point-modal-header">
+              <h3>
+                <span className="modal-icon">💡</span>
+                {editingKeyPoint ? '텍스트 수정' : '텍스트 추가'}
+              </h3>
+              <button className="btn-close" onClick={closeKeyPointModal}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="key-point-modal-body">
+              <div className="key-point-label-selector">
+                <span className="label-selector-title">유형 선택</span>
+                <div className="label-options">
+                  {keyPointLabelOptions.map(option => (
+                    <button
+                      key={option.value}
+                      className={`label-option ${keyPointLabel === option.value ? 'selected' : ''}`}
+                      onClick={() => setKeyPointLabel(option.value)}
+                      type="button"
+                    >
+                      <span className="label-option-icon">{option.icon}</span>
+                      <span className="label-option-text">상담사의 {option.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="key-point-hint">
+                고객에게 전달하고 싶은 메시지나 조언을 작성해주세요.
+              </p>
+              <textarea
+                value={keyPointContent}
+                onChange={e => setKeyPointContent(e.target.value)}
+                placeholder="예: 이 시기에는 특히 건강 관리에 신경 쓰시는 것이 좋습니다..."
+                rows={4}
+                autoFocus
+              />
+            </div>
+            <div className="key-point-modal-footer">
+              <button className="btn-cancel" onClick={closeKeyPointModal}>
+                취소
+              </button>
+              <button
+                className="btn-save"
+                onClick={editingKeyPoint ? handleUpdateKeyPoint : handleAddKeyPoint}
+                disabled={!keyPointContent.trim() || keyPointSaving}
+              >
+                {keyPointSaving ? '저장 중...' : (editingKeyPoint ? '수정' : '추가')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

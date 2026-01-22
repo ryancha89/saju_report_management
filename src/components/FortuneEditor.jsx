@@ -187,6 +187,14 @@ const findDecadeForAge = (decadeArray, startAge, age) => {
   };
 };
 
+// 섹션 라벨 매핑
+const SECTION_LABELS = {
+  sky: { label: '천간운', icon: '☰', description: '정신적 영역, 계획/아이디어' },
+  earth: { label: '지지운', icon: '☷', description: '현실적 영역, 실질적 재물' },
+  johu: { label: '조후운', icon: '🌡', description: '기후 균형, 건강/컨디션' },
+  summary: { label: '종합 재물운', icon: '💰', description: '전체 재물운 요약' }
+};
+
 // 단일 연도 재물운 편집 컴포넌트
 function YearFortuneEditor({
   yearData,
@@ -197,7 +205,8 @@ function YearFortuneEditor({
   gyeokguk,
   daySky,
   yearEarth,
-  userName
+  userName,
+  onSectionUpdate
 }) {
   // 해당 연도의 십성, 십이운성, 십이신살 계산
   const yearSky = yearData.sky?.char || yearData.ganji?.charAt(0);
@@ -218,6 +227,13 @@ function YearFortuneEditor({
   const decadeTwelveStar = getTwelveStar(daySky, decadeEarthChar);  // 대운 십이운성
   const decadeTwelveGod = getTwelveGod(yearEarth, decadeEarthChar);  // 대운 십이신살
   const [isExpanded, setIsExpanded] = useState(true);
+  const [editingSections, setEditingSections] = useState({});  // 섹션별 편집 모드
+  const [sectionEdits, setSectionEdits] = useState({
+    sky: yearData.content_sections?.sky || '',
+    earth: yearData.content_sections?.earth || '',
+    johu: yearData.content_sections?.johu || '',
+    summary: yearData.content_sections?.summary || ''
+  });
   const [localEdit, setLocalEdit] = useState(yearData.manager_edit || {
     sky: {
       fortune_level: 'normal',
@@ -244,6 +260,15 @@ function YearFortuneEditor({
       advice: '',
       memo: ''
     });
+    // 섹션 콘텐츠 동기화
+    if (yearData.content_sections) {
+      setSectionEdits({
+        sky: yearData.content_sections.sky || '',
+        earth: yearData.content_sections.earth || '',
+        johu: yearData.content_sections.johu || '',
+        summary: yearData.content_sections.summary || ''
+      });
+    }
   }, [yearData]);
 
   const handleLocalChange = (field, value, category = null) => {
@@ -263,6 +288,45 @@ function YearFortuneEditor({
     }
     setLocalEdit(newEdit);
     onUpdate(yearData.year, newEdit);
+  };
+
+  // 섹션 편집 토글
+  const toggleSectionEdit = (sectionKey) => {
+    setEditingSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
+  // 섹션 내용 변경
+  const handleSectionChange = (sectionKey, value) => {
+    setSectionEdits(prev => ({
+      ...prev,
+      [sectionKey]: value
+    }));
+  };
+
+  // 섹션 저장
+  const handleSectionSave = (sectionKey) => {
+    if (onSectionUpdate) {
+      onSectionUpdate(yearData.year, sectionKey, sectionEdits[sectionKey]);
+    }
+    setEditingSections(prev => ({
+      ...prev,
+      [sectionKey]: false
+    }));
+  };
+
+  // 섹션 편집 취소
+  const handleSectionCancel = (sectionKey) => {
+    setSectionEdits(prev => ({
+      ...prev,
+      [sectionKey]: yearData.content_sections?.[sectionKey] || ''
+    }));
+    setEditingSections(prev => ({
+      ...prev,
+      [sectionKey]: false
+    }));
   };
 
   const getResultClass = (result) => {
@@ -480,41 +544,73 @@ function YearFortuneEditor({
               </div>
             )}
 
-            {/* 일지 성패 분석 (연애운/배우자운) */}
-            {yearData.day_earth && hasAnalysisData(yearData.day_earth) && (
-              <div className="fortune-analysis-box day-earth-box">
-                <div className="analysis-header day-earth-header">
-                  <span className="analysis-type">【일지(日支) 성패】</span>
-                  <span className="analysis-label">세운 지지 ↔ 일지 · 배우자궁</span>
+            {/* 조후 분석 (기후 균형) */}
+            {yearData.johu_analysis && (
+              <div className="fortune-analysis-box johu-box">
+                <div className="analysis-header johu-header">
+                  <span className="analysis-type">【조후(調候) 분석】</span>
+                  <span className="analysis-label">기후 균형 · 온도 분석</span>
                 </div>
                 <div className="analysis-content">
-                  <div className="analysis-row">
-                    <span className="row-label">십성:</span>
-                    <span className="row-value sipsung-flow">{renderSipsung(yearData.day_earth)}</span>
-                  </div>
-                  <div className="analysis-row">
-                    <span className="row-label">코드:</span>
-                    <span className="row-value code-value">{yearData.day_earth.code || '(없음)'}</span>
-                    {yearData.day_earth.result && (
-                      <span className={`result-badge ${getResultClass(yearData.day_earth.result)}`}>
-                        {yearData.day_earth.result}
-                      </span>
-                    )}
-                  </div>
-                  {yearData.day_earth.positions && yearData.day_earth.positions.length > 0 && (
+                  {/* 원국 기후 */}
+                  {yearData.johu_analysis.chart_climate && (
                     <div className="analysis-row">
-                      <span className="row-label">위치:</span>
-                      <span className="row-value">
-                        {yearData.day_earth.positions.map(p => translatePosition(p)).join(', ')}
-                      </span>
-                      <span className="row-roles">
-                        → 역할: {getRolesFromPositions(yearData.day_earth.positions).join(', ') || '(해당없음)'}
+                      <span className="row-label">원국 기후:</span>
+                      <span className="row-value johu-climate">
+                        {yearData.johu_analysis.chart_climate.label || '알 수 없음'}
+                        {yearData.johu_analysis.chart_climate.need && (
+                          <span className="johu-need"> ({yearData.johu_analysis.chart_climate.need})</span>
+                        )}
                       </span>
                     </div>
                   )}
-                  {yearData.day_earth.reason && (
-                    <div className="analysis-reason">
-                      {yearData.day_earth.reason}
+                  {/* 원국 온도 */}
+                  {yearData.johu_analysis.base_temperature && (
+                    <div className="analysis-row">
+                      <span className="row-label">원국 온도:</span>
+                      <span className={`row-value johu-temp johu-temp-${yearData.johu_analysis.base_temperature.level || 'moderate'}`}>
+                        {yearData.johu_analysis.base_temperature.label || '보통'}
+                        <span className="johu-score"> ({yearData.johu_analysis.base_temperature.score || 50}점)</span>
+                      </span>
+                    </div>
+                  )}
+                  {/* 세운 온도 */}
+                  {yearData.johu_analysis.year_temperature && (
+                    <div className="analysis-row">
+                      <span className="row-label">{yearData.year}년 온도:</span>
+                      <span className={`row-value johu-temp johu-temp-${yearData.johu_analysis.year_temperature.level || 'moderate'}`}>
+                        {yearData.johu_analysis.year_temperature.label || '보통'}
+                        <span className="johu-score"> ({yearData.johu_analysis.year_temperature.score || 50}점)</span>
+                        {yearData.johu_analysis.year_temperature.trend && (
+                          <span className={`johu-trend johu-trend-${yearData.johu_analysis.year_temperature.trend}`}>
+                            {yearData.johu_analysis.year_temperature.trend === 'improving' ? ' ↑개선' :
+                             yearData.johu_analysis.year_temperature.trend === 'worsening' ? ' ↓악화' : ' →유지'}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {/* 조후용신 */}
+                  {yearData.johu_analysis.johu_yongshin && (
+                    <div className="analysis-row">
+                      <span className="row-label">조후용신:</span>
+                      <span className="row-value johu-yongshin">{yearData.johu_analysis.johu_yongshin}</span>
+                    </div>
+                  )}
+                  {/* 조후용신 충족 여부 */}
+                  {yearData.johu_analysis.johu_met_in_year && (
+                    <div className="analysis-row">
+                      <span className="row-label">용신 충족:</span>
+                      <span className={`row-value johu-met ${yearData.johu_analysis.johu_met_in_year.main_met ? 'met-yes' : yearData.johu_analysis.johu_met_in_year.sub_met ? 'met-partial' : 'met-no'}`}>
+                        {yearData.johu_analysis.johu_met_in_year.main_met ? '✓ 조후용신 충족 (매우 좋음)' :
+                         yearData.johu_analysis.johu_met_in_year.sub_met ? '○ 보조용신 충족 (좋음)' :
+                         '✗ 미충족'}
+                      </span>
+                    </div>
+                  )}
+                  {yearData.johu_analysis.johu_met_in_year?.description && (
+                    <div className="analysis-reason johu-description">
+                      {yearData.johu_analysis.johu_met_in_year.description}
                     </div>
                   )}
                 </div>
@@ -615,7 +711,7 @@ function YearFortuneEditor({
             </div>
           </div>
 
-          {/* 생성된 콘텐츠 */}
+          {/* 생성된 콘텐츠 - 단락별 표시 */}
           {isRegenerating ? (
             <div className="generated-content-section" style={{ background: '#f0fdf4' }}>
               <div className="section-loading">
@@ -623,14 +719,94 @@ function YearFortuneEditor({
                 <span className="section-loading-text">{yearData.year}년 재물운을 생성하고 있습니다...</span>
               </div>
             </div>
-          ) : yearData.generated_content ? (
-            <div className="generated-content-section">
+          ) : yearData.content_sections && (yearData.content_sections.sky || yearData.content_sections.earth || yearData.content_sections.johu || yearData.content_sections.summary) ? (
+            <div className="generated-content-section sectioned">
               <div className="content-title">생성된 재물운</div>
-              <div
-                className="generated-content"
-                dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
-              />
+
+              {/* 섹션별 콘텐츠 */}
+              {['sky', 'earth', 'johu', 'summary'].map(sectionKey => {
+                const section = SECTION_LABELS[sectionKey];
+                const content = sectionEdits[sectionKey] || yearData.content_sections?.[sectionKey] || '';
+                if (!content && !editingSections[sectionKey]) return null;
+
+                return (
+                  <div key={sectionKey} className={`content-section section-${sectionKey}`}>
+                    <div className="section-header">
+                      <span className="section-icon">{section.icon}</span>
+                      <span className="section-label">{section.label}</span>
+                      <span className="section-desc">({section.description})</span>
+                      <button
+                        className={`btn-section-edit ${editingSections[sectionKey] ? 'editing' : ''}`}
+                        onClick={() => toggleSectionEdit(sectionKey)}
+                      >
+                        {editingSections[sectionKey] ? '취소' : '수정'}
+                      </button>
+                    </div>
+
+                    {editingSections[sectionKey] ? (
+                      <div className="section-edit-area">
+                        <textarea
+                          className="section-textarea"
+                          value={sectionEdits[sectionKey]}
+                          onChange={(e) => handleSectionChange(sectionKey, e.target.value)}
+                          rows={6}
+                          placeholder={`${section.label} 내용을 입력하세요...`}
+                        />
+                        <div className="section-edit-actions">
+                          <button
+                            className="btn-section-cancel"
+                            onClick={() => handleSectionCancel(sectionKey)}
+                          >
+                            취소
+                          </button>
+                          <button
+                            className="btn-section-save"
+                            onClick={() => handleSectionSave(sectionKey)}
+                          >
+                            저장
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="section-content">
+                        {content || <span className="empty-content">내용 없음</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          ) : yearData.generated_content ? (
+            // generated_content가 객체인 경우 (새 형식)
+            typeof yearData.generated_content === 'object' ? (
+              <div className="generated-content-section sectioned">
+                <div className="content-title">생성된 재물운</div>
+                {['sky', 'earth', 'johu', 'summary'].map(sectionKey => {
+                  const section = SECTION_LABELS[sectionKey];
+                  const content = yearData.generated_content?.[sectionKey] || '';
+                  if (!content) return null;
+                  return (
+                    <div key={sectionKey} className={`content-section section-${sectionKey}`}>
+                      <div className="section-header">
+                        <span className="section-icon">{section.icon}</span>
+                        <span className="section-label">{section.label}</span>
+                        <span className="section-desc">({section.description})</span>
+                      </div>
+                      <div className="section-content">{content}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              // 기존 단일 콘텐츠 형식 (레거시 지원)
+              <div className="generated-content-section">
+                <div className="content-title">생성된 재물운</div>
+                <div
+                  className="generated-content"
+                  dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
+                />
+              </div>
+            )
           ) : (
             <div className="generated-content-section" style={{ background: '#fef3c7', borderColor: '#fcd34d' }}>
               <div className="content-title" style={{ color: '#92400e' }}>재물운 미생성</div>
@@ -643,13 +819,13 @@ function YearFortuneEditor({
           {/* 재생성 버튼 */}
           <div className="year-fortune-actions">
             <button
-              className="btn-regenerate-year"
+              className={`btn-regenerate-year ${isRegenerating ? 'loading' : ''}`}
               onClick={() => onRegenerate(yearData.year)}
               disabled={isRegenerating}
             >
               {isRegenerating ? (
                 <>
-                  <RefreshCw size={14} className="spinning" />
+                  <RefreshCw size={16} className="spinning" />
                   <span>생성 중...</span>
                 </>
               ) : (
@@ -1117,6 +1293,52 @@ const FortuneEditor = forwardRef(function FortuneEditor({
     ));
   };
 
+  // 섹션별 콘텐츠 업데이트
+  const handleSectionUpdate = async (year, sectionKey, content) => {
+    // 로컬 상태 업데이트
+    const updatedData = fortuneData.map(item => {
+      if (item.year === year) {
+        const updatedSections = {
+          ...(item.content_sections || {}),
+          [sectionKey]: content
+        };
+        // combined 재생성
+        const combined = ['sky', 'earth', 'johu', 'summary']
+          .map(key => updatedSections[key])
+          .filter(Boolean)
+          .join('\n\n');
+        return {
+          ...item,
+          content_sections: updatedSections,
+          generated_content: combined
+        };
+      }
+      return item;
+    });
+    setFortuneData(updatedData);
+    notifyParent(updatedData, null);
+
+    // 서버에 자동 저장
+    try {
+      await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/save_fortune`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          fortune_data: {
+            baseFortune: baseFortune,
+            yearlyFortunes: updatedData
+          }
+        })
+      });
+      console.log(`[FortuneEditor] Section ${sectionKey} for year ${year} auto-saved`);
+    } catch (saveErr) {
+      console.error('Section auto-save error:', saveErr);
+    }
+  };
+
   // 개별 연도 재생성
   const handleRegenerateYear = async (year) => {
     setRegeneratingYear(year);
@@ -1158,8 +1380,10 @@ const FortuneEditor = forwardRef(function FortuneEditor({
           ? {
               ...item,
               generated_content: data.fortune?.generated_content,
+              content_sections: data.fortune?.content_sections || null,
               sky_analysis: data.fortune?.sky_analysis || item.sky_analysis,
-              earth_analysis: data.fortune?.earth_analysis || item.earth_analysis
+              earth_analysis: data.fortune?.earth_analysis || item.earth_analysis,
+              johu_analysis: data.fortune?.johu_analysis || item.johu_analysis
             }
           : item
       );
@@ -1274,8 +1498,10 @@ const FortuneEditor = forwardRef(function FortuneEditor({
           return {
             ...item,
             generated_content: newFortune.generated_content,
+            content_sections: newFortune.content_sections || null,
             sky_analysis: newFortune.sky_analysis || item.sky_analysis,
-            earth_analysis: newFortune.earth_analysis || item.earth_analysis
+            earth_analysis: newFortune.earth_analysis || item.earth_analysis,
+            johu_analysis: newFortune.johu_analysis || item.johu_analysis
           };
         }
         return item;
@@ -1394,7 +1620,29 @@ const FortuneEditor = forwardRef(function FortuneEditor({
     );
   }
 
-  const isGenerating = regeneratingAll || regeneratingIntro;
+  const isGenerating = regeneratingAll || regeneratingIntro || regeneratingYear;
+
+  // 로딩 메시지 결정
+  const getLoadingMessage = () => {
+    if (regeneratingYear) {
+      return {
+        title: `${regeneratingYear}년 재물운 생성 중...`,
+        subtitle: 'AI가 해당 연도의 재물운을 분석하고 있습니다.'
+      };
+    }
+    if (regeneratingAll) {
+      return {
+        title: '재물운 생성 중...',
+        subtitle: 'AI가 5년치 재물운을 분석하고 있습니다. 잠시만 기다려주세요.'
+      };
+    }
+    return {
+      title: '기본 설명 생성 중...',
+      subtitle: 'AI가 기본 재물운 특성을 분석하고 있습니다.'
+    };
+  };
+
+  const loadingMessage = getLoadingMessage();
 
   return (
     <div className="fortune-editor" style={{ position: 'relative' }}>
@@ -1403,14 +1651,8 @@ const FortuneEditor = forwardRef(function FortuneEditor({
         <div className="fortune-editor-loading-overlay">
           <div className="loading-content">
             <div className="loading-spinner"></div>
-            <div className="loading-text">
-              {regeneratingAll ? '재물운 생성 중...' : '기본 설명 생성 중...'}
-            </div>
-            <div className="loading-subtext">
-              {regeneratingAll
-                ? 'AI가 5년치 재물운을 분석하고 있습니다. 잠시만 기다려주세요.'
-                : 'AI가 기본 재물운 특성을 분석하고 있습니다.'}
-            </div>
+            <div className="loading-text">{loadingMessage.title}</div>
+            <div className="loading-subtext">{loadingMessage.subtitle}</div>
           </div>
         </div>
       )}
@@ -1512,6 +1754,7 @@ const FortuneEditor = forwardRef(function FortuneEditor({
               gyeokguk={gyeokguk}
               onUpdate={handleYearUpdate}
               onRegenerate={handleRegenerateYear}
+              onSectionUpdate={handleSectionUpdate}
               isRegenerating={regeneratingYear === yearData.year}
               daySky={daySky}
               yearEarth={yearEarth}

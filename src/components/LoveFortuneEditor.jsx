@@ -30,17 +30,33 @@ const getYearLabel = (index) => {
   return labels[index] || `${index}년 후`;
 };
 
+// 섹션 라벨 매핑 (연애운용)
+const SECTION_LABELS = {
+  sky: { label: '인연이 찾아오는 방식', icon: '💫', description: '외부 만남, 소개팅 운' },
+  earth: { label: '마음속 감정의 흐름', icon: '💕', description: '내면 감정, 배우자궁' },
+  johu: { label: '연애 컨디션', icon: '🌸', description: '마음의 온도, 준비 상태' },
+  summary: { label: '올해 연애운 총정리', icon: '💝', description: '종합 조언' }
+};
+
 // 단일 연도 연애운 편집 컴포넌트
 function YearLoveFortuneEditor({
   yearData,
   yearIndex,
   onUpdate,
   onRegenerate,
+  onSectionUpdate,
   isRegenerating,
   dayEarth,
   userName
 }) {
   const [isExpanded, setIsExpanded] = useState(yearIndex === 0);
+  const [editingSections, setEditingSections] = useState({});  // 섹션별 편집 모드
+  const [sectionEdits, setSectionEdits] = useState({
+    sky: yearData.content_sections?.sky || '',
+    earth: yearData.content_sections?.earth || '',
+    johu: yearData.content_sections?.johu || '',
+    summary: yearData.content_sections?.summary || ''
+  });
   const [localEdit, setLocalEdit] = useState(yearData.manager_edit || {
     fortune_level: 'normal',
     reason: '',
@@ -55,12 +71,60 @@ function YearLoveFortuneEditor({
       advice: '',
       memo: ''
     });
+    // 섹션 콘텐츠 동기화
+    if (yearData.content_sections) {
+      setSectionEdits({
+        sky: yearData.content_sections.sky || '',
+        earth: yearData.content_sections.earth || '',
+        johu: yearData.content_sections.johu || '',
+        summary: yearData.content_sections.summary || ''
+      });
+    }
   }, [yearData]);
 
   const handleLocalChange = (field, value) => {
     const newEdit = { ...localEdit, [field]: value };
     setLocalEdit(newEdit);
     onUpdate(yearData.year, newEdit);
+  };
+
+  // 섹션 편집 토글
+  const toggleSectionEdit = (sectionKey) => {
+    setEditingSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
+
+  // 섹션 내용 변경
+  const handleSectionChange = (sectionKey, value) => {
+    setSectionEdits(prev => ({
+      ...prev,
+      [sectionKey]: value
+    }));
+  };
+
+  // 섹션 저장
+  const handleSectionSave = (sectionKey) => {
+    if (onSectionUpdate) {
+      onSectionUpdate(yearData.year, sectionKey, sectionEdits[sectionKey]);
+    }
+    setEditingSections(prev => ({
+      ...prev,
+      [sectionKey]: false
+    }));
+  };
+
+  // 섹션 편집 취소
+  const handleSectionCancel = (sectionKey) => {
+    setSectionEdits(prev => ({
+      ...prev,
+      [sectionKey]: yearData.content_sections?.[sectionKey] || ''
+    }));
+    setEditingSections(prev => ({
+      ...prev,
+      [sectionKey]: false
+    }));
   };
 
   const getLevelColor = (level) => {
@@ -279,15 +343,73 @@ function YearLoveFortuneEditor({
             </div>
           </div>
 
-          {/* 생성된 콘텐츠 */}
+          {/* 생성된 콘텐츠 - 단락별 표시 */}
           {isRegenerating ? (
-            <div className="generated-content-section" style={{ background: '#fdf2f8' }}>
+            <div className="generated-content-section love-content" style={{ background: '#fdf2f8' }}>
               <div className="section-loading">
                 <div className="loading-spinner-small"></div>
                 <span className="section-loading-text">{yearData.year}년 연애운을 생성하고 있습니다...</span>
               </div>
             </div>
+          ) : yearData.content_sections && (yearData.content_sections.sky || yearData.content_sections.earth || yearData.content_sections.johu || yearData.content_sections.summary) ? (
+            <div className="generated-content-section love-content sectioned">
+              <div className="content-title">생성된 연애운</div>
+
+              {/* 섹션별 콘텐츠 */}
+              {['sky', 'earth', 'johu', 'summary'].map(sectionKey => {
+                const section = SECTION_LABELS[sectionKey];
+                const content = sectionEdits[sectionKey] || yearData.content_sections?.[sectionKey] || '';
+                if (!content && !editingSections[sectionKey]) return null;
+
+                return (
+                  <div key={sectionKey} className={`content-section love-section section-${sectionKey}`}>
+                    <div className="section-header">
+                      <span className="section-icon">{section.icon}</span>
+                      <span className="section-label">{section.label}</span>
+                      <span className="section-desc">({section.description})</span>
+                      <button
+                        className={`btn-section-edit ${editingSections[sectionKey] ? 'editing' : ''}`}
+                        onClick={() => toggleSectionEdit(sectionKey)}
+                      >
+                        {editingSections[sectionKey] ? '취소' : '수정'}
+                      </button>
+                    </div>
+
+                    {editingSections[sectionKey] ? (
+                      <div className="section-edit-area">
+                        <textarea
+                          className="section-textarea"
+                          value={sectionEdits[sectionKey]}
+                          onChange={(e) => handleSectionChange(sectionKey, e.target.value)}
+                          rows={6}
+                          placeholder={`${section.label} 내용을 입력하세요...`}
+                        />
+                        <div className="section-edit-actions">
+                          <button
+                            className="btn-section-cancel"
+                            onClick={() => handleSectionCancel(sectionKey)}
+                          >
+                            취소
+                          </button>
+                          <button
+                            className="btn-section-save"
+                            onClick={() => handleSectionSave(sectionKey)}
+                          >
+                            저장
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="section-content">
+                        {content || <span className="empty-content">내용 없음</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           ) : yearData.generated_content ? (
+            // 기존 단일 콘텐츠 형식 (레거시 지원)
             <div className="generated-content-section love-content">
               <div className="content-title">생성된 연애운</div>
               <div
@@ -296,10 +418,10 @@ function YearLoveFortuneEditor({
               />
             </div>
           ) : (
-            <div className="generated-content-section" style={{ background: '#fdf2f8', borderColor: '#f9a8d4' }}>
+            <div className="generated-content-section love-content" style={{ background: '#fdf2f8', borderColor: '#f9a8d4' }}>
               <div className="content-title" style={{ color: '#be185d' }}>연애운 미생성</div>
               <div className="section-loading-text" style={{ color: '#be185d', textAlign: 'center', padding: '10px' }}>
-                '이 연도만 재생성' 버튼을 눌러주세요.
+                '이 연도만 재생성' 또는 '전체 재생성' 버튼을 눌러주세요.
               </div>
             </div>
           )}
@@ -476,6 +598,40 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     ));
   };
 
+  // 섹션 업데이트 핸들러
+  const handleSectionUpdate = async (year, sectionKey, content) => {
+    // 해당 연도의 섹션 업데이트
+    const updatedData = loveFortuneData.map(item => {
+      if (item.year === year) {
+        const newSections = {
+          ...(item.content_sections || {}),
+          [sectionKey]: content
+        };
+        // combined도 업데이트
+        newSections.combined = [
+          newSections.sky,
+          newSections.earth,
+          newSections.johu,
+          newSections.summary
+        ].filter(s => s).join('\n\n');
+
+        return {
+          ...item,
+          content_sections: newSections,
+          generated_content: newSections.combined
+        };
+      }
+      return item;
+    });
+
+    setLoveFortuneData(updatedData);
+    notifyParent(updatedData);
+
+    // 서버에 자동 저장
+    await saveLoveFortuneData(updatedData);
+    console.log(`[LoveFortuneEditor] Section ${sectionKey} for year ${year} auto-saved`);
+  };
+
   // 개별 연도 재생성
   const handleRegenerateYear = async (year) => {
     setRegeneratingYear(year);
@@ -500,14 +656,16 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
         throw new Error(data.error || '재생성에 실패했습니다.');
       }
 
-      // 생성된 데이터로 업데이트
+      // 생성된 데이터로 업데이트 (content_sections 지원)
       const updatedData = loveFortuneData.map(item =>
         item.year === year
           ? {
               ...item,
               generated_content: data.generated_content,
+              content_sections: data.content_sections || null,
               day_earth_outcome: data.day_earth_outcome || item.day_earth_outcome,
-              day_earth_relations: data.day_earth_relations || item.day_earth_relations
+              day_earth_relations: data.day_earth_relations || item.day_earth_relations,
+              johu_analysis: data.johu_analysis || item.johu_analysis
             }
           : item
       );
@@ -551,8 +709,10 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
                 ? {
                     ...item,
                     generated_content: data.generated_content,
+                    content_sections: data.content_sections || null,
                     day_earth_outcome: data.day_earth_outcome || item.day_earth_outcome,
-                    day_earth_relations: data.day_earth_relations || item.day_earth_relations
+                    day_earth_relations: data.day_earth_relations || item.day_earth_relations,
+                    johu_analysis: data.johu_analysis || item.johu_analysis
                   }
                 : item
             );
@@ -648,17 +808,39 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     );
   }
 
+  const isGenerating = regeneratingAll || regeneratingYear;
+
+  // 로딩 메시지 결정
+  const getLoadingMessage = () => {
+    if (regeneratingYear) {
+      return {
+        title: `${regeneratingYear}년 연애운 생성 중...`,
+        subtitle: 'AI가 해당 연도의 연애운을 분석하고 있습니다.'
+      };
+    }
+    if (regeneratingAll) {
+      return {
+        title: '연애운 생성 중...',
+        subtitle: 'AI가 5년치 연애운을 분석하고 있습니다. 잠시만 기다려주세요.'
+      };
+    }
+    return {
+      title: '생성 중...',
+      subtitle: '잠시만 기다려주세요.'
+    };
+  };
+
+  const loadingMessage = getLoadingMessage();
+
   return (
     <div className="love-fortune-editor" style={{ position: 'relative' }}>
       {/* 전체 생성 중 오버레이 */}
-      {regeneratingAll && (
+      {isGenerating && (
         <div className="love-fortune-editor-loading-overlay">
           <div className="loading-content">
             <div className="loading-spinner"></div>
-            <div className="loading-text">연애운 생성 중...</div>
-            <div className="loading-subtext">
-              AI가 5년치 연애운을 분석하고 있습니다. 잠시만 기다려주세요.
-            </div>
+            <div className="loading-text">{loadingMessage.title}</div>
+            <div className="loading-subtext">{loadingMessage.subtitle}</div>
           </div>
         </div>
       )}
@@ -737,6 +919,7 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
               dayEarth={dayEarth}
               onUpdate={handleYearUpdate}
               onRegenerate={handleRegenerateYear}
+              onSectionUpdate={handleSectionUpdate}
               isRegenerating={regeneratingYear === yearData.year}
               userName={userName}
             />
