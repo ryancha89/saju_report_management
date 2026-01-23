@@ -13,6 +13,7 @@ import Lectures from './pages/Lectures';
 import GyeokgukLectures from './pages/GyeokgukLectures';
 import ZhengguanLecture from './pages/ZhengguanLecture';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import MobilePreview from './pages/MobilePreview';
 import ReportPreview from './pages/ReportPreview';
 import LandingPage from './pages/LandingPage';
@@ -45,6 +46,9 @@ function App() {
 
           {/* 관리자 로그인 페이지 */}
           <Route path="/admin/login" element={<Login />} />
+
+          {/* 매니저 등록 페이지 (초대 링크 통해 접근) */}
+          <Route path="/admin/register" element={<Register />} />
 
           {/* 사용자 정보 입력 페이지 */}
           <Route path="/user-info" element={<UserInfoPage />} />

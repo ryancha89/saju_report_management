@@ -17,7 +17,7 @@ const menuItems = [
   { path: '/admin/customers', icon: Users, label: '고객 관리' },
   { path: '/admin/suggestions', icon: FileEdit, label: '수정 제안' },
   { path: '/admin/lectures', icon: BookOpen, label: '강의' },
-  { path: '/admin/settings', icon: Settings, label: '설정' },
+  { path: '/admin/settings', icon: Settings, label: '설정', adminOnly: true },
 ];
 
 function Sidebar() {
@@ -51,7 +51,9 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {menuItems.map((item) => (
+        {menuItems
+          .filter((item) => !item.adminOnly || isAdmin())
+          .map((item) => (
           item.disabled ? (
             <div key={item.path} className="nav-item disabled">
               <item.icon size={20} />

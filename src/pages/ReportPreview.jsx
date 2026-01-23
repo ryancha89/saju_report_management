@@ -2155,7 +2155,7 @@ function ReportPreview({ isAdminPreview = false }) {
               className="report-title-btn"
               onClick={() => setShowChapterDropdown(!showChapterDropdown)}
             >
-              <span className="report-title">포춘톨치</span>
+              <span className="report-title">{reportData?.order?.origin === 'blueprint_app' ? '만세력 설명서' : '포춘톨치'}</span>
               <ChevronDown size={18} className={`title-chevron ${showChapterDropdown ? 'open' : ''}`} />
             </button>
 

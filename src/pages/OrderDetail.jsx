@@ -3495,6 +3495,12 @@ function OrderDetail() {
                 <label>리포트 타입</label>
                 <span className="report-type-badge">{order.report_type_label}</span>
               </div>
+              <div className="info-row">
+                <label>구매 출처</label>
+                <span className={`origin-badge ${order.origin === 'blueprint_app' ? 'origin-app' : 'origin-web'}`}>
+                  {order.origin_label || '웹'}
+                </span>
+              </div>
               {order.report_name && (
                 <div className="info-row">
                   <label>리포트명</label>

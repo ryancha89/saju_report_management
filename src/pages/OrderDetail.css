@@ -119,6 +119,28 @@
   font-size: 0.85rem !important;
 }
 
+/* Origin Badge */
+.origin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem !important;
+  font-weight: 600;
+}
+
+.origin-web {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc;
+}
+
+.origin-app {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e !important;
+  border: 1px solid #fcd34d;
+}
+
 .status-select {
   padding: 10px 16px;
   border: 1px solid #e2e8f0;
