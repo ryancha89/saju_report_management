@@ -582,6 +582,12 @@ body:has(.blueprint-intro-page) {
   font-weight: 500;
 }
 
+.process-badge.highlight {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(244, 208, 63, 0.2) 100%);
+  border-color: #d4af37;
+  color: #f4d03f;
+}
+
 .process-contact {
   text-align: center;
   margin-top: 24px;

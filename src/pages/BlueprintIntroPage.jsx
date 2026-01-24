@@ -324,7 +324,15 @@ function BlueprintIntroPage() {
                 <div className="process-number">3</div>
                 <div className="process-content">
                   <h4>리포트 발송</h4>
-                  <p>입력하신 이메일로 웹 리포트 링크와 PDF 파일이 함께 발송됩니다.</p>
+                  <p>입력하신 이메일과 카카오톡으로 리포트 링크가 발송됩니다.</p>
+                </div>
+              </div>
+              <div className="process-item">
+                <div className="process-number">4</div>
+                <div className="process-content">
+                  <h4>추가 질문</h4>
+                  <p>리포트를 받으신 후 궁금한 점이 있다면 추가 질문을 남겨주세요. 상담사가 직접 답변해 드립니다.</p>
+                  <span className="process-badge highlight">1회 무료 질문 제공</span>
                 </div>
               </div>
             </div>
