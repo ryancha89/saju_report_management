@@ -985,7 +985,7 @@ body:has(.user-info-page) {
 /* 가상계좌 정보 */
 .vbank-info {
   width: 100%;
-  max-width: 320px;
+  max-width: 400px;
   background: rgba(20, 20, 30, 0.8);
   border: 1px solid rgba(244, 208, 63, 0.3);
   border-radius: 16px;
@@ -1074,6 +1074,43 @@ body:has(.user-info-page) {
   text-align: center;
   line-height: 1.5;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 입금 확인 완료 */
+.payment-confirmed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.payment-confirmed .confirmed-icon {
+  color: #22c55e;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 12px rgba(34, 197, 94, 0.5));
+}
+
+.payment-confirmed h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #22c55e;
+  margin: 0 0 12px 0;
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.payment-confirmed p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 8px 0;
+  line-height: 1.6;
+}
+
+.payment-confirmed .production-notice {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 8px;
 }
 
 /* 가상계좌 아이콘 색상 */

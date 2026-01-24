@@ -56,8 +56,10 @@ function UserInfoPage() {
   const [sajuData, setSajuData] = useState(null); // 사주 데이터
   const [sajuLoading, setSajuLoading] = useState(false); // 사주 로딩 상태
   const [copied, setCopied] = useState(false); // 계좌번호 복사 상태
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false); // 입금 확인 상태
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
+  const pollingIntervalRef = useRef(null);
 
   // URL에서 product, ref, coupon 파라미터 가져오기
   const searchParams = new URLSearchParams(location.search);
@@ -140,8 +142,49 @@ function UserInfoPage() {
       if (nameTimeoutRef.current) {
         clearTimeout(nameTimeoutRef.current);
       }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
     };
   }, []);
+
+  // Vbank 결제 상태 polling (5초 간격)
+  useEffect(() => {
+    if (isOrderComplete && paymentResult?.method === 'vbank' && paymentResult?.orderId && !paymentConfirmed) {
+      const checkPaymentStatus = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/orders/${paymentResult.orderId}/payment_status`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`,
+            },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.is_paid) {
+              setPaymentConfirmed(true);
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Payment status check failed:', error);
+        }
+      };
+
+      // 처음 한 번 확인
+      checkPaymentStatus();
+      // 5초 간격으로 확인
+      pollingIntervalRef.current = setInterval(checkPaymentStatus, 5000);
+
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+      };
+    }
+  }, [isOrderComplete, paymentResult, paymentConfirmed]);
 
   // 도시 검색 필터
   const filteredCities = useMemo(() => {
@@ -883,52 +926,63 @@ function UserInfoPage() {
 
             {isVbank && paymentResult?.vbankInfo && (
               <div className="vbank-info">
-                <div className="vbank-row">
-                  <span className="vbank-label">입금 은행</span>
-                  <span className="vbank-value">{paymentResult.vbankInfo.bankName}</span>
-                </div>
-                <div className="vbank-row">
-                  <span className="vbank-label">계좌 번호</span>
-                  <span className="vbank-value account-number">
-                    {paymentResult.vbankInfo.accountNumber}
-                    <button
-                      className="copy-btn"
-                      onClick={() => {
-                        navigator.clipboard.writeText(paymentResult.vbankInfo.accountNumber);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                    >
-                      {copied ? <Check size={16} /> : <Copy size={16} />}
-                      <span>{copied ? '복사됨' : '복사'}</span>
-                    </button>
-                  </span>
-                </div>
-                <div className="vbank-row">
-                  <span className="vbank-label">예금주</span>
-                  <span className="vbank-value">{paymentResult.vbankInfo.accountHolder}</span>
-                </div>
-                <div className="vbank-row">
-                  <span className="vbank-label">입금 금액</span>
-                  <span className="vbank-value price">{(paymentResult.amount || productInfo.price).toLocaleString()}원</span>
-                </div>
-                {paymentResult.vbankInfo.dueDate && (
-                  <div className="vbank-row">
-                    <span className="vbank-label">입금 기한</span>
-                    <span className="vbank-value due-date">
-                      {new Date(paymentResult.vbankInfo.dueDate * 1000).toLocaleString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
+                {paymentConfirmed ? (
+                  <div className="payment-confirmed">
+                    <CheckCircle size={48} className="confirmed-icon" />
+                    <h3>입금이 확인되었습니다</h3>
+                    <p>상담사가 주문을 확인하였습니다.</p>
+                    <p className="production-notice">주문제작까지 몇 시간~최대 3일이 소요될 수 있습니다.</p>
                   </div>
+                ) : (
+                  <>
+                    <div className="vbank-row">
+                      <span className="vbank-label">입금 은행</span>
+                      <span className="vbank-value">{paymentResult.vbankInfo.bankName}</span>
+                    </div>
+                    <div className="vbank-row">
+                      <span className="vbank-label">계좌 번호</span>
+                      <span className="vbank-value account-number">
+                        {paymentResult.vbankInfo.accountNumber}
+                        <button
+                          className="copy-btn"
+                          onClick={() => {
+                            navigator.clipboard.writeText(paymentResult.vbankInfo.accountNumber);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                        >
+                          {copied ? <Check size={16} /> : <Copy size={16} />}
+                          <span>{copied ? '복사됨' : '복사'}</span>
+                        </button>
+                      </span>
+                    </div>
+                    <div className="vbank-row">
+                      <span className="vbank-label">예금주</span>
+                      <span className="vbank-value">{paymentResult.vbankInfo.accountHolder}</span>
+                    </div>
+                    <div className="vbank-row">
+                      <span className="vbank-label">입금 금액</span>
+                      <span className="vbank-value price">{(paymentResult.amount || productInfo.price).toLocaleString()}원</span>
+                    </div>
+                    {paymentResult.vbankInfo.dueDate && (
+                      <div className="vbank-row">
+                        <span className="vbank-label">입금 기한</span>
+                        <span className="vbank-value due-date">
+                          {new Date(paymentResult.vbankInfo.dueDate * 1000).toLocaleString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="vbank-warning">
+                      입금 기한 내에 입금해주세요. 미입금 시 주문이 자동 취소됩니다.
+                    </div>
+                  </>
                 )}
-                <div className="vbank-warning">
-                  입금 기한 내에 입금해주세요. 미입금 시 주문이 자동 취소됩니다.
-                </div>
               </div>
             )}
 

@@ -3574,6 +3574,28 @@ function OrderDetail() {
                   {order.origin_label || '웹'}
                 </span>
               </div>
+              {order.payment_method && (
+                <div className="info-row">
+                  <label>결제 방법</label>
+                  <span className={`payment-method-badge ${order.payment_method}`}>
+                    {order.payment_method_label || order.payment_method}
+                  </span>
+                </div>
+              )}
+              {order.payment_status && (
+                <div className="info-row">
+                  <label>결제 상태</label>
+                  <span className={`payment-status-badge ${order.payment_status}`}>
+                    {order.payment_status_label || order.payment_status}
+                  </span>
+                </div>
+              )}
+              {order.payment_amount && (
+                <div className="info-row">
+                  <label>결제 금액</label>
+                  <span>{order.payment_amount.toLocaleString()}원</span>
+                </div>
+              )}
               {order.report_name && (
                 <div className="info-row">
                   <label>리포트명</label>

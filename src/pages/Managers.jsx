@@ -19,6 +19,9 @@ function Managers() {
     total_pages: 1
   });
 
+  // 상세보기 모달 상태
+  const [viewingManager, setViewingManager] = useState(null);
+
   // 수정 모달 상태
   const [editingManager, setEditingManager] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -138,6 +141,18 @@ function Managers() {
     }
   };
 
+  // 전화번호 포맷팅 (010-1234-5678 형식)
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '-';
+    const numbers = phone.replace(/\D/g, '');
+    if (numbers.length === 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    } else if (numbers.length === 10) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6)}`;
+    }
+    return phone;
+  };
+
   // 수익 계산
   const calculateRevenue = (price, rate) => {
     const priceWithoutVat = Math.round(price / 1.1);
@@ -194,7 +209,7 @@ function Managers() {
         </div>
 
         {managers.map((mgr) => (
-          <div key={mgr.id} className="table-row">
+          <div key={mgr.id} className="table-row" onClick={() => setViewingManager(mgr)}>
             <div className="manager-info">
               <span className="name">{mgr.name}</span>
               <span className="email">{mgr.email}</span>
@@ -203,11 +218,11 @@ function Managers() {
             <span className="commission-rate">
               <strong>{mgr.commission_rate || 50}%</strong>
             </span>
-            <span className="phone">{mgr.phone_number || '-'}</span>
+            <span className="phone">{formatPhoneNumber(mgr.phone_number)}</span>
             <span className={`status ${mgr.profile_completed ? 'completed' : 'pending'}`}>
               {mgr.profile_completed ? '완료' : '미완료'}
             </span>
-            <button className="edit-btn" onClick={() => openEditModal(mgr)}>
+            <button className="edit-btn" onClick={(e) => { e.stopPropagation(); openEditModal(mgr); }}>
               <Edit2 size={16} />
             </button>
           </div>
@@ -236,6 +251,115 @@ function Managers() {
           >
             다음
           </button>
+        </div>
+      )}
+
+      {/* 상세보기 모달 */}
+      {viewingManager && (
+        <div className="modal-overlay" onClick={() => setViewingManager(null)}>
+          <div className="modal-content detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>매니저 상세 정보</h2>
+              <button className="close-btn" onClick={() => setViewingManager(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="detail-section">
+                <h3>기본 정보</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">이름</span>
+                    <span className="value">{viewingManager.name}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">이메일</span>
+                    <span className="value">{viewingManager.email}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">활동명</span>
+                    <span className="value">{viewingManager.display_name || '-'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">연락처</span>
+                    <span className="value">{formatPhoneNumber(viewingManager.phone_number)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">역할</span>
+                    <span className="value">{viewingManager.role === 'admin' ? '관리자' : '매니저'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">프로필 상태</span>
+                    <span className={`value status-badge ${viewingManager.profile_completed ? 'completed' : 'pending'}`}>
+                      {viewingManager.profile_completed ? '완료' : '미완료'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h3>추천 코드</h3>
+                <div className="detail-grid">
+                  <div className="detail-item full-width">
+                    <span className="label">추천 코드</span>
+                    <span className="value code">{viewingManager.referral_code || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h3>상담사의 한마디</h3>
+                <div className="detail-grid">
+                  <div className="detail-item full-width">
+                    <span className="value message">{viewingManager.manager_message || '등록된 메시지가 없습니다.'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h3>정산 정보</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">수익률</span>
+                    <span className="value highlight">{viewingManager.commission_rate || 50}%</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">은행명</span>
+                    <span className="value">{viewingManager.bank_name || '-'}</span>
+                  </div>
+                  <div className="detail-item full-width">
+                    <span className="label">계좌번호</span>
+                    <span className="value">{viewingManager.bank_account || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h3>가입 정보</h3>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="label">가입일</span>
+                    <span className="value">
+                      {viewingManager.created_at
+                        ? new Date(viewingManager.created_at).toLocaleDateString('ko-KR')
+                        : '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="cancel-btn" onClick={() => setViewingManager(null)}>
+                닫기
+              </button>
+              <button className="save-btn" onClick={() => { setViewingManager(null); openEditModal(viewingManager); }}>
+                <Edit2 size={16} />
+                수정하기
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
