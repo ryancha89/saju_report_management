@@ -21,10 +21,8 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
   //   : productInfo.price;
   const discountAmount = productInfo.price - discountedPrice;
 
-  const noticeUrl =
-    import.meta.env.MODE === 'development'
-      ? 'http://localhost:4000/api/v1/payment_histories/portone_webhook'
-      : 'https://api.fortunetorch.com/api/v1/payment_histories/portone_webhook';
+  // 가상계좌 webhook은 항상 프로덕션 URL 사용 (PortOne 서버에서 호출하므로 localhost 불가)
+  const noticeUrl = 'https://api.fortunetorch.com/api/v1/payment_histories/portone_webhook';
 
   const handlePayment = async () => {
     console.log('handlePayment called', { productInfo, userInfo, payMethod });
@@ -170,14 +168,54 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
     }
   };
 
-  // 가상계좌 정보를 백엔드에서 조회 후 주문 생성
+  // 가상계좌 정보를 PortOne API에서 직접 조회 후 주문 생성
   const fetchVbankInfoAndCreateOrder = async (merchant_uid, imp_uid, paymentResponse) => {
     try {
-      // webhook이 VirtualAccount를 생성할 때까지 잠시 대기
+      // 백엔드를 통해 PortOne에서 결제 정보 조회
+      console.log('Fetching payment info from backend for imp_uid:', imp_uid);
+
+      const paymentInfoResponse = await fetch(`${API_BASE_URL}/api/v1/payment_histories/portone_payment_info?imp_uid=${imp_uid}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`,
+        },
+      });
+
+      const paymentInfoData = await paymentInfoResponse.json();
+      console.log('Payment info from PortOne:', paymentInfoData);
+
+      if (paymentInfoData.success && paymentInfoData.payment) {
+        const payment = paymentInfoData.payment;
+        const enrichedResponse = {
+          ...paymentResponse,
+          vbank_name: payment.vbank_name,
+          vbank_num: payment.vbank_num,
+          vbank_holder: payment.vbank_holder,
+          vbank_date: payment.vbank_date,
+        };
+        console.log('Enriched response with vbank info:', enrichedResponse);
+        await createOrder(merchant_uid, imp_uid, 'vbank', enrichedResponse);
+      } else {
+        // PortOne 조회 실패 시 기존 방식으로 fallback
+        console.log('PortOne fetch failed, trying backend vbank endpoint');
+        await fetchVbankFromBackend(merchant_uid, imp_uid, paymentResponse);
+      }
+    } catch (err) {
+      console.error('Failed to fetch payment info:', err);
+      // 실패해도 주문 생성 시도
+      await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
+    }
+  };
+
+  // 백엔드 VirtualAccount에서 조회 (fallback)
+  const fetchVbankFromBackend = async (merchant_uid, imp_uid, paymentResponse) => {
+    const prodApiUrl = 'https://api.fortunetorch.com';
+    const apiUrl = import.meta.env.MODE === 'development' ? prodApiUrl : API_BASE_URL;
+
+    try {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // 백엔드에서 가상계좌 정보 조회
-      const vbankResponse = await fetch(`${API_BASE_URL}/api/v1/payment_histories/vbank?merchant_uid=${merchant_uid}`, {
+      const vbankResponse = await fetch(`${apiUrl}/api/v1/payment_histories/vbank?merchant_uid=${merchant_uid}`, {
         headers: {
           'Content-Type': 'application/json',
           'Saju-Authorization': `Bearer-${API_TOKEN}`,
@@ -188,7 +226,6 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       console.log('vbank info from backend:', vbankData);
 
       if (vbankData.result === 'success' && vbankData.account) {
-        // 백엔드에서 가져온 가상계좌 정보로 주문 생성
         const enrichedResponse = {
           ...paymentResponse,
           vbank_name: vbankData.account.vbank_name,
@@ -198,25 +235,10 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
         };
         await createOrder(merchant_uid, imp_uid, 'vbank', enrichedResponse);
       } else {
-        // 백엔드에 아직 없으면 직접 PortOne API에서 조회
-        await fetchFromPortoneAndCreateOrder(merchant_uid, imp_uid, paymentResponse);
+        await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
       }
     } catch (err) {
-      console.error('Failed to fetch vbank info:', err);
-      // 실패해도 주문 생성 시도 (vbank 정보 없이)
-      await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
-    }
-  };
-
-  // PortOne에서 직접 결제 정보 조회
-  const fetchFromPortoneAndCreateOrder = async (merchant_uid, imp_uid, paymentResponse) => {
-    try {
-      // PortOne에서 결제 정보 조회 (프론트엔드에서 직접 조회는 CORS 이슈가 있을 수 있음)
-      // 대신 주문 생성을 진행하고, 백엔드에서 처리하도록 함
-      console.log('Creating order without vbank details, backend will handle via webhook');
-      await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
-    } catch (err) {
-      console.error('Failed to fetch from Portone:', err);
+      console.error('Backend vbank fetch failed:', err);
       await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
     }
   };
@@ -330,6 +352,13 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       {/* 상품 정보 */}
       <div className="product-info">
         <div className="product-name">{productInfo.name}</div>
+        {/* TODO: 테스트 후 원래 로직으로 복구 - couponInfo 조건부 표시 */}
+        <div className="price-with-discount">
+          <div className="original-price">{productInfo.price.toLocaleString()}원</div>
+          <div className="discount-badge">테스트</div>
+          <div className="discounted-price">{discountedPrice.toLocaleString()}원</div>
+        </div>
+        {/* 원래 코드:
         {couponInfo?.discount_percent ? (
           <div className="price-with-discount">
             <div className="original-price">{productInfo.price.toLocaleString()}원</div>
@@ -339,6 +368,7 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
         ) : (
           <div className="product-price">{productInfo.price.toLocaleString()}원</div>
         )}
+        */}
         {couponInfo && (
           <div className="coupon-applied">
             <span className="coupon-label">적용된 쿠폰:</span>
