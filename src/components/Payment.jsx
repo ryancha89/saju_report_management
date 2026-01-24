@@ -275,22 +275,12 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
         tracking: trackingData,
         ref: referralCode || null,
         coupon_code: couponCode || null,
-        // 결제 정보
-        payment: {
-          imp_uid: imp_uid,
-          merchant_uid: merchant_uid,
-          pay_method: method,
-          amount: discountedPrice,
-          original_amount: productInfo.price,
-          discount_amount: discountAmount,
-          status: method === 'vbank' ? 'pending' : 'paid',
-          vbank_info: method === 'vbank' ? {
-            vbank_name: paymentResponse.vbank_name,
-            vbank_num: paymentResponse.vbank_num,
-            vbank_holder: paymentResponse.vbank_holder,
-            vbank_date: paymentResponse.vbank_date,
-          } : null,
-        },
+        // 결제 정보 (최상위 레벨)
+        payment_method: method,
+        payment_status: method === 'vbank' ? 'ready' : 'paid',
+        imp_uid: imp_uid,
+        merchant_uid: merchant_uid,
+        payment_amount: discountedPrice,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/v1/orders`, {

@@ -182,6 +182,12 @@
   border: 1px solid #fca5a5;
 }
 
+.payment-status-badge.none {
+  background: #f3f4f6;
+  color: #9ca3af !important;
+  border: 1px solid #e5e7eb;
+}
+
 .status-select {
   padding: 10px 16px;
   border: 1px solid #e2e8f0;

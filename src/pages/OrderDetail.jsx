@@ -3574,28 +3574,6 @@ function OrderDetail() {
                   {order.origin_label || '웹'}
                 </span>
               </div>
-              {order.payment_method && (
-                <div className="info-row">
-                  <label>결제 방법</label>
-                  <span className={`payment-method-badge ${order.payment_method}`}>
-                    {order.payment_method_label || order.payment_method}
-                  </span>
-                </div>
-              )}
-              {order.payment_status && (
-                <div className="info-row">
-                  <label>결제 상태</label>
-                  <span className={`payment-status-badge ${order.payment_status}`}>
-                    {order.payment_status_label || order.payment_status}
-                  </span>
-                </div>
-              )}
-              {order.payment_amount && (
-                <div className="info-row">
-                  <label>결제 금액</label>
-                  <span>{order.payment_amount.toLocaleString()}원</span>
-                </div>
-              )}
               {order.report_name && (
                 <div className="info-row">
                   <label>리포트명</label>
@@ -3629,6 +3607,20 @@ function OrderDetail() {
                   <option value="completed">완료</option>
                   <option value="cancelled">취소됨</option>
                 </select>
+              </div>
+              <div className="info-row">
+                <label>결제 상태</label>
+                {order.origin === 'blueprint_app' ? (
+                  <span className="payment-status-badge paid">앱결제 / 결제완료</span>
+                ) : order.payment_method ? (
+                  <span className={`payment-status-badge ${order.payment_status || 'none'}`}>
+                    {order.payment_method === 'card' ? '카드' : '가상계좌'}
+                    {order.payment_status && ` / ${order.payment_status === 'paid' ? '결제완료' : order.payment_status === 'ready' ? '입금대기' : order.payment_status}`}
+                    {order.payment_amount && ` (${order.payment_amount.toLocaleString()}원)`}
+                  </span>
+                ) : (
+                  <span className="payment-status-badge none">미등록</span>
+                )}
               </div>
             </div>
           </div>
