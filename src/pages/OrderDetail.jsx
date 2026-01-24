@@ -1916,17 +1916,30 @@ function OrderDetail() {
     setChapter3Error(null);
 
     try {
+      // 5분 타임아웃 설정 (AI 생성에 시간이 오래 걸림)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000);
+
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Saju-Authorization': `Bearer-${API_TOKEN}`
-        }
+        },
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[generateChapter3] 서버 에러:', response.status, errorText);
+        throw new Error(`서버 에러 (${response.status}): ${errorText || '알 수 없는 오류'}`);
+      }
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error || '챕터3 생성에 실패했습니다.');
       }
 
@@ -1955,7 +1968,12 @@ function OrderDetail() {
 
       return data.chapter;
     } catch (err) {
-      setChapter3Error(err.message);
+      console.error('[generateChapter3] 에러:', err);
+      if (err.name === 'AbortError') {
+        setChapter3Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
+      } else {
+        setChapter3Error(err.message || '알 수 없는 오류가 발생했습니다.');
+      }
       throw err;
     } finally {
       setChapter3Loading(false);

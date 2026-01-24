@@ -36,10 +36,13 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
     const timestamp = new Date().getTime();
     const merchant_uid = `report-${productInfo.id}-${timestamp}`;
 
-    // // 결제 없이 바로 주문 생성 (테스트용)
-    // const mockImpUid = `test_imp_${timestamp}`;
-    // await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
-    // return;
+    // DEV 환경에서 결제창 없이 바로 주문 생성
+    const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
+    if (isDev) {
+      const mockImpUid = `test_imp_${timestamp}`;
+      await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
+      return;
+    }
 
     console.log('window.IMP:', window.IMP);
     if (!window.IMP) {

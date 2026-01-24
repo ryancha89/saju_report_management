@@ -107,6 +107,7 @@ function UserInfoPage() {
     initTracking();
   }, []);
 
+
   // 쿠폰 코드 유효성 검증
   useEffect(() => {
     const validateCoupon = async () => {
