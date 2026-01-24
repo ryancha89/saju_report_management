@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, Loader, Home, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, Loader, Home } from 'lucide-react';
 import './PaymentCompletePage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -150,14 +150,6 @@ function PaymentCompletePage() {
           리포트 제작이 시작되며, 완료되면 알림을 보내드립니다.
         </p>
 
-        {orderInfo && (
-          <div className="order-info">
-            <div className="info-item">
-              <FileText size={18} />
-              <span>주문번호: {orderInfo.orderId}</span>
-            </div>
-          </div>
-        )}
 
         <div className="notice-box">
           <p>
