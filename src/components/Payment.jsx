@@ -14,9 +14,11 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
   const { addToast } = useToast();
 
   // 쿠폰 적용 시 할인된 가격 계산
-  const discountedPrice = couponInfo?.discount_percent
-    ? Math.round(productInfo.price * (1 - couponInfo.discount_percent / 100))
-    : productInfo.price;
+  // TODO: 테스트 후 원래대로 복구
+  const discountedPrice = 1000; // 테스트용 1000원
+  // const discountedPrice = couponInfo?.discount_percent
+  //   ? Math.round(productInfo.price * (1 - couponInfo.discount_percent / 100))
+  //   : productInfo.price;
   const discountAmount = productInfo.price - discountedPrice;
 
   const noticeUrl =
@@ -25,6 +27,8 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       : 'https://api.fortunetorch.com/api/v1/payment_histories/portone_webhook';
 
   const handlePayment = async () => {
+    console.log('handlePayment called', { productInfo, userInfo, payMethod });
+
     if (!productInfo || !userInfo) {
       setError('결제 정보가 부족합니다.');
       return;
@@ -36,11 +40,12 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
     const timestamp = new Date().getTime();
     const merchant_uid = `report-${productInfo.id}-${timestamp}`;
 
-    // 결제 없이 바로 주문 생성 (테스트용)
-    const mockImpUid = `test_imp_${timestamp}`;
-    await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
-    return;
+    // // 결제 없이 바로 주문 생성 (테스트용)
+    // const mockImpUid = `test_imp_${timestamp}`;
+    // await createOrder(merchant_uid, mockImpUid, 'card', { success: true });
+    // return;
 
+    console.log('window.IMP:', window.IMP);
     if (!window.IMP) {
       setError('결제 모듈을 불러올 수 없습니다. 페이지를 새로고침해주세요.');
       setIsProcessing(false);
@@ -62,6 +67,30 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       return phone;
     };
 
+    const customData = {
+      product_type: productInfo.id,
+      expected_price: productInfo.price,
+      user_info: {
+        name: userInfo.name,
+        email: userInfo.email,
+        phone: userInfo.phone,
+        birth_year: userInfo.birthYear,
+        birth_month: userInfo.birthMonth,
+        birth_day: userInfo.birthDay,
+        birth_hour: userInfo.birthHour,
+        birth_minute: userInfo.birthMinute,
+        gender: userInfo.gender,
+        time_unknown: userInfo.timeUnknown,
+        calendar_type: userInfo.calendarType,
+        birth_place: userInfo.birthPlace,
+        birth_lat: userInfo.birthLat,
+        birth_lon: userInfo.birthLon,
+        time_adjustment: userInfo.timeAdjustment,
+        time_adjust_minutes: userInfo.timeAdjustMinutes,
+      },
+      tracking: trackingData,
+    };
+
     const baseData = {
       pg: 'welcome',
       name: productInfo.name,
@@ -71,29 +100,7 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       buyer_tel: formatPhone(userInfo.phone),
       buyer_email: userInfo.email,
       m_redirect_url: `${window.location.origin}/payment-complete`,
-      custom_data: {
-        product_type: productInfo.id,
-        expected_price: productInfo.price,
-        user_info: {
-          name: userInfo.name,
-          email: userInfo.email,
-          phone: userInfo.phone,
-          birth_year: userInfo.birthYear,
-          birth_month: userInfo.birthMonth,
-          birth_day: userInfo.birthDay,
-          birth_hour: userInfo.birthHour,
-          birth_minute: userInfo.birthMinute,
-          gender: userInfo.gender,
-          time_unknown: userInfo.timeUnknown,
-          calendar_type: userInfo.calendarType,
-          birth_place: userInfo.birthPlace,
-          birth_lat: userInfo.birthLat,
-          birth_lon: userInfo.birthLon,
-          time_adjustment: userInfo.timeAdjustment,
-          time_adjust_minutes: userInfo.timeAdjustMinutes,
-        },
-        tracking: trackingData,
-      },
+      custom_data: JSON.stringify(customData),
     };
 
     let data = null;
@@ -111,6 +118,7 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       };
     }
 
+    console.log('IMP.request_pay data:', data);
     try {
       IMP.request_pay(data, handleCallback);
     } catch (err) {
@@ -121,16 +129,17 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
   };
 
   const handleCallback = async (response) => {
+    console.log('handleCallback response:', response);
     const { success, imp_uid, merchant_uid, error_msg, error_code, pay_method: method } = response;
 
     // 결제 취소 또는 실패 처리
-    if (error_code || error_msg || (!success && method !== 'vbank')) {
+    if (error_code || error_msg) {
       setIsProcessing(false);
       // 취소인 경우 토스트로 표시
       const isCancelled = error_msg?.includes('취소') || error_msg?.includes('cancel');
       if (isCancelled) {
         addToast('결제가 취소되었습니다', 'info');
-      } else if (error_msg) {
+      } else {
         setError(error_msg);
         if (onPaymentError) {
           onPaymentError(error_msg);
@@ -139,15 +148,77 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       return;
     }
 
-    // 가상계좌의 경우
+    // 가상계좌의 경우: imp_uid와 merchant_uid가 있으면 발급 성공으로 처리
+    // (vbank는 success가 undefined일 수 있음 - webhook으로 가상계좌 정보가 생성됨)
     if (method === 'vbank' || payMethod === 'vbank') {
-      // 가상계좌 발급 정보를 저장하고 완료 처리
-      await createOrder(merchant_uid, imp_uid, 'vbank', response);
+      if (imp_uid && merchant_uid) {
+        // 가상계좌 발급 후 백엔드에서 정보 조회
+        await fetchVbankInfoAndCreateOrder(merchant_uid, imp_uid, response);
+      } else {
+        setIsProcessing(false);
+        setError('가상계좌 발급에 실패했습니다. 다시 시도해주세요.');
+      }
       return;
     }
 
-    // 카드 결제 성공
-    await createOrder(merchant_uid, imp_uid, 'card', response);
+    // 카드 결제: success가 필요
+    if (success) {
+      await createOrder(merchant_uid, imp_uid, 'card', response);
+    } else {
+      setIsProcessing(false);
+      setError('결제에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  // 가상계좌 정보를 백엔드에서 조회 후 주문 생성
+  const fetchVbankInfoAndCreateOrder = async (merchant_uid, imp_uid, paymentResponse) => {
+    try {
+      // webhook이 VirtualAccount를 생성할 때까지 잠시 대기
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // 백엔드에서 가상계좌 정보 조회
+      const vbankResponse = await fetch(`${API_BASE_URL}/api/v1/payment_histories/vbank?merchant_uid=${merchant_uid}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`,
+        },
+      });
+
+      const vbankData = await vbankResponse.json();
+      console.log('vbank info from backend:', vbankData);
+
+      if (vbankData.result === 'success' && vbankData.account) {
+        // 백엔드에서 가져온 가상계좌 정보로 주문 생성
+        const enrichedResponse = {
+          ...paymentResponse,
+          vbank_name: vbankData.account.bank_name,
+          vbank_num: vbankData.account.bank_account,
+          vbank_holder: vbankData.account.account_holder,
+          vbank_date: vbankData.account.due_date,
+        };
+        await createOrder(merchant_uid, imp_uid, 'vbank', enrichedResponse);
+      } else {
+        // 백엔드에 아직 없으면 직접 PortOne API에서 조회
+        await fetchFromPortoneAndCreateOrder(merchant_uid, imp_uid, paymentResponse);
+      }
+    } catch (err) {
+      console.error('Failed to fetch vbank info:', err);
+      // 실패해도 주문 생성 시도 (vbank 정보 없이)
+      await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
+    }
+  };
+
+  // PortOne에서 직접 결제 정보 조회
+  const fetchFromPortoneAndCreateOrder = async (merchant_uid, imp_uid, paymentResponse) => {
+    try {
+      // PortOne에서 결제 정보 조회 (프론트엔드에서 직접 조회는 CORS 이슈가 있을 수 있음)
+      // 대신 주문 생성을 진행하고, 백엔드에서 처리하도록 함
+      console.log('Creating order without vbank details, backend will handle via webhook');
+      await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
+    } catch (err) {
+      console.error('Failed to fetch from Portone:', err);
+      await createOrder(merchant_uid, imp_uid, 'vbank', paymentResponse);
+    }
   };
 
   const createOrder = async (merchant_uid, imp_uid, method, paymentResponse) => {
