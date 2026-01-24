@@ -1188,6 +1188,12 @@ function OrderDetail() {
   // 챕터8 상태 (상담사 코칭) - CoachingEditor에서 관리
   const [coachingData, setCoachingData] = useState(null);
 
+  // 비동기 생성 진행률 상태 (챕터 5, 6, 7, 8)
+  const [fortuneProgress, setFortuneProgress] = useState(null); // { progress: 0-100, message: '...' }
+  const [careerProgress, setCareerProgress] = useState(null);
+  const [loveProgress, setLoveProgress] = useState(null);
+  const [coachingProgress, setCoachingProgress] = useState(null);
+
   // Q&A 상태 (고객 질문 답변)
   const [qaAnswers, setQaAnswers] = useState([]);
   const [qaPolishing, setQaPolishing] = useState({}); // { index: true/false }
@@ -2240,7 +2246,73 @@ function OrderDetail() {
     }
   };
 
-  // 챕터 4, 5, 6, 7 전체 생성 (재물운, 직업운, 연애운, 코칭)
+  // 비동기 Job 폴링 헬퍼 함수
+  const pollJobStatus = async (jobId, setProgress, maxPollingTime = 600000) => {
+    const pollingInterval = 2000; // 2초
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxPollingTime) {
+      await new Promise(resolve => setTimeout(resolve, pollingInterval));
+
+      const statusResponse = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${id}/job_status?job_id=${jobId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          }
+        }
+      );
+
+      const statusData = await statusResponse.json();
+      console.log(`[pollJobStatus] Job ${jobId} 상태:`, statusData.status, statusData.progress);
+
+      // 진행률 업데이트
+      if (statusData.progress !== undefined && setProgress) {
+        setProgress({
+          progress: statusData.progress,
+          message: statusData.message || '처리 중...'
+        });
+      }
+
+      if (statusData.status === 'completed') {
+        return { success: true, result: statusData.result };
+      }
+
+      if (statusData.status === 'failed') {
+        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
+      }
+    }
+
+    return { success: false, error: '작업 시간이 초과되었습니다.' };
+  };
+
+  // 비동기 챕터 생성 시작 함수
+  const startAsyncJob = async (chapterType, options = {}) => {
+    const startResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_async`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Saju-Authorization': `Bearer-${API_TOKEN}`
+      },
+      body: JSON.stringify({ chapter_type: chapterType, options })
+    });
+
+    if (!startResponse.ok) {
+      const errorText = await startResponse.text();
+      throw new Error(`서버 에러 (${startResponse.status}): ${errorText || '알 수 없는 오류'}`);
+    }
+
+    const startData = await startResponse.json();
+    if (!startData.success) {
+      throw new Error(startData.error || '작업 시작에 실패했습니다.');
+    }
+
+    return startData.job_id;
+  };
+
+  // 챕터 4, 5, 6, 7 전체 생성 (재물운, 직업운, 연애운, 코칭) - 비동기 방식
   const handleRegenerateAllChapters = async () => {
     if (!validationResult) {
       alert('먼저 사주 검증을 실행해주세요.');
@@ -2251,154 +2323,153 @@ function OrderDetail() {
     const yearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
 
     setRegeneratingAllChapters(true);
+    // 초기 진행률 설정
+    setFortuneProgress({ progress: 0, message: '대기 중...' });
+    setCareerProgress({ progress: 0, message: '대기 중...' });
+    setLoveProgress({ progress: 0, message: '대기 중...' });
+    setCoachingProgress({ progress: 0, message: '대기 중...' });
+
     try {
       const results = [];
 
-      // 재물운 - API 직접 호출 및 저장
+      // 재물운 - 비동기 생성
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          const rawFortunes = data.fortunes || data.fortune_years || {};
-          const baseFortune = data.base_fortune || {};
+        setFortuneProgress({ progress: 0, message: '재물운 생성 시작...' });
+        const fortuneJobId = await startAsyncJob('fortune', { year_count: yearCount });
+        console.log('[handleRegenerateAllChapters] 재물운 Job 시작:', fortuneJobId);
+
+        const fortuneResult = await pollJobStatus(fortuneJobId, setFortuneProgress);
+
+        if (fortuneResult.success && fortuneResult.result) {
+          const rawFortunes = fortuneResult.result.fortunes || {};
           const yearlyFortunes = Object.entries(rawFortunes).map(([year, fortune]) => ({
             year: parseInt(year),
             ...fortune
           })).sort((a, b) => a.year - b.year);
 
           setFortuneEditorData(yearlyFortunes);
-          setFortuneBaseFortune(baseFortune);
 
-          // 재물운 저장 - FortuneEditor와 동일한 형식으로
+          // 재물운 저장
           await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
             body: JSON.stringify({
               fortune_data: {
-                baseFortune: baseFortune,
+                baseFortune: {},
                 yearlyFortunes: yearlyFortunes
               }
             })
           });
           results.push('재물운 ✓');
         } else {
-          results.push('재물운 ✗');
+          results.push(`재물운 ✗ (${fortuneResult.error})`);
         }
       } catch (err) {
         results.push('재물운 ✗');
         console.error('재물운 생성 실패:', err);
+      } finally {
+        setFortuneProgress(null);
       }
 
-      // 직업운 - API 직접 호출 및 저장
+      // 직업운 - 비동기 생성
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          const rawCareers = data.careers || data.career_years || {};
-          const baseCareer = data.base_career || {};
+        setCareerProgress({ progress: 0, message: '직업운 생성 시작...' });
+        const careerJobId = await startAsyncJob('career', { year_count: yearCount });
+        console.log('[handleRegenerateAllChapters] 직업운 Job 시작:', careerJobId);
+
+        const careerResult = await pollJobStatus(careerJobId, setCareerProgress);
+
+        if (careerResult.success && careerResult.result) {
+          const rawCareers = careerResult.result.careers || {};
           const yearlyCareers = Object.entries(rawCareers).map(([year, career]) => ({
             year: parseInt(year),
             ...career
           })).sort((a, b) => a.year - b.year);
 
           setCareerEditorData(yearlyCareers);
-          setCareerBaseCareer(baseCareer);
 
-          // 직업운 저장 - CareerEditor와 동일한 형식으로
+          // 직업운 저장
           await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
             body: JSON.stringify({
               career_data: {
-                baseCareer: baseCareer,
+                baseCareer: {},
                 yearlyCareers: yearlyCareers
               }
             })
           });
           results.push('직업운 ✓');
         } else {
-          results.push('직업운 ✗');
+          results.push(`직업운 ✗ (${careerResult.error})`);
         }
       } catch (err) {
         results.push('직업운 ✗');
         console.error('직업운 생성 실패:', err);
+      } finally {
+        setCareerProgress(null);
       }
 
-      // 연애운 - API 직접 호출 (N년 각 연도별 생성) 및 저장
+      // 연애운 - 비동기 생성
       try {
-        const currentYear = new Date().getFullYear();
-        const yearlyLoveFortunes = [];
+        setLoveProgress({ progress: 0, message: '연애운 생성 시작...' });
+        const loveJobId = await startAsyncJob('love', { year_count: yearCount });
+        console.log('[handleRegenerateAllChapters] 연애운 Job 시작:', loveJobId);
 
-        // 먼저 base analysis 데이터 가져오기 (year_count 전달)
-        const baseRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/love_fortune_data?year_count=${yearCount}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const baseData = await baseRes.json();
-        const baseAnalysis = baseData.data?.base_analysis || {};
-        const cachedAnalysis = baseData.data || {};
+        const loveResult = await pollJobStatus(loveJobId, setLoveProgress);
 
-        for (let i = 0; i < yearCount; i++) {
-          const targetYear = currentYear + i;
-          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ year: targetYear, manager_input: {} })
+        if (loveResult.success && loveResult.result) {
+          const loveData = loveResult.result.love_fortune || {};
+          setLoveFortuneData({
+            baseAnalysis: {},
+            yearlyLoveFortunes: [{
+              year: new Date().getFullYear(),
+              generated_content: loveData.content || ''
+            }]
           });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            yearlyLoveFortunes.push({
-              year: targetYear,
-              generated_content: data.generated_content || '',
-              day_earth_outcome: data.day_earth_outcome,
-              day_earth_relations: data.day_earth_relations
-            });
-          }
-        }
 
-        if (yearlyLoveFortunes.length > 0) {
-          const loveData = {
-            baseAnalysis: baseAnalysis,
-            yearlyLoveFortunes: yearlyLoveFortunes,
-            cached_analysis: cachedAnalysis
-          };
-          setLoveFortuneData(loveData);
-
-          // 연애운 저장 - LoveFortuneEditor와 동일한 형식으로
+          // 연애운 저장
           await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ love_fortune_data: loveData })
+            body: JSON.stringify({
+              love_fortune_data: {
+                baseAnalysis: {},
+                yearlyLoveFortunes: [{
+                  year: new Date().getFullYear(),
+                  generated_content: loveData.content || ''
+                }]
+              }
+            })
           });
-          results.push(`연애운 ✓ (${yearlyLoveFortunes.length}/${yearCount})`);
+          results.push('연애운 ✓');
         } else {
-          results.push('연애운 ✗');
+          results.push(`연애운 ✗ (${loveResult.error})`);
         }
       } catch (err) {
         results.push('연애운 ✗');
         console.error('연애운 생성 실패:', err);
+      } finally {
+        setLoveProgress(null);
       }
 
-      // 코칭 - API 직접 호출 및 저장
+      // 코칭 - 비동기 생성
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          const coachingItems = data.coaching_items || [];
+        setCoachingProgress({ progress: 0, message: '코칭 생성 시작...' });
+        const coachingJobId = await startAsyncJob('coaching', {});
+        console.log('[handleRegenerateAllChapters] 코칭 Job 시작:', coachingJobId);
+
+        const coachingResult = await pollJobStatus(coachingJobId, setCoachingProgress);
+
+        if (coachingResult.success && coachingResult.result) {
+          const coaching = coachingResult.result.coaching || {};
+          const coachingItems = [{
+            title: '상담사 코칭',
+            content: coaching.content || ''
+          }];
           setCoachingData(coachingItems);
 
-          // 코칭 저장 - CoachingEditor와 동일한 형식으로
+          // 코칭 저장
           await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_coaching`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
@@ -2406,11 +2477,13 @@ function OrderDetail() {
           });
           results.push('코칭 ✓');
         } else {
-          results.push('코칭 ✗');
+          results.push(`코칭 ✗ (${coachingResult.error})`);
         }
       } catch (err) {
         results.push('코칭 ✗');
         console.error('코칭 생성 실패:', err);
+      } finally {
+        setCoachingProgress(null);
       }
 
       alert(`전체 생성 완료!\n${results.join('\n')}`);
@@ -3068,38 +3141,33 @@ function OrderDetail() {
         setChapter4Loading(false);
       }
 
-      // 챕터5 (재물운) - API 직접 호출
+      // 챕터5 (재물운) - 비동기 생성
       setGeneratingChapter(5);
+      setFortuneProgress({ progress: 0, message: '재물운 생성 시작...' });
       try {
-        console.log(`[generateAllChapters] 재물운 생성 시작 (${yearCount}년)`);
-        const res5 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const data5 = await res5.json();
-        console.log('[generateAllChapters] 재물운 생성 응답:', data5);
-        if (res5.ok && data5.success) {
-          const rawFortunes = data5.fortunes || data5.fortune_years || {};
-          const baseFortune = data5.base_fortune || {};
+        console.log(`[generateAllChapters] 재물운 비동기 생성 시작 (${yearCount}년)`);
+        const fortuneJobId = await startAsyncJob('fortune', { year_count: yearCount });
+        console.log('[generateAllChapters] 재물운 Job 시작:', fortuneJobId);
 
-          // 연도별 객체를 배열로 변환
+        const fortuneResult = await pollJobStatus(fortuneJobId, setFortuneProgress);
+
+        if (fortuneResult.success && fortuneResult.result) {
+          const rawFortunes = fortuneResult.result.fortunes || {};
           const yearlyFortunes = Object.entries(rawFortunes).map(([year, fortune]) => ({
             year: parseInt(year),
             ...fortune
           })).sort((a, b) => a.year - b.year);
 
           setFortuneEditorData(yearlyFortunes);
-          setFortuneBaseFortune(baseFortune);
 
-          // 재물운 저장 - FortuneEditor와 동일한 형식으로
+          // 재물운 저장
           console.log('[generateAllChapters] 재물운 저장 시작');
           const saveRes5 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
             body: JSON.stringify({
               fortune_data: {
-                baseFortune: baseFortune,
+                baseFortune: {},
                 yearlyFortunes: yearlyFortunes
               }
             })
@@ -3109,40 +3177,37 @@ function OrderDetail() {
         }
       } catch (err) {
         console.error('재물운 생성/저장 실패:', err);
+      } finally {
+        setFortuneProgress(null);
       }
 
-      // 챕터6 (직업운) - API 직접 호출
+      // 챕터6 (직업운) - 비동기 생성
       setGeneratingChapter(6);
+      setCareerProgress({ progress: 0, message: '직업운 생성 시작...' });
       try {
-        console.log(`[generateAllChapters] 직업운 생성 시작 (${yearCount}년)`);
-        const res6 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const data6 = await res6.json();
-        console.log('[generateAllChapters] 직업운 생성 응답:', data6);
-        if (res6.ok && data6.success) {
-          const rawCareers = data6.careers || data6.career_years || {};
-          const baseCareer = data6.base_career || {};
+        console.log(`[generateAllChapters] 직업운 비동기 생성 시작 (${yearCount}년)`);
+        const careerJobId = await startAsyncJob('career', { year_count: yearCount });
+        console.log('[generateAllChapters] 직업운 Job 시작:', careerJobId);
 
-          // 연도별 객체를 배열로 변환
+        const careerResult = await pollJobStatus(careerJobId, setCareerProgress);
+
+        if (careerResult.success && careerResult.result) {
+          const rawCareers = careerResult.result.careers || {};
           const yearlyCareers = Object.entries(rawCareers).map(([year, career]) => ({
             year: parseInt(year),
             ...career
           })).sort((a, b) => a.year - b.year);
 
           setCareerEditorData(yearlyCareers);
-          setCareerBaseCareer(baseCareer);
 
-          // 직업운 저장 - CareerEditor와 동일한 형식으로
+          // 직업운 저장
           console.log('[generateAllChapters] 직업운 저장 시작');
           const saveRes6 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
             body: JSON.stringify({
               career_data: {
-                baseCareer: baseCareer,
+                baseCareer: {},
                 yearlyCareers: yearlyCareers
               }
             })
@@ -3152,83 +3217,66 @@ function OrderDetail() {
         }
       } catch (err) {
         console.error('직업운 생성/저장 실패:', err);
+      } finally {
+        setCareerProgress(null);
       }
 
-      // 챕터7 (연애운) - API 직접 호출 (N년 각 연도별 생성)
+      // 챕터7 (연애운) - 비동기 생성
       setGeneratingChapter(7);
+      setLoveProgress({ progress: 0, message: '연애운 생성 시작...' });
       try {
-        console.log(`[generateAllChapters] 연애운 생성 시작 (${yearCount}년)`);
-        const currentYear = new Date().getFullYear();
-        const yearlyLoveFortunes = [];
+        console.log(`[generateAllChapters] 연애운 비동기 생성 시작 (${yearCount}년)`);
+        const loveJobId = await startAsyncJob('love', { year_count: yearCount });
+        console.log('[generateAllChapters] 연애운 Job 시작:', loveJobId);
 
-        // 먼저 base analysis 데이터 가져오기 (year_count 전달)
-        const baseRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/love_fortune_data?year_count=${yearCount}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const baseData = await baseRes.json();
-        const baseAnalysis = baseData.data?.base_analysis || {};
-        const cachedAnalysis = baseData.data || {};
+        const loveResult = await pollJobStatus(loveJobId, setLoveProgress);
 
-        // N년간 각 연도별 연애운 생성
-        for (let i = 0; i < yearCount; i++) {
-          const targetYear = currentYear + i;
-          const res7 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ year: targetYear, manager_input: {} })
-          });
-          const data7 = await res7.json();
-          console.log(`[generateAllChapters] 연애운 ${targetYear}년 응답:`, data7);
-          if (res7.ok && data7.success) {
-            yearlyLoveFortunes.push({
-              year: targetYear,
-              generated_content: data7.generated_content || '',
-              day_earth_outcome: data7.day_earth_outcome,
-              day_earth_relations: data7.day_earth_relations
-            });
-          }
-        }
-
-        // 연애운 데이터 설정 및 저장 - LoveFortuneEditor와 동일한 형식으로
-        if (yearlyLoveFortunes.length > 0) {
-          const loveData = {
-            baseAnalysis: baseAnalysis,
-            yearlyLoveFortunes: yearlyLoveFortunes,
-            cached_analysis: cachedAnalysis
+        if (loveResult.success && loveResult.result) {
+          const loveData = loveResult.result.love_fortune || {};
+          const loveFortuneData = {
+            baseAnalysis: {},
+            yearlyLoveFortunes: [{
+              year: new Date().getFullYear(),
+              generated_content: loveData.content || ''
+            }]
           };
-          setLoveFortuneData(loveData);
-          newChapter6Data = loveData;
+          setLoveFortuneData(loveFortuneData);
+          newChapter6Data = loveFortuneData;
 
           console.log('[generateAllChapters] 연애운 저장 시작');
           const saveRes7 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ love_fortune_data: loveData })
+            body: JSON.stringify({ love_fortune_data: loveFortuneData })
           });
           const saveData7 = await saveRes7.json();
           console.log('[generateAllChapters] 연애운 저장 응답:', saveData7);
         }
       } catch (err) {
         console.error('연애운 생성/저장 실패:', err);
+      } finally {
+        setLoveProgress(null);
       }
 
-      // 챕터8 (코칭) - API 직접 호출
+      // 챕터8 (코칭) - 비동기 생성
       setGeneratingChapter(8);
+      setCoachingProgress({ progress: 0, message: '코칭 생성 시작...' });
       try {
-        console.log('[generateAllChapters] 코칭 생성 시작');
-        const res8 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        });
-        const data8 = await res8.json();
-        console.log('[generateAllChapters] 코칭 생성 응답:', data8);
-        if (res8.ok && data8.success) {
-          // API가 coaching_items를 반환함
-          const coachingItems = data8.coaching_items || [];
+        console.log('[generateAllChapters] 코칭 비동기 생성 시작');
+        const coachingJobId = await startAsyncJob('coaching', {});
+        console.log('[generateAllChapters] 코칭 Job 시작:', coachingJobId);
+
+        const coachingResult = await pollJobStatus(coachingJobId, setCoachingProgress);
+
+        if (coachingResult.success && coachingResult.result) {
+          const coaching = coachingResult.result.coaching || {};
+          const coachingItems = [{
+            title: '상담사 코칭',
+            content: coaching.content || ''
+          }];
           setCoachingData(coachingItems);
 
-          // 코칭 저장 - CoachingEditor와 동일한 형식으로
+          // 코칭 저장
           console.log('[generateAllChapters] 코칭 저장 시작');
           const saveRes8 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_coaching`, {
             method: 'POST',
@@ -3240,6 +3288,8 @@ function OrderDetail() {
         }
       } catch (err) {
         console.error('코칭 생성/저장 실패:', err);
+      } finally {
+        setCoachingProgress(null);
       }
 
       // 전체 저장 (새로 생성된 데이터 사용)
@@ -5717,6 +5767,31 @@ function OrderDetail() {
                             </div>
                           )}
 
+                          {/* 재물운 비동기 생성 진행률 표시 */}
+                          {fortuneProgress && (
+                            <div className="async-progress-overlay">
+                              <div className="generation-loading">
+                                <div className="generation-spinner"></div>
+                                <div className="generation-text">
+                                  <h3>재물운 분석 중</h3>
+                                  <p className="generation-chapter-title">
+                                    {fortuneProgress.message || '재물운을 분석하고 있습니다...'}
+                                  </p>
+                                  <div className="generation-progress">
+                                    <div className="progress-bar">
+                                      <div
+                                        className="progress-fill"
+                                        style={{ width: `${fortuneProgress.progress || 0}%` }}
+                                      />
+                                    </div>
+                                    <span className="progress-text">{fortuneProgress.progress || 0}%</span>
+                                  </div>
+                                  <p className="generation-note">잠시만 기다려주세요 (최대 5분 소요)</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* 재물운 편집기 - 사주 검증이 완료된 경우 표시 */}
                           {validationResult ? (
                             <FortuneEditor
@@ -5785,6 +5860,31 @@ function OrderDetail() {
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter6' ? (
                         <div className="chapter6-content career-chapter">
+                          {/* 직업운 비동기 생성 진행률 표시 */}
+                          {careerProgress && (
+                            <div className="async-progress-overlay">
+                              <div className="generation-loading">
+                                <div className="generation-spinner"></div>
+                                <div className="generation-text">
+                                  <h3>직업운 분석 중</h3>
+                                  <p className="generation-chapter-title">
+                                    {careerProgress.message || '직업운을 분석하고 있습니다...'}
+                                  </p>
+                                  <div className="generation-progress">
+                                    <div className="progress-bar">
+                                      <div
+                                        className="progress-fill"
+                                        style={{ width: `${careerProgress.progress || 0}%` }}
+                                      />
+                                    </div>
+                                    <span className="progress-text">{careerProgress.progress || 0}%</span>
+                                  </div>
+                                  <p className="generation-note">잠시만 기다려주세요 (최대 5분 소요)</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* 직업운/사회운 - CareerEditor 사용 */}
                           <CareerEditor
                             ref={careerEditorRef}
@@ -5800,6 +5900,31 @@ function OrderDetail() {
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter7' ? (
                         <div className="chapter7-content">
+                          {/* 연애운 비동기 생성 진행률 표시 */}
+                          {loveProgress && (
+                            <div className="async-progress-overlay">
+                              <div className="generation-loading">
+                                <div className="generation-spinner"></div>
+                                <div className="generation-text">
+                                  <h3>연애운 분석 중</h3>
+                                  <p className="generation-chapter-title">
+                                    {loveProgress.message || '연애운을 분석하고 있습니다...'}
+                                  </p>
+                                  <div className="generation-progress">
+                                    <div className="progress-bar">
+                                      <div
+                                        className="progress-fill"
+                                        style={{ width: `${loveProgress.progress || 0}%` }}
+                                      />
+                                    </div>
+                                    <span className="progress-text">{loveProgress.progress || 0}%</span>
+                                  </div>
+                                  <p className="generation-note">잠시만 기다려주세요 (최대 5분 소요)</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           <LoveFortuneEditor
                             ref={loveFortuneEditorRef}
                             orderId={order.id}
@@ -5811,6 +5936,31 @@ function OrderDetail() {
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter8' ? (
                         <div className="chapter8-content">
+                          {/* 코칭 비동기 생성 진행률 표시 */}
+                          {coachingProgress && (
+                            <div className="async-progress-overlay">
+                              <div className="generation-loading">
+                                <div className="generation-spinner"></div>
+                                <div className="generation-text">
+                                  <h3>코칭 생성 중</h3>
+                                  <p className="generation-chapter-title">
+                                    {coachingProgress.message || '코칭 포인트를 생성하고 있습니다...'}
+                                  </p>
+                                  <div className="generation-progress">
+                                    <div className="progress-bar">
+                                      <div
+                                        className="progress-fill"
+                                        style={{ width: `${coachingProgress.progress || 0}%` }}
+                                      />
+                                    </div>
+                                    <span className="progress-text">{coachingProgress.progress || 0}%</span>
+                                  </div>
+                                  <p className="generation-note">잠시만 기다려주세요 (최대 5분 소요)</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           <CoachingEditor
                             ref={coachingEditorRef}
                             orderId={order.id}
