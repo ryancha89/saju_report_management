@@ -656,6 +656,7 @@ const CareerEditor = forwardRef(function CareerEditor({
   const [loading, setLoading] = useState(false);
   const [regeneratingYear, setRegeneratingYear] = useState(null);
   const [regeneratingAll, setRegeneratingAll] = useState(false);
+  const [regeneratingAllProgress, setRegeneratingAllProgress] = useState(null);
   const [regeneratingIntro, setRegeneratingIntro] = useState(false);
   const [gyeokguk, setGyeokguk] = useState('');
   const [currentDecade, setCurrentDecade] = useState(null);
@@ -1091,10 +1092,52 @@ const CareerEditor = forwardRef(function CareerEditor({
     }
   };
 
-  // 전체 재생성
+  // 비동기 Job 폴링 헬퍼 함수
+  const pollJobStatus = async (jobId, maxPollingTime = 600000) => {
+    const pollingInterval = 2000;
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxPollingTime) {
+      await new Promise(resolve => setTimeout(resolve, pollingInterval));
+
+      const statusResponse = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status?job_id=${jobId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          }
+        }
+      );
+
+      const statusData = await statusResponse.json();
+      console.log(`[CareerEditor] Job ${jobId} 상태:`, statusData.status, statusData.progress);
+
+      if (statusData.progress !== undefined) {
+        setRegeneratingAllProgress({
+          progress: statusData.progress,
+          message: statusData.message || '처리 중...'
+        });
+      }
+
+      if (statusData.status === 'completed') {
+        return { success: true, result: statusData.result };
+      }
+
+      if (statusData.status === 'failed') {
+        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
+      }
+    }
+
+    return { success: false, error: '작업 시간이 초과되었습니다.' };
+  };
+
+  // 전체 재생성 - 비동기 방식
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     setRegeneratingIntro(true);
+    setRegeneratingAllProgress({ progress: 0, message: '직업운 생성 시작...' });
 
     let updatedBaseCareer = baseCareer;
     let updatedCareerData = careerData;
@@ -1130,47 +1173,50 @@ const CareerEditor = forwardRef(function CareerEditor({
         setRegeneratingIntro(false);
       }
 
-      // 2. 연도별 직업운 생성
-      const managerInputs = {};
-      careerData.forEach(item => {
-        if (item.manager_edit) {
-          managerInputs[item.year] = {
-            sky: {
-              career_level: item.manager_edit.sky?.career_level || 'normal',
-              reason: item.manager_edit.sky?.reason || ''
-            },
-            earth: {
-              career_level: item.manager_edit.earth?.career_level || 'normal',
-              reason: item.manager_edit.earth?.reason || ''
-            },
-            advice: item.manager_edit.advice || '',
-            memo: item.manager_edit.memo || ''
-          };
-        }
-      });
+      // 2. 연도별 직업운 생성 - 비동기 방식
+      setRegeneratingAllProgress({ progress: 10, message: '연도별 직업운 생성 중...' });
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_career_all`, {
+      // 비동기 Job 시작
+      const startResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Saju-Authorization': `Bearer-${API_TOKEN}`
         },
         body: JSON.stringify({
-          manager_inputs: managerInputs
+          chapter_type: 'career',
+          options: { year_count: careerData.length || 5 }
         })
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || '전체 재생성에 실패했습니다.');
+      if (!startResponse.ok) {
+        const errorData = await startResponse.json();
+        throw new Error(errorData.error || '비동기 작업 시작에 실패했습니다.');
       }
 
+      const startData = await startResponse.json();
+      if (!startData.success) {
+        throw new Error(startData.error || '작업 시작에 실패했습니다.');
+      }
+
+      const jobId = startData.job_id;
+      console.log('[CareerEditor] 직업운 Job 시작:', jobId);
+
+      // 폴링으로 결과 대기
+      const result = await pollJobStatus(jobId);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // 결과 처리
+      const careers = result.result?.careers || {};
       updatedCareerData = careerData.map(item => {
-        const newCareer = data.careers?.[item.year];
+        const newCareer = careers[item.year];
         if (newCareer) {
           return {
             ...item,
-            generated_content: newCareer.generated_content,
+            generated_content: newCareer.content || newCareer.generated_content,
             sky_analysis: newCareer.sky_analysis || item.sky_analysis,
             earth_analysis: newCareer.earth_analysis || item.earth_analysis
           };
@@ -1205,6 +1251,7 @@ const CareerEditor = forwardRef(function CareerEditor({
       alert(`전체 재생성 실패: ${err.message}`);
     } finally {
       setRegeneratingAll(false);
+      setRegeneratingAllProgress(null);
     }
   };
 

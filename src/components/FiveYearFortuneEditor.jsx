@@ -1809,39 +1809,91 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     }
   };
 
-  // 전체 재생성 (5년운세 + 재물운 + 직업운 + 연애운 + 코칭)
+  // 비동기 Job 폴링 헬퍼 함수
+  const pollJobStatus = async (jobId, maxPollingTime = 600000) => {
+    const pollingInterval = 2000;
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxPollingTime) {
+      await new Promise(resolve => setTimeout(resolve, pollingInterval));
+
+      const statusResponse = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status?job_id=${jobId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          }
+        }
+      );
+
+      const statusData = await statusResponse.json();
+      console.log(`[FiveYearFortuneEditor] Job ${jobId} 상태:`, statusData.status, statusData.progress);
+
+      if (statusData.status === 'completed') {
+        return { success: true, result: statusData.result };
+      }
+
+      if (statusData.status === 'failed') {
+        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
+      }
+    }
+
+    return { success: false, error: '작업 시간이 초과되었습니다.' };
+  };
+
+  // 비동기 Job 시작 헬퍼 함수
+  const startAsyncJob = async (chapterType, options = {}) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Saju-Authorization': `Bearer-${API_TOKEN}`
+      },
+      body: JSON.stringify({ chapter_type: chapterType, options })
+    });
+
+    if (!response.ok) {
+      throw new Error('비동기 작업 시작에 실패했습니다.');
+    }
+
+    const data = await response.json();
+    return data.job_id;
+  };
+
+  // 전체 재생성 (5년운세 + 재물운 + 직업운 + 연애운 + 코칭) - 비동기 방식
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     try {
       let updatedData = [...fiveYearData];
       const currentYear = new Date().getFullYear();
+      const yearCount = fiveYearData.length || 5;
 
-      // 1. 재물운 전체 생성
+      // 1. 재물운 전체 생성 - 비동기 방식
       try {
-        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_fortune_all`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Saju-Authorization': `Bearer-${API_TOKEN}`
-          },
-          body: JSON.stringify({ manager_inputs: {} })
-        });
-        console.log('재물운 전체 생성 완료');
+        console.log('재물운 비동기 생성 시작...');
+        const fortuneJobId = await startAsyncJob('fortune', { year_count: yearCount });
+        const fortuneResult = await pollJobStatus(fortuneJobId);
+        if (fortuneResult.success) {
+          console.log('재물운 전체 생성 완료');
+        } else {
+          console.warn('재물운 전체 생성 실패:', fortuneResult.error);
+        }
       } catch (e) {
         console.warn('재물운 전체 생성 실패:', e);
       }
 
-      // 2. 직업운 전체 생성
+      // 2. 직업운 전체 생성 - 비동기 방식
       try {
-        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_career_all`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Saju-Authorization': `Bearer-${API_TOKEN}`
-          },
-          body: JSON.stringify({ manager_inputs: {} })
-        });
-        console.log('직업운 전체 생성 완료');
+        console.log('직업운 비동기 생성 시작...');
+        const careerJobId = await startAsyncJob('career', { year_count: yearCount });
+        const careerResult = await pollJobStatus(careerJobId);
+        if (careerResult.success) {
+          console.log('직업운 전체 생성 완료');
+        } else {
+          console.warn('직업운 전체 생성 실패:', careerResult.error);
+        }
       } catch (e) {
         console.warn('직업운 전체 생성 실패:', e);
       }
