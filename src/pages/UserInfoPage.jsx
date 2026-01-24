@@ -345,11 +345,12 @@ function UserInfoPage() {
       // 뒤로가면 highestStep도 현재 위치로 조정
       setHighestStep(prevStep);
     } else {
-      // 상품별로 이전 페이지로 이동
-      if (productId === 'blueprint') {
-        navigate('/blueprint');
+      // 상품별로 이전 페이지로 이동 (ref 파라미터 유지)
+      const refParam = referralCode ? `?ref=${referralCode}` : '';
+      if (productId === 'blueprint' || productId === 'blueprint_lite') {
+        navigate(`/blueprint${refParam}`);
       } else {
-        navigate('/');
+        navigate(`/${refParam}`);
       }
     }
   };

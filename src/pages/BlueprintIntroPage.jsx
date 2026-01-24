@@ -46,9 +46,9 @@ function BlueprintIntroPage() {
       name: 'LITE',
       title: '3년 플랜',
       subtitle: '현재/다음 대운 + 3개년 운세',
-      originalPrice: 90000,
+      originalPrice: 99000,
       currentPrice: 59000,
-      discount: 34
+      discount: 40
     }
   };
 
