@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight } from 'lucide-react';
+import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking } from '../lib/tracking';
 import Payment from '../components/Payment';
@@ -58,9 +58,15 @@ function UserInfoPage() {
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
 
-  // URL에서 product 파라미터 가져오기
-  const productId = new URLSearchParams(location.search).get('product') || 'blueprint';
+  // URL에서 product, ref, coupon 파라미터 가져오기
+  const searchParams = new URLSearchParams(location.search);
+  const productId = searchParams.get('product') || 'blueprint';
+  const referralCode = searchParams.get('ref');
+  const couponCode = searchParams.get('coupon');
   const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.blueprint;
+
+  // 쿠폰 정보 상태
+  const [couponInfo, setCouponInfo] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -85,6 +91,33 @@ function UserInfoPage() {
   useEffect(() => {
     initTracking();
   }, []);
+
+  // 쿠폰 코드 유효성 검증
+  useEffect(() => {
+    const validateCoupon = async () => {
+      if (!couponCode) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/personal_coupons/validate/${couponCode}`, {
+          headers: {
+            'Saju-Authorization': `Bearer-${API_TOKEN}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success && data.coupon?.can_use) {
+          setCouponInfo(data.coupon);
+        } else {
+          console.warn('Invalid coupon:', data.error);
+          setCouponInfo(null);
+        }
+      } catch (error) {
+        console.error('Coupon validation error:', error);
+        setCouponInfo(null);
+      }
+    };
+
+    validateCoupon();
+  }, [couponCode]);
 
   // 배경색 설정
   useEffect(() => {
@@ -722,6 +755,9 @@ function UserInfoPage() {
                   productInfo={productInfo}
                   userInfo={getUserInfoForPayment()}
                   trackingData={getTrackingForAPI()}
+                  referralCode={referralCode}
+                  couponCode={couponCode}
+                  couponInfo={couponInfo}
                   onPaymentSuccess={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}
                 />
@@ -874,6 +910,43 @@ function UserInfoPage() {
               <span>발송 이메일</span>
               <strong>{formData.email}</strong>
             </div>
+
+            {/* 앱 다운로드 유도 섹션 */}
+            <div className="app-download-section">
+              <div className="app-download-header">
+                <Smartphone size={24} />
+                <span>앱에서 더 많은 기능을 이용하세요!</span>
+              </div>
+              <p className="app-download-description">
+                Fortune Torch 앱에서 로그인하면<br />
+                구매한 레포트를 언제든지 확인하고<br />
+                친구에게 공유하면 <strong>1,000 토치</strong>를 받을 수 있어요!
+              </p>
+              <div className="app-store-buttons">
+                <a
+                  href="https://apps.apple.com/kr/app/%EB%A7%8C%EC%84%B8%EB%A0%A5-%EC%84%A4%EB%AA%85%EC%84%9C/id1551797792"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="app-store-btn ios"
+                >
+                  <Download size={18} />
+                  <span>App Store</span>
+                </a>
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.ryancha.easy_saju_calendar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="app-store-btn android"
+                >
+                  <Download size={18} />
+                  <span>Google Play</span>
+                </a>
+              </div>
+              <p className="app-download-tip">
+                * 동일한 이메일 <strong>({formData.email})</strong>로 로그인하세요
+              </p>
+            </div>
+
             <button
               className="order-complete-home-btn"
               onClick={() => navigate('/')}

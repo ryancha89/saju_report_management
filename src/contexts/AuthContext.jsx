@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const checkAuth = async (token) => {
+  const checkAuth = async (token, skipLoadingReset = false) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/manager/me`, {
         headers: {
@@ -42,7 +42,16 @@ export function AuthProvider({ children }) {
       console.error('Auth check failed:', err);
       localStorage.removeItem('manager_token');
     } finally {
-      setLoading(false);
+      if (!skipLoadingReset) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const refreshManager = async () => {
+    const token = localStorage.getItem('manager_token');
+    if (token) {
+      await checkAuth(token, true);
     }
   };
 
@@ -101,6 +110,10 @@ export function AuthProvider({ children }) {
     return manager?.role === 'admin';
   };
 
+  const isProfileCompleted = () => {
+    return manager?.profile_completed === true;
+  };
+
   const value = {
     manager,
     loading,
@@ -109,6 +122,8 @@ export function AuthProvider({ children }) {
     logout,
     getToken,
     isAdmin,
+    isProfileCompleted,
+    refreshManager,
     isAuthenticated: !!manager,
   };
 

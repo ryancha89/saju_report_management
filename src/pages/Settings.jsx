@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 function Settings() {
   const { getToken, isAdmin } = useAuth();
   const [email, setEmail] = useState('');
+  const [commissionRate, setCommissionRate] = useState(50);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [pendingInvitations, setPendingInvitations] = useState([]);
@@ -52,7 +53,7 @@ function Settings() {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, commission_rate: commissionRate }),
       });
 
       const data = await response.json();
@@ -60,6 +61,7 @@ function Settings() {
       if (data.success) {
         setMessage({ type: 'success', text: data.message });
         setEmail('');
+        setCommissionRate(50);
         fetchPendingInvitations();
       } else {
         setMessage({ type: 'error', text: data.error });
@@ -140,9 +142,9 @@ function Settings() {
         )}
 
         <form onSubmit={handleInvite} className="invite-form">
-          <div className="form-group">
-            <label htmlFor="email">이메일 주소</label>
-            <div className="input-with-button">
+          <div className="form-row">
+            <div className="form-group flex-grow">
+              <label htmlFor="email">이메일 주소</label>
               <input
                 type="email"
                 id="email"
@@ -152,11 +154,26 @@ function Settings() {
                 required
                 disabled={loading}
               />
-              <button type="submit" className="invite-button" disabled={loading || !email}>
-                {loading ? '발송 중...' : '초대 발송'}
-              </button>
+            </div>
+            <div className="form-group commission-input">
+              <label htmlFor="commission_rate">수익률</label>
+              <div className="rate-input-wrap">
+                <input
+                  type="number"
+                  id="commission_rate"
+                  value={commissionRate}
+                  onChange={(e) => setCommissionRate(parseInt(e.target.value) || 50)}
+                  min="0"
+                  max="100"
+                  disabled={loading}
+                />
+                <span>%</span>
+              </div>
             </div>
           </div>
+          <button type="submit" className="invite-button" disabled={loading || !email}>
+            {loading ? '발송 중...' : '초대 발송'}
+          </button>
         </form>
       </div>
 
@@ -171,6 +188,7 @@ function Settings() {
             <thead>
               <tr>
                 <th>이메일</th>
+                <th>수익률</th>
                 <th>발송일시</th>
                 <th>만료일시</th>
                 <th>관리</th>
@@ -180,6 +198,7 @@ function Settings() {
               {pendingInvitations.map((invitation) => (
                 <tr key={invitation.id}>
                   <td>{invitation.email}</td>
+                  <td><strong>{invitation.commission_rate || 50}%</strong></td>
                   <td>{formatDate(invitation.invitation_sent_at)}</td>
                   <td>{formatDate(invitation.invitation_expires_at)}</td>
                   <td>

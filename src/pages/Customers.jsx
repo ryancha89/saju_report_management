@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, Loader, RefreshCw, X, Phone, Mail, ShoppingBag, Calendar, Eye } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import './Customers.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 function Customers() {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,7 +44,7 @@ function Customers() {
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/customers?${params}`, {
         headers: {
           'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`
+          'Authorization': `Bearer ${getToken()}`
         }
       });
 
@@ -64,7 +65,7 @@ function Customers() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, pagination.perPage]);
+  }, [searchTerm, pagination.perPage, getToken]);
 
   const fetchCustomerDetail = async (phoneNumber) => {
     setDetailLoading(true);
@@ -72,7 +73,7 @@ function Customers() {
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/customers/${encodeURIComponent(phoneNumber)}`, {
         headers: {
           'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`
+          'Authorization': `Bearer ${getToken()}`
         }
       });
 

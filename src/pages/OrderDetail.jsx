@@ -1192,6 +1192,12 @@ function OrderDetail() {
   const [qaPolishing, setQaPolishing] = useState({}); // { index: true/false }
   const [savingQa, setSavingQa] = useState(false);
 
+  // Chapter 10 Q&A 상태 (웹 프리뷰에서 받은 질문)
+  const [chapter10Question, setChapter10Question] = useState(null); // { question, answer, status }
+  const [chapter10Loading, setChapter10Loading] = useState(false);
+  const [chapter10Answer, setChapter10Answer] = useState('');
+  const [chapter10Submitting, setChapter10Submitting] = useState(false);
+
   // 챕터4, 5, 6, 7, 8 편집기 refs (전체 생성용)
   const fiveYearFortuneEditorRef = useRef(null);
   const fortuneEditorRef = useRef(null);
@@ -1449,6 +1455,7 @@ function OrderDetail() {
   useEffect(() => {
     if (order) {
       fetchSavedReport();
+      fetchChapter10Question(); // Chapter 10 Q&A 질문 조회
     }
   }, [order?.id]);
 
@@ -1544,6 +1551,78 @@ function OrderDetail() {
       alert('Q&A 저장 중 오류가 발생했습니다: ' + error.message);
     } finally {
       setSavingQa(false);
+    }
+  };
+
+  // Chapter 10 Q&A: 질문 조회
+  const fetchChapter10Question = async () => {
+    setChapter10Loading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/question`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.has_question) {
+          setChapter10Question({
+            question: data.question,
+            answer: data.answer,
+            status: data.status
+          });
+          setChapter10Answer(data.answer?.content || '');
+        } else {
+          setChapter10Question(null);
+        }
+      }
+    } catch (error) {
+      console.error('Chapter 10 질문 조회 오류:', error);
+    } finally {
+      setChapter10Loading(false);
+    }
+  };
+
+  // Chapter 10 Q&A: 답변 제출
+  const submitChapter10Answer = async () => {
+    if (!chapter10Answer.trim()) {
+      alert('답변을 입력해주세요.');
+      return;
+    }
+
+    setChapter10Submitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/answer_question`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({ answer: chapter10Answer })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '답변 제출에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        alert('답변이 성공적으로 저장되었습니다. 고객에게 이메일이 발송됩니다.');
+        // 상태 업데이트
+        setChapter10Question(prev => ({
+          ...prev,
+          answer: data.answer,
+          status: 'answered'
+        }));
+      }
+    } catch (error) {
+      console.error('Chapter 10 답변 제출 오류:', error);
+      alert('답변 제출 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+      setChapter10Submitting(false);
     }
   };
 
@@ -2416,14 +2495,8 @@ function OrderDetail() {
       }
     }
 
-    // 레포트 챕터 설정 (Q&A 챕터는 질문이 있을 때만 표시)
+    // 레포트 챕터 설정 (Q&A 챕터는 항상 표시 - Chapter 10 질문 여부는 내부에서 처리)
     let chapters = getReportChapters(order.report_type);
-    const hasQuestions = order.questions &&
-      Array.isArray(order.questions) &&
-      order.questions.some(q => q && q.trim());
-    if (!hasQuestions) {
-      chapters = chapters.filter(ch => ch.id !== 'chapter_qa');
-    }
     setReportChapters(chapters);
     setSelectedChapter(0);
     setShowFullPreview(true);
@@ -3553,6 +3626,80 @@ function OrderDetail() {
                   </div>
                 ))}
                 <p className="questions-hint">* 질문 답변은 Q&A 챕터에서 작성할 수 있습니다.</p>
+              </div>
+            </div>
+          )}
+
+          {/* 리포트 질문 (Chapter 10 Q&A) */}
+          {chapter10Question && (
+            <div className="detail-card chapter10-qa-card">
+              <div className="card-header">
+                <MessageCircle size={20} />
+                <h3>
+                  리포트 질문
+                  <span className={`qa-status-badge ${chapter10Question.status === 'answered' ? 'answered' : 'pending'}`}>
+                    {chapter10Question.status === 'answered' ? '답변 완료' : '답변 대기'}
+                  </span>
+                </h3>
+              </div>
+              <div className="card-content">
+                <div className="chapter10-question-section">
+                  <div className="chapter10-question-label">질문</div>
+                  <div className="chapter10-question-content">{chapter10Question.question?.content}</div>
+                  <div className="chapter10-question-meta">
+                    {chapter10Question.question?.user_email && (
+                      <span>이메일: {chapter10Question.question.user_email}</span>
+                    )}
+                    {chapter10Question.question?.submitted_at && (
+                      <span>
+                        제출: {new Date(chapter10Question.question.submitted_at).toLocaleString('ko-KR')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {chapter10Question.status === 'answered' && chapter10Question.answer ? (
+                  <div className="chapter10-answer-section answered">
+                    <div className="chapter10-answer-label">답변</div>
+                    <div className="chapter10-answer-content">{chapter10Question.answer.content}</div>
+                    <div className="chapter10-answer-meta">
+                      <span>답변자: {chapter10Question.answer.answered_by || 'Admin'}</span>
+                      <span>
+                        답변일: {new Date(chapter10Question.answer.answered_at).toLocaleString('ko-KR')}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="chapter10-answer-section">
+                    <div className="chapter10-answer-label">답변 작성</div>
+                    <textarea
+                      className="chapter10-answer-input"
+                      value={chapter10Answer}
+                      onChange={(e) => setChapter10Answer(e.target.value)}
+                      placeholder="고객 질문에 대한 답변을 작성해주세요..."
+                      rows={5}
+                    />
+                    <div className="chapter10-answer-actions">
+                      <button
+                        className="btn btn-chapter10-submit"
+                        onClick={submitChapter10Answer}
+                        disabled={chapter10Submitting || !chapter10Answer.trim()}
+                      >
+                        {chapter10Submitting ? (
+                          <>
+                            <Loader size={16} className="spinning" />
+                            제출 중...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={16} />
+                            답변 제출 (고객에게 이메일 발송)
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -5534,71 +5681,76 @@ function OrderDetail() {
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter_qa' ? (
                         <div className="chapter-qa-content">
-                          {qaAnswers.length > 0 ? (
+                          {chapter10Question && chapter10Question.question ? (
                             <div className="qa-editor">
                               <p className="qa-intro">
-                                고객이 남긴 질문에 대한 답변을 작성해 주세요. AI 다듬기 기능을 활용하여 답변을 더 풍부하게 만들 수 있습니다.
+                                고객이 웹 리포트에서 남긴 질문입니다. 답변을 작성해 주세요.
                               </p>
-                              {qaAnswers.map((qa, idx) => (
-                                <div key={idx} className="qa-item">
-                                  <div className="qa-question">
-                                    <span className="qa-number">Q{idx + 1}</span>
-                                    <span className="qa-question-text">{qa.question}</span>
+                              <div className="qa-item">
+                                <div className="qa-question">
+                                  <span className="qa-number">Q</span>
+                                  <span className="qa-question-text">{chapter10Question.question.content}</span>
+                                </div>
+                                <div className="qa-question-meta">
+                                  {chapter10Question.question.user_email && (
+                                    <span>이메일: {chapter10Question.question.user_email}</span>
+                                  )}
+                                  {chapter10Question.question.submitted_at && (
+                                    <span style={{marginLeft: '16px'}}>
+                                      제출: {new Date(chapter10Question.question.submitted_at).toLocaleString('ko-KR')}
+                                    </span>
+                                  )}
+                                </div>
+                                {chapter10Question.status === 'answered' && chapter10Question.answer ? (
+                                  <div className="qa-answer-display">
+                                    <div className="qa-answer-label">✅ 답변 완료</div>
+                                    <div className="qa-answer-content">{chapter10Question.answer.content}</div>
+                                    <div className="qa-answer-meta">
+                                      <span>답변자: {chapter10Question.answer.answered_by || 'Admin'}</span>
+                                      {chapter10Question.answer.answered_at && (
+                                        <span style={{marginLeft: '16px'}}>
+                                          답변일: {new Date(chapter10Question.answer.answered_at).toLocaleString('ko-KR')}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
+                                ) : (
                                   <div className="qa-answer">
                                     <textarea
                                       className="qa-answer-input"
-                                      value={qa.answer}
-                                      onChange={(e) => handleQaAnswerChange(idx, e.target.value)}
+                                      value={chapter10Answer}
+                                      onChange={(e) => setChapter10Answer(e.target.value)}
                                       placeholder="답변을 입력하세요..."
-                                      rows={4}
+                                      rows={6}
                                     />
-                                    <div className="qa-actions">
+                                    <div className="qa-save-actions">
                                       <button
-                                        className="btn btn-qa-polish"
-                                        onClick={() => polishQaAnswer(idx)}
-                                        disabled={qaPolishing[idx] || !qa.answer.trim()}
+                                        className="btn btn-save-qa"
+                                        onClick={submitChapter10Answer}
+                                        disabled={chapter10Submitting || !chapter10Answer.trim()}
                                       >
-                                        {qaPolishing[idx] ? (
+                                        {chapter10Submitting ? (
                                           <>
                                             <Loader size={16} className="spinning" />
-                                            AI 다듬는 중...
+                                            저장 중...
                                           </>
                                         ) : (
                                           <>
-                                            <Wand2 size={16} />
-                                            AI 다듬기
+                                            <Save size={16} />
+                                            답변 저장 및 발송
                                           </>
                                         )}
                                       </button>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
-                              <div className="qa-save-actions">
-                                <button
-                                  className="btn btn-save-qa"
-                                  onClick={saveQaAnswers}
-                                  disabled={savingQa}
-                                >
-                                  {savingQa ? (
-                                    <>
-                                      <Loader size={16} className="spinning" />
-                                      저장 중...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Save size={16} />
-                                      Q&A 저장
-                                    </>
-                                  )}
-                                </button>
+                                )}
                               </div>
                             </div>
                           ) : (
                             <div className="qa-empty">
                               <MessageCircle size={48} strokeWidth={1} />
                               <p>고객이 질문을 남기지 않았습니다.</p>
+                              <p className="qa-empty-sub">리포트를 발송한 후 고객이 질문을 남기면 여기에 표시됩니다.</p>
                             </div>
                           )}
                         </div>

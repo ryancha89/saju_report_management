@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Eye, Send, ChevronLeft, ChevronRight, Loader, RefreshCw } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import './OrderManagement.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 function OrderManagement() {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,7 +44,7 @@ function OrderManagement() {
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders?${params}`, {
         headers: {
           'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`
+          'Authorization': `Bearer ${getToken()}`
         }
       });
 
@@ -64,7 +65,7 @@ function OrderManagement() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, statusFilter, pagination.perPage]);
+  }, [searchTerm, statusFilter, pagination.perPage, getToken]);
 
   useEffect(() => {
     fetchOrders(1);

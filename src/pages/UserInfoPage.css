@@ -899,6 +899,89 @@ body:has(.user-info-page) {
     inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
+/* 앱 다운로드 유도 섹션 */
+.app-download-section {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(20, 20, 30, 0.85);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 24px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease-out 0.5s both;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+}
+
+.app-download-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #a78bfa;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.app-download-description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.app-download-description strong {
+  color: #f4d03f;
+}
+
+.app-store-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.app-store-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.app-store-btn.ios {
+  background: linear-gradient(135deg, #007AFF, #5856D6);
+  color: white;
+}
+
+.app-store-btn.android {
+  background: linear-gradient(135deg, #34A853, #4285F4);
+  color: white;
+}
+
+.app-store-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.app-download-tip {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  margin: 0;
+}
+
+.app-download-tip strong {
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+}
+
 /* 가상계좌 정보 */
 .vbank-info {
   width: 100%;

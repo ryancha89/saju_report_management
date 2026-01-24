@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader, FileText, User, Calendar, ChevronLeft, ChevronRight, Home, Download, ChevronDown, MessageSquarePlus, Edit3, Trash2, X } from 'lucide-react';
+import { Loader, FileText, User, Calendar, ChevronLeft, ChevronRight, Home, Share2, ChevronDown, MessageSquarePlus, Edit3, Trash2, X } from 'lucide-react';
 import './ReportPreview.css';
 import '../components/CounselorKeyPoint.css';
 
@@ -14,7 +14,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const [error, setError] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [currentChapter, setCurrentChapter] = useState(1);
-  const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [showChapterDropdown, setShowChapterDropdown] = useState(false);
   const [currentDecadePage, setCurrentDecadePage] = useState(1); // 0: 요약, 1~N: 개별 대운 (기본값: 첫 대운)
   const [currentFiveYearPage, setCurrentFiveYearPage] = useState(1); // 1~5: 연도별 페이지
@@ -22,7 +22,10 @@ function ReportPreview({ isAdminPreview = false }) {
   const [currentCareerYearPage, setCurrentCareerYearPage] = useState(1); // 직업운 연도별 페이지
   const [currentLoveYearPage, setCurrentLoveYearPage] = useState(1); // 연애운 연도별 페이지
   const [showChapterImage, setShowChapterImage] = useState(false); // 챕터 이미지 표시 여부
+  const [showManagerGreeting, setShowManagerGreeting] = useState(true); // 매니저 인사말 표시 여부
   const dropdownRef = useRef(null);
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
 
   // 상담사의 핵심 포인트 관련 상태
   const [keyPoints, setKeyPoints] = useState({});
@@ -40,6 +43,21 @@ function ReportPreview({ isAdminPreview = false }) {
     { value: '코멘트', icon: '💬' },
     { value: '조언', icon: '🎯' }
   ];
+
+  // Q&A 관련 상태 (Chapter 10)
+  const [qaStatus, setQaStatus] = useState(null); // { has_question, status, question, answer }
+  const [questionText, setQuestionText] = useState('');
+  const [questionEmail, setQuestionEmail] = useState('');
+  const [questionSubmitting, setQuestionSubmitting] = useState(false);
+  const [questionError, setQuestionError] = useState(null);
+
+  // 리뷰 관련 상태
+  const [reviewStatus, setReviewStatus] = useState(null); // { has_review, review }
+  const [reviewText, setReviewText] = useState('');
+  const [reviewRating, setReviewRating] = useState('helpful');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   // 라벨에 해당하는 아이콘 가져오기
   const getKeyPointIcon = (label) => {
@@ -60,10 +78,26 @@ function ReportPreview({ isAdminPreview = false }) {
     6: { title: '재물운' },
     7: { title: '직업운/사회운' },
     8: { title: '연애운/배우자운' },
-    9: { title: '상담사의 코칭' }
+    9: { title: '상담사의 코칭' },
+    10: { title: '질문과 답변' },
+    11: { title: '부록' }
   };
 
-  const totalChapters = 9;
+  // 총 챕터 수: 기본 9 + Q&A(질문 있으면) + 부록
+  const hasQA = qaStatus?.has_question;
+  const totalChapters = hasQA ? 11 : 10; // Q&A 있으면 11, 없으면 10 (부록 포함)
+
+  // 현재 챕터 제목 가져오기 (부록 챕터 번호가 동적이므로)
+  const getChapterTitle = (num) => {
+    if (hasQA) {
+      // Q&A 있으면: 1-9 기본, 10 Q&A, 11 부록
+      return chapterInfo[num]?.title || '';
+    } else {
+      // Q&A 없으면: 1-9 기본, 10 부록
+      if (num === 10) return '부록';
+      return chapterInfo[num]?.title || '';
+    }
+  };
 
   useEffect(() => {
     const originalBg = document.body.style.backgroundColor;
@@ -78,6 +112,8 @@ function ReportPreview({ isAdminPreview = false }) {
 
   useEffect(() => {
     fetchReport();
+    fetchQaStatus(); // Q&A 상태도 함께 조회
+    fetchReviewStatus(); // 리뷰 상태도 함께 조회
   }, [token]);
 
   useEffect(() => {
@@ -90,7 +126,7 @@ function ReportPreview({ isAdminPreview = false }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 챕터가 변경될 때 이미지 표시 여부 설정 (챕터 1-9)
+  // 챕터가 변경될 때 이미지 표시 여부 설정 (챕터 1-9만 이미지 있음, 챕터 10은 바로 콘텐츠)
   useEffect(() => {
     if (currentChapter >= 1 && currentChapter <= 9) {
       setShowChapterImage(true);
@@ -121,6 +157,128 @@ function ReportPreview({ isAdminPreview = false }) {
       setLoading(false);
     }
   };
+
+  // Q&A 상태 조회
+  const fetchQaStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/question_status`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setQaStatus(data);
+      }
+    } catch (err) {
+      console.error('Q&A 상태 조회 실패:', err);
+    }
+  };
+
+  // 질문 제출
+  const submitQuestion = async () => {
+    if (!questionText.trim()) {
+      setQuestionError('질문을 입력해주세요.');
+      return;
+    }
+
+    setQuestionSubmitting(true);
+    setQuestionError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/question`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: questionText,
+          email: questionEmail || reportData?.order?.email || ''
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '질문 제출에 실패했습니다.');
+      }
+
+      // 성공 시 Q&A 상태 업데이트
+      setQaStatus({
+        has_question: true,
+        status: 'pending',
+        question: {
+          content: questionText,
+          submitted_at: new Date().toISOString(),
+          user_email: questionEmail
+        },
+        answer: null
+      });
+      setQuestionText('');
+      setQuestionEmail('');
+    } catch (err) {
+      setQuestionError(err.message);
+    } finally {
+      setQuestionSubmitting(false);
+    }
+  };
+
+  // 리뷰 상태 조회
+  const fetchReviewStatus = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/review_status`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setReviewStatus(data);
+      }
+    } catch (err) {
+      console.error('리뷰 상태 조회 실패:', err);
+    }
+  };
+
+  // 리뷰 제출
+  const submitReview = async () => {
+    if (!reviewText.trim()) {
+      setReviewError('리뷰 내용을 입력해주세요.');
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: reviewRating,
+          content: reviewText
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '리뷰 제출에 실패했습니다.');
+      }
+
+      // 성공 시 상태 업데이트
+      setReviewStatus({
+        has_review: true,
+        review: data.review
+      });
+      setReviewSuccess(true);
+      setReviewText('');
+    } catch (err) {
+      setReviewError(err.message);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  // 리뷰 평가 옵션
+  const reviewRatingOptions = [
+    { value: 'helpful', label: '도움이 됐어요', emoji: '💡' },
+    { value: 'fun', label: '재미있었어요', emoji: '😊' },
+    { value: 'educational', label: '배우는게 많았어요', emoji: '📚' },
+    { value: 'encouraging', label: '용기를 얻었어요', emoji: '💪' }
+  ];
 
   // 핵심포인트 추가
   const handleAddKeyPoint = async () => {
@@ -250,27 +408,55 @@ function ReportPreview({ isAdminPreview = false }) {
     setKeyPointPosition(0);
   };
 
-  const handleDownloadPDF = async () => {
-    if (downloading) return;
-    setDownloading(true);
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+
+    // 추천 코드가 있으면 구매 페이지 링크로, 없으면 리포트 링크
+    const referralCode = reportData?.order?.user_referral_code;
+    const baseUrl = window.location.origin;
+    const productType = reportData?.order?.report_type || 'blueprint';
+
+    let shareUrl;
+    let shareText;
+    const shareTitle = reportData?.order?.origin === 'blueprint_app' ? '만세력 설명서' : '포춘톨치 사주 리포트';
+
+    if (referralCode) {
+      // 추천 코드가 있으면 구매 페이지로 연결 (친구가 구매하면 1000코인 지급)
+      shareUrl = `${baseUrl}/user-info?product=${productType}&ref=${referralCode}`;
+      shareText = `나도 ${shareTitle}를 받아봤는데 정말 좋았어요! 이 링크로 구매하면 할인 혜택이 있어요 🎁`;
+    } else {
+      // 추천 코드가 없으면 리포트 보기 링크
+      shareUrl = window.location.href;
+      shareText = `${reportData?.order?.name || ''}님의 ${shareTitle}를 확인해보세요!`;
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/download`, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!response.ok) throw new Error('PDF 다운로드에 실패했습니다.');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `사주리포트_${reportData?.order?.name || 'report'}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Web Share API 지원 확인
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } else {
+        // Web Share API 미지원 시 클립보드에 복사
+        await navigator.clipboard.writeText(shareUrl);
+        alert('링크가 클립보드에 복사되었습니다!');
+      }
     } catch (err) {
-      alert(err.message);
+      // 사용자가 공유를 취소한 경우 무시
+      if (err.name !== 'AbortError') {
+        // 클립보드 폴백
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          alert('링크가 클립보드에 복사되었습니다!');
+        } catch {
+          alert('공유에 실패했습니다.');
+        }
+      }
     } finally {
-      setDownloading(false);
+      setSharing(false);
     }
   };
 
@@ -747,6 +933,22 @@ function ReportPreview({ isAdminPreview = false }) {
                       })}
                     </tr>
                   )}
+                  {/* 연도별 운세 등급 표시 행 */}
+                  <tr className="yearly-rating-row">
+                    {yearsData.map(([key, data], idx) => {
+                      const ratingInfo = getYearlyRatingInfo(data);
+                      return (
+                        <td
+                          key={idx}
+                          className={`yearly-rating-cell ${ratingInfo.className} ${idx === 0 ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
+                          onClick={() => goToYear(idx)}
+                        >
+                          <span className="yearly-rating-icon">{ratingInfo.icon}</span>
+                          <span className="yearly-rating-text">{ratingInfo.shortText}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -768,28 +970,42 @@ function ReportPreview({ isAdminPreview = false }) {
         )}
 
         {/* 선택된 연도 상세 */}
-        {currentYearEntry && (
-          <>
-            {/* 연도별 핵심포인트 섹션 */}
-            {renderKeyPointsSection(`chapter${chapterNum}_year_${year}`)}
-            <div className="year-fortune-card">
-              <div className="year-fortune-header">
-              <div className="year-info">
-                <span className="year-number">{year}년</span>
-                {ganji && <span className={`year-ganji ${getElementClass(ganji?.charAt?.(0))}`}>{ganji}</span>}
+        {currentYearEntry && (() => {
+          const yearRatingInfo = getYearlyRatingInfo(yearData);
+          return (
+            <>
+              {/* 연도별 핵심포인트 섹션 */}
+              {renderKeyPointsSection(`chapter${chapterNum}_year_${year}`)}
+              <div className={`year-fortune-card ${yearRatingInfo.className}`}>
+                <div className="year-fortune-header">
+                  <div className="year-info">
+                    <span className="year-number">{year}년</span>
+                    {ganji && <span className={`year-ganji ${getElementClass(ganji?.charAt?.(0))}`}>{ganji}</span>}
+                  </div>
+                  {decade && (
+                    <span className="decade-text">{decade.ganji} 대운</span>
+                  )}
+                  {/* 연도별 운세 등급 배지 */}
+                  <span className={`yearly-rating-badge ${yearRatingInfo.className}`}>
+                    <span className="badge-icon">{yearRatingInfo.icon}</span>
+                    <span className="badge-text">{yearRatingInfo.text}</span>
+                  </span>
+                </div>
+                {/* 긍정적 메시지 */}
+                {yearRatingInfo.message && (
+                  <div className={`yearly-rating-message ${yearRatingInfo.className}`}>
+                    {yearRatingInfo.message}
+                  </div>
+                )}
+                <div className="year-fortune-content">
+                  {content ? renderContent(content) : <p className="no-content">내용 없음</p>}
+                </div>
+                {/* 연도별 핵심포인트 섹션 (글 끝) */}
+                {renderKeyPointsSection(`chapter${chapterNum}_year_${year}_end`)}
               </div>
-              {decade && (
-                <span className="decade-text">{decade.ganji} 대운</span>
-              )}
-            </div>
-            <div className="year-fortune-content">
-              {content ? renderContent(content) : <p className="no-content">내용 없음</p>}
-            </div>
-            {/* 연도별 핵심포인트 섹션 (글 끝) */}
-            {renderKeyPointsSection(`chapter${chapterNum}_year_${year}_end`)}
-          </div>
-          </>
-        )}
+            </>
+          );
+        })()}
 
         {/* 연도 네비게이션 */}
         {totalYears > 1 && (
@@ -909,6 +1125,67 @@ function ReportPreview({ isAdminPreview = false }) {
       case 'caution': return '▽ 주의';
       case 'difficult': return '✕ 흉';
       default: return '― 미정';
+    }
+  };
+
+  // 연도별 운세 등급 표시 (재물운/직업운/연애운용) - 긍정적이고 부드러운 표현
+  const getYearlyRatingInfo = (yearData) => {
+    const rating = getOverallRating(yearData);
+    switch (rating) {
+      case 'excellent':
+        return {
+          rating: 'excellent',
+          icon: '🌟',
+          shortText: '최고',
+          text: '최고의 해',
+          message: '이 해는 큰 성과와 기회가 찾아오는 특별히 좋은 시기입니다!',
+          className: 'yearly-rating-excellent'
+        };
+      case 'good':
+        return {
+          rating: 'good',
+          icon: '✨',
+          shortText: '좋음',
+          text: '좋은 해',
+          message: '긍정적인 흐름이 예상되는 좋은 시기입니다.',
+          className: 'yearly-rating-good'
+        };
+      case 'neutral':
+        return {
+          rating: 'neutral',
+          icon: '○',
+          shortText: '평탄',
+          text: '안정적인 해',
+          message: '안정적인 흐름 속에서 차근차근 준비하기 좋은 시기입니다.',
+          className: 'yearly-rating-neutral'
+        };
+      case 'caution':
+        return {
+          rating: 'caution',
+          icon: '💪',
+          shortText: '도전',
+          text: '도전의 해',
+          message: '신중한 판단과 준비가 더 좋은 결과로 이어지는 시기입니다.',
+          className: 'yearly-rating-caution'
+        };
+      case 'difficult':
+        return {
+          rating: 'difficult',
+          icon: '🌱',
+          shortText: '성장',
+          text: '성장의 해',
+          message: '내면의 성장과 기초를 다지는 소중한 시기입니다. 인내가 미래의 열매가 됩니다.',
+          className: 'yearly-rating-difficult'
+        };
+      default:
+        return {
+          rating: 'neutral',
+          icon: '○',
+          shortText: '―',
+          text: '―',
+          message: '',
+          className: 'yearly-rating-neutral'
+        };
     }
   };
 
@@ -1900,6 +2177,7 @@ function ReportPreview({ isAdminPreview = false }) {
 
     return (
       <div className="saju-info-content">
+
         <div className="saju-profile">
           <h3 className="saju-name">{order.name}</h3>
           <div className="saju-meta">
@@ -2014,6 +2292,31 @@ function ReportPreview({ isAdminPreview = false }) {
             </>
           );
         })()}
+
+        {/* 앱 연동 코드 - 웹에서 구매한 경우에만 표시 */}
+        {order.claim_code && order.origin !== 'blueprint_app' && (
+          <div className="claim-code-section">
+            <div className="claim-code-header">
+              <span className="claim-code-icon">📱</span>
+              <span className="claim-code-title">앱 연동 코드</span>
+            </div>
+            <div className="claim-code-box">
+              <span className="claim-code-value">{order.claim_code}</span>
+              <button
+                className="claim-code-copy-btn"
+                onClick={() => {
+                  navigator.clipboard.writeText(order.claim_code);
+                  alert('연동 코드가 복사되었습니다!');
+                }}
+              >
+                복사
+              </button>
+            </div>
+            <p className="claim-code-description">
+              만세력 앱에서 이 코드를 입력하면 리포트를 앱에서도 볼 수 있습니다.
+            </p>
+          </div>
+        )}
       </div>
     );
   };
@@ -2046,6 +2349,14 @@ function ReportPreview({ isAdminPreview = false }) {
     // 챕터 9는 코칭
     else if (num === 9) {
       content = renderCoaching();
+    }
+    // 챕터 10: Q&A가 있으면 Q&A, 없으면 부록
+    else if (num === 10) {
+      content = hasQA ? renderQAChapter() : renderAppendix();
+    }
+    // 챕터 11: 부록 (Q&A가 있을 때만)
+    else if (num === 11) {
+      content = renderAppendix();
     }
     // 챕터 6, 7, 8은 연도별 데이터 (재물운, 직업운, 연애운)
     else {
@@ -2091,6 +2402,198 @@ function ReportPreview({ isAdminPreview = false }) {
     );
   };
 
+  // Chapter 10 Q&A 렌더링
+  const renderQAChapter = () => {
+    if (!qaStatus?.has_question) {
+      return (
+        <div className="no-content">
+          <p>질문이 없습니다.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="qa-chapter-content">
+        <div className="qa-chapter-question">
+          <div className="qa-chapter-label">질문</div>
+          <div className="qa-chapter-text">{qaStatus.question?.content}</div>
+          <div className="qa-chapter-meta">
+            {qaStatus.question?.submitted_at && (
+              <span>
+                제출일: {new Date(qaStatus.question.submitted_at).toLocaleDateString('ko-KR')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {qaStatus.status === 'answered' && qaStatus.answer ? (
+          <div className="qa-chapter-answer">
+            <div className="qa-chapter-label">상담사 답변</div>
+            <div className="qa-chapter-text">
+              {qaStatus.answer.content?.split('\n').map((paragraph, idx) => (
+                paragraph.trim() && <p key={idx}>{paragraph}</p>
+              ))}
+            </div>
+            <div className="qa-chapter-meta">
+              {qaStatus.answer.answered_by && (
+                <span>답변: {qaStatus.answer.answered_by}</span>
+              )}
+              {qaStatus.answer.answered_at && (
+                <span>
+                  답변일: {new Date(qaStatus.answer.answered_at).toLocaleDateString('ko-KR')}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="qa-chapter-pending">
+            <div className="qa-pending-icon">⏳</div>
+            <p>상담사가 답변을 준비 중입니다.</p>
+            <p className="qa-pending-note">답변이 완료되면 이메일로 알려드립니다.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 부록 렌더링 (공유하기 + 리뷰 + 질문 폼)
+  const renderAppendix = () => {
+    return (
+      <div className="appendix-content">
+        {/* 공유하기 섹션 */}
+        <div className="appendix-share-section">
+          <h3>리포트가 마음에 드셨나요?</h3>
+          <p>친구나 가족에게도 공유해 보세요!</p>
+          <button className="btn-share-report" onClick={handleShare}>
+            <Share2 size={18} />
+            리포트 공유하기
+          </button>
+        </div>
+
+        {/* 리뷰 섹션 */}
+        {!isAdminPreview && (
+          <div className="appendix-review-section">
+            {reviewStatus?.has_review || reviewSuccess ? (
+              <div className="appendix-review-submitted">
+                <div className="review-success-icon">✨</div>
+                <h3>소중한 리뷰 감사합니다!</h3>
+                <p>더 좋은 서비스로 보답하겠습니다.</p>
+              </div>
+            ) : (
+              <div className="appendix-review-form">
+                <h3>📝 리뷰를 남겨주세요</h3>
+                <p className="review-description">여러분의 소중한 후기가 더 좋은 서비스를 만드는 데 큰 힘이 됩니다.</p>
+
+                <div className="review-rating-options">
+                  {reviewRatingOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      className={`review-rating-btn ${reviewRating === option.value ? 'active' : ''}`}
+                      onClick={() => setReviewRating(option.value)}
+                      disabled={reviewSubmitting}
+                    >
+                      <span className="rating-emoji">{option.emoji}</span>
+                      <span className="rating-label">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  className="review-textarea"
+                  placeholder="리포트에 대한 솔직한 후기를 남겨주세요..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  rows={4}
+                  disabled={reviewSubmitting}
+                />
+
+                {reviewError && (
+                  <div className="review-error">{reviewError}</div>
+                )}
+
+                <button
+                  className="btn-submit-review"
+                  onClick={submitReview}
+                  disabled={reviewSubmitting || !reviewText.trim()}
+                >
+                  {reviewSubmitting ? (
+                    <>
+                      <Loader size={18} className="spinning" />
+                      제출 중...
+                    </>
+                  ) : (
+                    '리뷰 제출하기'
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 질문 섹션 */}
+        {!isAdminPreview && (
+          <div className="appendix-question-section">
+            {qaStatus?.has_question ? (
+              <div className="appendix-question-submitted">
+                <h3>질문이 제출되었습니다</h3>
+                {qaStatus.status === 'answered' ? (
+                  <p>답변이 완료되었습니다. <button className="link-btn" onClick={() => setCurrentChapter(10)}>질문과 답변 보기</button></p>
+                ) : (
+                  <p>상담사가 답변을 준비 중입니다. 답변이 완료되면 이메일로 알려드립니다.</p>
+                )}
+              </div>
+            ) : (
+              <div className="appendix-question-form">
+                <h3>상담사에게 질문하기</h3>
+                <p className="question-limit-notice">리포트에 대해 궁금한 점이 있으시면 1회 질문하실 수 있습니다.</p>
+
+                <textarea
+                  className="question-textarea"
+                  placeholder="질문을 입력해주세요..."
+                  value={questionText}
+                  onChange={(e) => setQuestionText(e.target.value)}
+                  rows={4}
+                  disabled={questionSubmitting}
+                />
+
+                <input
+                  type="email"
+                  className="question-email-input"
+                  placeholder="답변 받을 이메일 주소 (선택)"
+                  value={questionEmail}
+                  onChange={(e) => setQuestionEmail(e.target.value)}
+                  disabled={questionSubmitting}
+                />
+
+                {questionError && (
+                  <div className="question-error">{questionError}</div>
+                )}
+
+                <button
+                  className="btn-submit-question"
+                  onClick={submitQuestion}
+                  disabled={questionSubmitting || !questionText.trim()}
+                >
+                  {questionSubmitting ? (
+                    <>
+                      <Loader size={18} className="spinning" />
+                      제출 중...
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquarePlus size={18} />
+                      질문 제출하기
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const goToPrevChapter = () => {
     if (currentChapter > 1) {
       setCurrentChapter(currentChapter - 1);
@@ -2105,6 +2608,35 @@ function ReportPreview({ isAdminPreview = false }) {
       setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  // 스와이프 핸들러
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const diffX = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // 최소 스와이프 거리
+
+    if (Math.abs(diffX) > minSwipeDistance) {
+      if (diffX > 0) {
+        // 왼쪽으로 스와이프 → 다음 챕터
+        goToNextChapter();
+      } else {
+        // 오른쪽으로 스와이프 → 이전 챕터
+        goToPrevChapter();
+      }
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   const selectChapter = (num) => {
@@ -2161,10 +2693,25 @@ function ReportPreview({ isAdminPreview = false }) {
 
             {showChapterDropdown && (
               <div className="chapter-dropdown">
+                {/* 상담사가 전하는 말 - 매니저 인사말 */}
+                <button
+                  className={`chapter-dropdown-item ${showManagerGreeting && currentChapter === 1 ? 'active' : ''}`}
+                  onClick={() => {
+                    setCurrentChapter(1);
+                    setShowManagerGreeting(true);
+                    setShowChapterDropdown(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  <span className="dropdown-icon">✦</span>
+                  <span className="dropdown-text">
+                    <span className="dropdown-title">상담사가 전하는 말</span>
+                  </span>
+                </button>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                   <button
                     key={num}
-                    className={`chapter-dropdown-item ${currentChapter === num ? 'active' : ''}`}
+                    className={`chapter-dropdown-item ${currentChapter === num && !showManagerGreeting ? 'active' : ''}`}
                     onClick={() => selectChapter(num)}
                   >
                     <span className="dropdown-number">{num}</span>
@@ -2173,23 +2720,76 @@ function ReportPreview({ isAdminPreview = false }) {
                     </span>
                   </button>
                 ))}
+                {/* Q&A 챕터 - 질문이 있으면 표시 */}
+                {hasQA && (
+                  <button
+                    className={`chapter-dropdown-item ${currentChapter === 10 ? 'active' : ''}`}
+                    onClick={() => selectChapter(10)}
+                  >
+                    <span className="dropdown-number">10</span>
+                    <span className="dropdown-text">
+                      <span className="dropdown-title">{chapterInfo[10].title}</span>
+                    </span>
+                  </button>
+                )}
+                {/* 부록 - 항상 표시 */}
+                <button
+                  className={`chapter-dropdown-item ${currentChapter === (hasQA ? 11 : 10) ? 'active' : ''}`}
+                  onClick={() => selectChapter(hasQA ? 11 : 10)}
+                >
+                  <span className="dropdown-number">{hasQA ? 11 : 10}</span>
+                  <span className="dropdown-text">
+                    <span className="dropdown-title">부록</span>
+                  </span>
+                </button>
               </div>
             )}
           </div>
 
           <button
-            className={`header-btn ${downloading ? 'loading' : ''}`}
-            onClick={handleDownloadPDF}
-            title="PDF 다운로드"
-            disabled={downloading}
+            className={`header-btn ${sharing ? 'loading' : ''}`}
+            onClick={handleShare}
+            title="공유하기"
+            disabled={sharing}
           >
-            {downloading ? <Loader size={22} className="spinning" /> : <Download size={22} />}
+            {sharing ? <Loader size={22} className="spinning" /> : <Share2 size={22} />}
           </button>
         </header>
 
         {/* Chapter Content */}
-        <div className="chapter-display">
-          {showChapterImage && currentChapter >= 1 && currentChapter <= 9 ? (
+        <div
+          className="chapter-display"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {showManagerGreeting && currentChapter === 1 && reportData?.order?.manager ? (
+            <div className="manager-greeting-overlay" onClick={() => {
+              setShowManagerGreeting(false);
+              setShowChapterImage(true);
+            }}>
+              <div className="manager-greeting-content">
+                <div className="manager-greeting-badge">
+                  {reportData.order.manager.is_default
+                    ? (reportData.order.origin === 'blueprint_app' ? '만세력 설명서' : '포춘톨치')
+                    : 'Your Counselor'}
+                </div>
+                <div className="manager-greeting-role">
+                  {reportData.order.manager.is_default
+                    ? (reportData.order.origin === 'blueprint_app' ? '만세력 설명서 상담사가 전하는 말' : '포춘톨치 상담사가 전하는 말')
+                    : '담당 상담사가 전하는 말'}
+                </div>
+                <h2 className="manager-greeting-name">{reportData.order.manager.display_name}</h2>
+                {reportData.order.manager.message && (
+                  <p className="manager-greeting-message">"{reportData.order.manager.message}"</p>
+                )}
+              </div>
+              <div className="scroll-indicator">
+                <span className="scroll-hint">탭하여 시작하기</span>
+                <ChevronDown size={28} />
+              </div>
+            </div>
+          ) : showChapterImage && currentChapter >= 1 && currentChapter <= 9 ? (
             <div className="chapter-image-overlay" onClick={() => setShowChapterImage(false)}>
               <img
                 src={`/img/chapter${currentChapter}.png`}
@@ -2201,6 +2801,7 @@ function ReportPreview({ isAdminPreview = false }) {
                 <h2 className="chapter-title-overlay">{chapterInfo[currentChapter].title}</h2>
               </div>
               <div className="scroll-indicator">
+                <span className="scroll-hint">탭하여 계속</span>
                 <ChevronDown size={28} />
               </div>
             </div>
@@ -2209,13 +2810,25 @@ function ReportPreview({ isAdminPreview = false }) {
               <div className="chapter-title-bar">
                 <div className="chapter-title-info">
                   <span className="chapter-number">Chapter {currentChapter}</span>
-                  <h2 className="chapter-title">{chapterInfo[currentChapter].title}</h2>
+                  <h2 className="chapter-title">{getChapterTitle(currentChapter)}</h2>
                 </div>
               </div>
               <div className="chapter-content">
                 {renderChapterContent()}
               </div>
             </>
+          )}
+
+          {/* 스와이프 힌트 */}
+          {currentChapter > 1 && (
+            <div className="swipe-hint swipe-hint-left" onClick={goToPrevChapter}>
+              <ChevronLeft size={20} />
+            </div>
+          )}
+          {currentChapter < totalChapters && (
+            <div className="swipe-hint swipe-hint-right" onClick={goToNextChapter}>
+              <ChevronRight size={20} />
+            </div>
           )}
         </div>
 

@@ -277,6 +277,17 @@ body:has(.report-page) {
   color: #000000;
 }
 
+.dropdown-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  font-size: 0.9rem;
+  color: rgb(255, 244, 200);
+  flex-shrink: 0;
+}
+
 .dropdown-text {
   display: flex;
   flex-direction: column;
@@ -299,6 +310,65 @@ body:has(.report-page) {
   align-items: center;
   padding: 20px 8px 40px;
   overflow-x: hidden;
+}
+
+/* 매니저/상담사 인사 섹션 */
+.manager-greeting-section {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 32px;
+  padding: 24px 20px;
+  background: linear-gradient(145deg, rgba(255, 244, 200, 0.08) 0%, rgba(255, 244, 200, 0.03) 100%);
+  border: 1px solid rgba(255, 244, 200, 0.15);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.manager-greeting-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.manager-avatar {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.manager-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.manager-role {
+  font-size: 0.75rem;
+  color: rgba(255, 244, 200, 0.7);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.manager-display-name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: rgb(255, 244, 200);
+  margin: 0;
+}
+
+.manager-message {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 244, 200, 0.1);
+}
+
+.manager-message p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  word-break: keep-all;
 }
 
 .saju-profile {
@@ -697,6 +767,8 @@ body:has(.report-page) {
   padding: 0 16px 24px;
   background: #000000;
   overflow-x: hidden;
+  touch-action: pan-y pinch-zoom;
+  position: relative;
 }
 
 .chapter-title-bar {
@@ -733,6 +805,84 @@ body:has(.report-page) {
 /* Chapter Content */
 .chapter-content {
   font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* Manager Greeting Overlay (처음 표시) */
+.manager-greeting-overlay {
+  position: relative;
+  width: calc(100% + 32px);
+  margin-left: -16px;
+  margin-right: -16px;
+  min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 40px 24px;
+}
+
+.manager-greeting-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.manager-greeting-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  max-width: 340px;
+  margin-bottom: 60px;
+}
+
+.manager-greeting-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: rgb(255, 244, 200);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 244, 200, 0.3);
+  border-radius: 20px;
+  margin-bottom: 32px;
+  background: rgba(255, 244, 200, 0.05);
+}
+
+.manager-greeting-role {
+  font-size: 0.85rem;
+  color: rgba(255, 244, 200, 0.7);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.manager-greeting-name {
+  font-family: 'Hahmlet', serif;
+  font-size: 2rem;
+  font-weight: 500;
+  color: rgb(255, 244, 200);
+  margin: 0 0 24px 0;
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+.manager-greeting-message {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  word-break: keep-all;
+  font-weight: 300;
 }
 
 /* Chapter Image Overlay */
@@ -828,14 +978,60 @@ body:has(.report-page) {
   animation: bounce 2s ease-in-out infinite;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%);
   padding: 15px 25px;
-  border-radius: 50%;
+  border-radius: 30px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9))
           drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.scroll-hint {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
 }
 
 @keyframes bounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50% { transform: translateX(-50%) translateY(8px); }
+}
+
+/* 스와이프 힌트 */
+.swipe-hint {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+
+.swipe-hint-left {
+  left: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
+  border-radius: 0 12px 12px 0;
+}
+
+.swipe-hint-right {
+  right: 0;
+  background: linear-gradient(-90deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
+  border-radius: 12px 0 0 12px;
+}
+
+.swipe-hint:active {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .image-navigation-bar {
@@ -2953,6 +3149,173 @@ body:has(.report-page) {
   color: rgba(255, 255, 255, 0.85);
 }
 
+/* ========== 연도별 운세 등급 표시 (재물운/직업운/연애운) ========== */
+
+/* 요약 테이블의 등급 표시 행 */
+.yearly-rating-row {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.yearly-rating-cell {
+  padding: 8px 4px !important;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.yearly-rating-cell .yearly-rating-icon {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 2px;
+}
+
+.yearly-rating-cell .yearly-rating-text {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* 등급별 색상 - 요약 테이블 셀 */
+.yearly-rating-cell.yearly-rating-excellent {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 193, 7, 0.15));
+  color: #ffd700;
+}
+
+.yearly-rating-cell.yearly-rating-good {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.25), rgba(129, 199, 132, 0.15));
+  color: #81c784;
+}
+
+.yearly-rating-cell.yearly-rating-neutral {
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.2), rgba(144, 202, 249, 0.1));
+  color: #90caf9;
+}
+
+.yearly-rating-cell.yearly-rating-caution {
+  background: linear-gradient(135deg, rgba(255, 183, 77, 0.25), rgba(255, 167, 38, 0.15));
+  color: #ffb74d;
+}
+
+.yearly-rating-cell.yearly-rating-difficult {
+  background: linear-gradient(135deg, rgba(206, 147, 216, 0.25), rgba(186, 104, 200, 0.15));
+  color: #ce93d8;
+}
+
+/* 연도 상세 카드의 등급 배지 */
+.yearly-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.yearly-rating-badge .badge-icon {
+  font-size: 1rem;
+}
+
+.yearly-rating-badge .badge-text {
+  letter-spacing: 0.02em;
+}
+
+/* 등급별 배지 색상 */
+.yearly-rating-badge.yearly-rating-excellent {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.35), rgba(255, 193, 7, 0.25));
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+}
+
+.yearly-rating-badge.yearly-rating-good {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.35), rgba(129, 199, 132, 0.25));
+  color: #81c784;
+  border: 1px solid rgba(129, 199, 132, 0.4);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+}
+
+.yearly-rating-badge.yearly-rating-neutral {
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.3), rgba(144, 202, 249, 0.2));
+  color: #90caf9;
+  border: 1px solid rgba(144, 202, 249, 0.4);
+}
+
+.yearly-rating-badge.yearly-rating-caution {
+  background: linear-gradient(135deg, rgba(255, 183, 77, 0.35), rgba(255, 167, 38, 0.25));
+  color: #ffcc80;
+  border: 1px solid rgba(255, 183, 77, 0.4);
+}
+
+.yearly-rating-badge.yearly-rating-difficult {
+  background: linear-gradient(135deg, rgba(206, 147, 216, 0.35), rgba(186, 104, 200, 0.25));
+  color: #ce93d8;
+  border: 1px solid rgba(206, 147, 216, 0.4);
+}
+
+/* 긍정적 메시지 박스 */
+.yearly-rating-message {
+  padding: 14px 18px;
+  margin: 12px 0 16px 0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.yearly-rating-message.yearly-rating-excellent {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 193, 7, 0.08));
+  border-left: 4px solid #ffd700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.yearly-rating-message.yearly-rating-good {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(129, 199, 132, 0.08));
+  border-left: 4px solid #81c784;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.yearly-rating-message.yearly-rating-neutral {
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.12), rgba(144, 202, 249, 0.06));
+  border-left: 4px solid #90caf9;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.yearly-rating-message.yearly-rating-caution {
+  background: linear-gradient(135deg, rgba(255, 183, 77, 0.15), rgba(255, 167, 38, 0.08));
+  border-left: 4px solid #ffb74d;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.yearly-rating-message.yearly-rating-difficult {
+  background: linear-gradient(135deg, rgba(206, 147, 216, 0.15), rgba(186, 104, 200, 0.08));
+  border-left: 4px solid #ce93d8;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* 연도 상세 카드 테두리 (등급별) */
+.year-fortune-card.yearly-rating-excellent {
+  border-left: 3px solid rgba(255, 215, 0, 0.6);
+}
+
+.year-fortune-card.yearly-rating-good {
+  border-left: 3px solid rgba(129, 199, 132, 0.6);
+}
+
+.year-fortune-card.yearly-rating-neutral {
+  border-left: 3px solid rgba(144, 202, 249, 0.4);
+}
+
+.year-fortune-card.yearly-rating-caution {
+  border-left: 3px solid rgba(255, 183, 77, 0.6);
+}
+
+.year-fortune-card.yearly-rating-difficult {
+  border-left: 3px solid rgba(206, 147, 216, 0.6);
+}
+
 /* ========== 코칭 섹션 ========== */
 .coaching-content {
   display: flex;
@@ -3059,6 +3422,587 @@ h3.coaching-item-topic:active {
   text-align: center;
   padding: 48px 24px;
   color: #94a3b8;
+}
+
+/* ========== Q&A 섹션 (Chapter 9 하단) ========== */
+.qa-section {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 2px dashed rgba(212, 175, 55, 0.3);
+}
+
+.qa-share-notice {
+  text-align: center;
+  padding: 32px 24px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.08) 100%);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.qa-share-notice h3 {
+  color: #d4af37;
+  font-size: 1.3rem;
+  margin: 0 0 8px;
+}
+
+.qa-share-notice p {
+  color: #64748b;
+  margin: 0 0 16px;
+}
+
+.btn-share-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #d4af37 0%, #c9a227 100%);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-share-report:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.qa-question-form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.qa-question-form h3 {
+  color: #1e293b;
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.qa-form-description {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.qa-form-description strong {
+  color: #ea580c;
+}
+
+.qa-question-input {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 120px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.qa-question-input:focus {
+  outline: none;
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.qa-email-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.qa-email-input:focus {
+  outline: none;
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.qa-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.btn-submit-question {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-submit-question:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
+}
+
+.btn-submit-question:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.qa-pending-notice,
+.qa-answered-notice {
+  text-align: center;
+  padding: 32px 24px;
+  background: rgba(34, 197, 94, 0.05);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 16px;
+}
+
+.qa-pending-notice {
+  background: rgba(251, 146, 60, 0.05);
+  border-color: rgba(251, 146, 60, 0.2);
+}
+
+.qa-pending-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.qa-pending-notice h3 {
+  color: #ea580c;
+  margin: 0 0 8px;
+}
+
+.qa-pending-notice p {
+  color: #64748b;
+  margin: 0 0 16px;
+}
+
+.qa-question-preview {
+  background: rgba(251, 146, 60, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+}
+
+.qa-question-preview strong {
+  color: #ea580c;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.qa-question-preview p {
+  color: #334155;
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.btn-view-answer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.btn-view-answer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* ========== Q&A Chapter 10 ========== */
+.qa-chapter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.qa-chapter-question,
+.qa-chapter-answer {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.qa-chapter-question {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.05) 0%, rgba(234, 88, 12, 0.05) 100%);
+  border-color: rgba(251, 146, 60, 0.2);
+}
+
+.qa-chapter-answer {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(22, 163, 74, 0.05) 100%);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.qa-chapter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.qa-chapter-question .qa-chapter-label {
+  background: rgba(251, 146, 60, 0.15);
+  color: #ea580c;
+}
+
+.qa-chapter-answer .qa-chapter-label {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.qa-chapter-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+.qa-chapter-text p {
+  margin: 0 0 12px;
+}
+
+.qa-chapter-text p:last-child {
+  margin-bottom: 0;
+}
+
+.qa-chapter-meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.qa-chapter-pending {
+  text-align: center;
+  padding: 48px 24px;
+  background: rgba(251, 146, 60, 0.05);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 16px;
+}
+
+.qa-chapter-pending .qa-pending-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.qa-chapter-pending p {
+  color: #64748b;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.qa-pending-note {
+  margin-top: 8px !important;
+  font-size: 0.85rem !important;
+  color: #94a3b8 !important;
+}
+
+/* ========== 부록 (Appendix) ========== */
+.appendix-content {
+  padding: 20px 0;
+}
+
+.appendix-share-section {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.appendix-share-section h3 {
+  font-size: 1.3rem;
+  color: #92400e;
+  margin: 0 0 8px 0;
+}
+
+.appendix-share-section p {
+  color: #a16207;
+  margin: 0 0 20px 0;
+  font-size: 0.95rem;
+}
+
+.appendix-question-section {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.appendix-question-submitted {
+  text-align: center;
+  padding: 20px;
+}
+
+.appendix-question-submitted h3 {
+  font-size: 1.1rem;
+  color: #334155;
+  margin: 0 0 12px 0;
+}
+
+.appendix-question-submitted p {
+  color: #64748b;
+  margin: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #8b5cf6;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+
+.link-btn:hover {
+  color: #7c3aed;
+}
+
+.appendix-question-form h3 {
+  font-size: 1.1rem;
+  color: #334155;
+  margin: 0 0 8px 0;
+}
+
+.appendix-question-form .question-limit-notice {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
+}
+
+.appendix-question-form .question-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 100px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+
+.appendix-question-form .question-textarea:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.appendix-question-form .question-email-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.appendix-question-form .question-email-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.appendix-question-form .question-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.appendix-question-form .btn-submit-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.appendix-question-form .btn-submit-question:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.appendix-question-form .btn-submit-question:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 리뷰 섹션 */
+.appendix-review-section {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.appendix-review-submitted {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.appendix-review-submitted .review-success-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.appendix-review-submitted h3 {
+  font-size: 1.2rem;
+  color: #1e40af;
+  margin: 0 0 8px 0;
+}
+
+.appendix-review-submitted p {
+  color: #3b82f6;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.appendix-review-form h3 {
+  font-size: 1.1rem;
+  color: #1e40af;
+  margin: 0 0 8px 0;
+}
+
+.appendix-review-form .review-description {
+  color: #3b82f6;
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
+}
+
+.review-rating-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.review-rating-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.review-rating-btn:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.review-rating-btn.active {
+  border-color: #3b82f6;
+  background: #dbeafe;
+}
+
+.review-rating-btn .rating-emoji {
+  font-size: 1.2rem;
+}
+
+.review-rating-btn .rating-label {
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.appendix-review-form .review-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 100px;
+  margin-bottom: 12px;
+  font-family: inherit;
+  background: white;
+}
+
+.appendix-review-form .review-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.appendix-review-form .review-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.btn-submit-review {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-submit-review:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-submit-review:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ========== 반응형 ========== */
@@ -3304,4 +4248,80 @@ h3.coaching-item-topic:active {
   color: rgba(255, 255, 255, 0.8);
   margin-left: 12px;
   font-weight: 500;
+}
+
+/* 앱 연동 코드 섹션 */
+.claim-code-section {
+  margin-top: 40px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  border: 1px solid #dee2e6;
+}
+
+.claim-code-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.claim-code-icon {
+  font-size: 1.3rem;
+}
+
+.claim-code-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.claim-code-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 2px dashed #8B4513;
+  margin-bottom: 12px;
+}
+
+.claim-code-value {
+  flex: 1;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: #8B4513;
+  letter-spacing: 3px;
+  text-align: center;
+}
+
+.claim-code-copy-btn {
+  padding: 8px 16px;
+  background: #8B4513;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claim-code-copy-btn:hover {
+  background: #6B3410;
+  transform: scale(1.02);
+}
+
+.claim-code-copy-btn:active {
+  transform: scale(0.98);
+}
+
+.claim-code-description {
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
 }

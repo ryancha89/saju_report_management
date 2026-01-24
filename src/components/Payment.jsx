@@ -7,11 +7,17 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 const PORTONE_MERCHANT_ID = 'imp81781713';
 
-function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaymentError }) {
+function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode, couponInfo, onPaymentSuccess, onPaymentError }) {
   const [payMethod, setPayMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const { addToast } = useToast();
+
+  // 쿠폰 적용 시 할인된 가격 계산
+  const discountedPrice = couponInfo?.discount_percent
+    ? Math.round(productInfo.price * (1 - couponInfo.discount_percent / 100))
+    : productInfo.price;
+  const discountAmount = productInfo.price - discountedPrice;
 
   const noticeUrl =
     import.meta.env.MODE === 'development'
@@ -60,7 +66,7 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
       pg: 'welcome',
       name: productInfo.name,
       merchant_uid: merchant_uid,
-      amount: productInfo.price,
+      amount: discountedPrice,
       buyer_name: userInfo.name,
       buyer_tel: formatPhone(userInfo.phone),
       buyer_email: userInfo.email,
@@ -174,12 +180,16 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
         time_adjust_minutes: userInfo.timeAdjustMinutes,
         questions: userInfo.questions,
         tracking: trackingData,
+        ref: referralCode || null,
+        coupon_code: couponCode || null,
         // 결제 정보
         payment: {
           imp_uid: imp_uid,
           merchant_uid: merchant_uid,
           pay_method: method,
-          amount: productInfo.price,
+          amount: discountedPrice,
+          original_amount: productInfo.price,
+          discount_amount: discountAmount,
           status: method === 'vbank' ? 'pending' : 'paid',
           vbank_info: method === 'vbank' ? {
             vbank_name: paymentResponse.vbank_name,
@@ -249,7 +259,21 @@ function Payment({ productInfo, userInfo, trackingData, onPaymentSuccess, onPaym
       {/* 상품 정보 */}
       <div className="product-info">
         <div className="product-name">{productInfo.name}</div>
-        <div className="product-price">{productInfo.price.toLocaleString()}원</div>
+        {couponInfo?.discount_percent ? (
+          <div className="price-with-discount">
+            <div className="original-price">{productInfo.price.toLocaleString()}원</div>
+            <div className="discount-badge">-{couponInfo.discount_percent}%</div>
+            <div className="discounted-price">{discountedPrice.toLocaleString()}원</div>
+          </div>
+        ) : (
+          <div className="product-price">{productInfo.price.toLocaleString()}원</div>
+        )}
+        {couponInfo && (
+          <div className="coupon-applied">
+            <span className="coupon-label">적용된 쿠폰:</span>
+            <span className="coupon-name">{couponInfo.name || couponCode}</span>
+          </div>
+        )}
       </div>
 
       {/* 결제 수단 선택 */}

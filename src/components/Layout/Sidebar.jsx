@@ -8,7 +8,8 @@ import {
   User,
   Crown,
   FileEdit,
-  BookOpen
+  BookOpen,
+  UserCog
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -17,6 +18,8 @@ const menuItems = [
   { path: '/admin/customers', icon: Users, label: '고객 관리' },
   { path: '/admin/suggestions', icon: FileEdit, label: '수정 제안' },
   { path: '/admin/lectures', icon: BookOpen, label: '강의' },
+  { path: '/admin/profile', icon: UserCog, label: '내 프로필' },
+  { path: '/admin/managers', icon: Users, label: '매니저 관리', adminOnly: true },
   { path: '/admin/settings', icon: Settings, label: '설정', adminOnly: true },
 ];
 
@@ -42,7 +45,7 @@ function Sidebar() {
           <User size={20} />
         </div>
         <div className="user-details">
-          <span className="user-name">{manager?.name || '사용자'}</span>
+          <span className="user-name">{manager?.display_name || manager?.name || '사용자'}</span>
           <span className={`user-role ${manager?.role}`}>
             {isAdmin() && <Crown size={12} />}
             {manager?.role === 'admin' ? '관리자' : '매니저'}

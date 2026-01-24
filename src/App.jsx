@@ -8,6 +8,7 @@ import OrderDetail from './pages/OrderDetail';
 import KakaoMessage from './pages/KakaoMessage';
 import Customers from './pages/Customers';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 import GyeokgukSuggestions from './pages/GyeokgukSuggestions';
 import Lectures from './pages/Lectures';
 import GyeokgukLectures from './pages/GyeokgukLectures';
@@ -21,6 +22,7 @@ import BlueprintIntroPage from './pages/BlueprintIntroPage';
 import UserInfoPage from './pages/UserInfoPage';
 import ResultPage from './pages/ResultPage';
 import Events from './pages/events/Events';
+import Managers from './pages/Managers';
 import './App.css';
 
 // 동적 파라미터 리다이렉트 컴포넌트
@@ -99,6 +101,8 @@ function App() {
             <Route path="lectures/gyeokguk" element={<GyeokgukLectures />} />
             <Route path="lectures/gyeokguk/zhengguan" element={<ZhengguanLecture />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="managers" element={<Managers />} />
           </Route>
         </Routes>
       </BrowserRouter>
