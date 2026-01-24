@@ -21,6 +21,7 @@ import LandingPage from './pages/LandingPage';
 import BlueprintIntroPage from './pages/BlueprintIntroPage';
 import UserInfoPage from './pages/UserInfoPage';
 import ResultPage from './pages/ResultPage';
+import PaymentCompletePage from './pages/PaymentCompletePage';
 import Events from './pages/events/Events';
 import Managers from './pages/Managers';
 import './App.css';
@@ -57,6 +58,9 @@ function App() {
 
           {/* 사주 결과 페이지 */}
           <Route path="/result" element={<ResultPage />} />
+
+          {/* 결제 완료 페이지 (모바일 결제 후 리다이렉트) */}
+          <Route path="/payment-complete" element={<PaymentCompletePage />} />
 
           {/* 모바일 프리뷰 페이지 (인증 불필요) */}
           <Route path="/preview/:id" element={<MobilePreview />} />

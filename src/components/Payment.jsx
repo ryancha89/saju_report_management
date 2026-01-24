@@ -111,10 +111,48 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       data = {
         ...baseData,
         pay_method: 'card',
+        notice_url: noticeUrl,  // 카드 결제에도 webhook 호출
       };
     }
 
     console.log('IMP.request_pay data:', data);
+
+    // 모바일 결제 리다이렉트를 위해 주문 데이터를 localStorage에 저장
+    const [year, month, day] = userInfo.birthDate.split('-').map(Number);
+    let hour = null;
+    let minute = null;
+    if (!userInfo.timeUnknown && userInfo.birthTime) {
+      [hour, minute] = userInfo.birthTime.split(':').map(Number);
+    }
+
+    const pendingOrderData = {
+      product_id: productInfo.id,
+      name: userInfo.name,
+      email: userInfo.email,
+      phone_number: userInfo.phone,
+      birth_year: year,
+      birth_month: month,
+      birth_day: day,
+      gender: userInfo.gender,
+      calendar_type: userInfo.calendarType,
+      time_known: !userInfo.timeUnknown,
+      birth_hour: hour,
+      birth_minute: minute,
+      birth_place: userInfo.birthPlace || null,
+      birth_lat: userInfo.birthLat,
+      birth_lon: userInfo.birthLon,
+      time_adjustment: userInfo.timeAdjustment,
+      time_adjust_minutes: userInfo.timeAdjustMinutes,
+      questions: userInfo.questions,
+      tracking: trackingData,
+      ref: referralCode || null,
+      coupon_code: couponCode || null,
+      payment_method: payMethod,
+      payment_amount: discountedPrice,
+      merchant_uid: merchant_uid,
+    };
+    localStorage.setItem('pendingOrderData', JSON.stringify(pendingOrderData));
+
     try {
       IMP.request_pay(data, handleCallback);
     } catch (err) {
@@ -301,6 +339,8 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       const result = JSON.parse(responseText);
 
       if (result.success) {
+        // 성공 시 localStorage 정리
+        localStorage.removeItem('pendingOrderData');
         setIsProcessing(false);
         if (onPaymentSuccess) {
           onPaymentSuccess({
