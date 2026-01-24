@@ -191,10 +191,10 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
         // 백엔드에서 가져온 가상계좌 정보로 주문 생성
         const enrichedResponse = {
           ...paymentResponse,
-          vbank_name: vbankData.account.bank_name,
-          vbank_num: vbankData.account.bank_account,
-          vbank_holder: vbankData.account.account_holder,
-          vbank_date: vbankData.account.due_date,
+          vbank_name: vbankData.account.vbank_name,
+          vbank_num: vbankData.account.vbank_num,
+          vbank_holder: vbankData.account.vbank_holder,
+          vbank_date: vbankData.account.vbank_date,
         };
         await createOrder(merchant_uid, imp_uid, 'vbank', enrichedResponse);
       } else {
