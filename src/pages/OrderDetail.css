@@ -427,6 +427,13 @@
   transform: none;
 }
 
+/* 취소된 주문 버튼 스타일 */
+.btn-complete.cancelled,
+.btn-generate-report.cancelled {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  opacity: 0.7;
+}
+
 .preview-link {
   background: rgba(0, 0, 0, 0.2);
   padding: 12px 16px;

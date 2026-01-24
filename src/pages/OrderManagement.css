@@ -442,6 +442,29 @@
   color: #667eea;
 }
 
+/* Referrer Badge */
+.referrer-cell {
+  min-width: 90px;
+}
+
+.referrer-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+  color: #5b21b6;
+  border: 1px solid #a78bfa;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+.no-referrer {
+  color: #94a3b8;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .order-content {

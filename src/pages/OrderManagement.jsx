@@ -228,6 +228,7 @@ function OrderManagement() {
                       <th>연락처</th>
                       <th>이메일</th>
                       <th>리포트</th>
+                      <th>추천인</th>
                       <th>출처</th>
                       <th>상태</th>
                       <th>주문일</th>
@@ -245,6 +246,15 @@ function OrderManagement() {
                         <td>{order.phone_number}</td>
                         <td className="email-cell">{order.email}</td>
                         <td>{order.report_type_label}</td>
+                        <td className="referrer-cell">
+                          {order.referrer_code ? (
+                            <span className="referrer-badge" title={order.referrer_name || ''}>
+                              {order.referrer_code}
+                            </span>
+                          ) : (
+                            <span className="no-referrer">-</span>
+                          )}
+                        </td>
                         <td>
                           <span className={`origin-badge ${order.origin === 'blueprint_app' ? 'origin-app' : 'origin-web'}`}>
                             {order.origin_label || '웹'}

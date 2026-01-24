@@ -1652,6 +1652,12 @@ function OrderDetail() {
   };
 
   const updateOrderStatus = async (newStatus) => {
+    // 취소 시 확인
+    if (newStatus === 'cancelled') {
+      const confirmed = window.confirm('정말 이 주문을 취소하시겠습니까?\n취소된 주문은 레포트 제작이 불가능합니다.');
+      if (!confirmed) return;
+    }
+
     setUpdating(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}`, {
@@ -3809,7 +3815,7 @@ function OrderDetail() {
                   <button
                     className="btn btn-complete"
                     onClick={sendReport}
-                    disabled={sendingReport || order.status === 'completed'}
+                    disabled={sendingReport || order.status === 'completed' || order.status === 'cancelled'}
                   >
                     {sendingReport ? (
                       <>
@@ -3820,6 +3826,11 @@ function OrderDetail() {
                       <>
                         <CheckCircle size={16} />
                         제작 완료됨
+                      </>
+                    ) : order.status === 'cancelled' ? (
+                      <>
+                        <AlertCircle size={16} />
+                        취소된 주문
                       </>
                     ) : (
                       <>
@@ -3858,17 +3869,22 @@ function OrderDetail() {
               <div className="report-status not-generated">
                 <div className="status-info">
                   <AlertCircle size={16} className="status-icon warning" />
-                  <span>아직 레포트가 생성되지 않았습니다</span>
+                  <span>{order.status === 'cancelled' ? '취소된 주문입니다' : '아직 레포트가 생성되지 않았습니다'}</span>
                 </div>
                 <button
                   className="btn btn-generate-report"
                   onClick={() => generateAllChapters(false)}
-                  disabled={savingReport}
+                  disabled={savingReport || order.status === 'cancelled'}
                 >
                   {savingReport ? (
                     <>
                       <Loader size={16} className="spinning" />
                       생성 중...
+                    </>
+                  ) : order.status === 'cancelled' ? (
+                    <>
+                      <AlertCircle size={16} />
+                      취소된 주문
                     </>
                   ) : (
                     <>

@@ -66,9 +66,19 @@ function UserInfoPage() {
   // URL에서 product, ref, coupon 파라미터 가져오기
   const searchParams = new URLSearchParams(location.search);
   const productId = searchParams.get('product') || 'blueprint';
-  const referralCode = searchParams.get('ref');
   const couponCode = searchParams.get('coupon');
   const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.blueprint;
+
+  // ref 파라미터: URL에서 먼저 확인, 없으면 sessionStorage에서 가져옴
+  const urlRef = searchParams.get('ref');
+  const referralCode = urlRef || sessionStorage.getItem('blueprint_ref');
+
+  // ref가 URL에 있으면 sessionStorage에 저장 (새로고침 시에도 유지)
+  useEffect(() => {
+    if (urlRef) {
+      sessionStorage.setItem('blueprint_ref', urlRef);
+    }
+  }, [urlRef]);
 
   // 쿠폰 정보 상태
   const [couponInfo, setCouponInfo] = useState(null);
@@ -527,11 +537,15 @@ function UserInfoPage() {
                   });
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && formData.birthDate.length === 10) {
-                    if (isEditing) {
-                      finishEditing();
-                    } else {
-                      autoNext();
+                  if (e.key === 'Enter') {
+                    // 현재 입력값에서 숫자만 추출하여 8자리인지 확인
+                    const numbers = e.target.value.replace(/\D/g, '');
+                    if (numbers.length === 8) {
+                      if (isEditing) {
+                        finishEditing();
+                      } else {
+                        autoNext();
+                      }
                     }
                   }
                 }}
@@ -600,11 +614,15 @@ function UserInfoPage() {
                   }
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && formData.birthTime.length === 5) {
-                    if (isEditing) {
-                      finishEditing();
-                    } else {
-                      autoNext();
+                  if (e.key === 'Enter') {
+                    // 현재 입력값에서 숫자만 추출하여 4자리인지 확인
+                    const numbers = e.target.value.replace(/\D/g, '');
+                    if (numbers.length === 4) {
+                      if (isEditing) {
+                        finishEditing();
+                      } else {
+                        autoNext();
+                      }
                     }
                   }
                 }}
@@ -788,11 +806,15 @@ function UserInfoPage() {
                 }
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && formData.phone.length === 11) {
-                  if (isEditing) {
-                    finishEditing();
-                  } else {
-                    autoNext();
+                if (e.key === 'Enter') {
+                  // 현재 입력값에서 숫자만 추출하여 11자리인지 확인
+                  const numbers = e.target.value.replace(/\D/g, '');
+                  if (numbers.length === 11) {
+                    if (isEditing) {
+                      finishEditing();
+                    } else {
+                      autoNext();
+                    }
                   }
                 }
               }}

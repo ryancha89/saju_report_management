@@ -8,10 +8,21 @@ function BlueprintIntroPage() {
   const location = useLocation();
   const [openFaq, setOpenFaq] = useState(null);
 
-  // URL에서 plan 파라미터 읽기
+  // URL에서 plan, ref 파라미터 읽기
   const params = new URLSearchParams(location.search);
   const initialPlan = params.get('plan') === 'lite' ? 'lite' : 'full';
   const [selectedPlan, setSelectedPlan] = useState(initialPlan);
+
+  // ref 파라미터: URL에서 먼저 확인, 없으면 sessionStorage에서 가져옴
+  const urlRef = params.get('ref');
+  const referralCode = urlRef || sessionStorage.getItem('blueprint_ref');
+
+  // ref가 URL에 있으면 sessionStorage에 저장 (새로고침 시에도 유지)
+  useEffect(() => {
+    if (urlRef) {
+      sessionStorage.setItem('blueprint_ref', urlRef);
+    }
+  }, [urlRef]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -29,6 +40,10 @@ function BlueprintIntroPage() {
   const handleStartClick = () => {
     const params = new URLSearchParams(location.search);
     params.set('product', selectedPlan === 'full' ? 'blueprint' : 'blueprint_lite');
+    // ref가 URL에 없지만 sessionStorage에 있으면 추가
+    if (!params.get('ref') && referralCode) {
+      params.set('ref', referralCode);
+    }
     navigate(`/user-info?${params.toString()}`);
   };
 
