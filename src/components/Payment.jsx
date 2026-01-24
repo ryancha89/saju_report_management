@@ -315,6 +315,7 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
           onPaymentSuccess({
             orderId: result.order_id,
             method: method,
+            amount: discountedPrice,
             vbankInfo: method === 'vbank' ? {
               bankName: paymentResponse.vbank_name,
               accountNumber: paymentResponse.vbank_num,

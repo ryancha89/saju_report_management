@@ -1025,12 +1025,42 @@ body:has(.user-info-page) {
   letter-spacing: 1px;
   color: #f4e078;
   text-shadow: 0 0 8px rgba(244, 208, 63, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vbank-value.account-number .copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(244, 208, 63, 0.2);
+  border: 1px solid rgba(244, 208, 63, 0.4);
+  border-radius: 6px;
+  color: #f4e078;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vbank-value.account-number .copy-btn:hover {
+  background: rgba(244, 208, 63, 0.3);
+}
+
+.vbank-value.account-number .copy-btn:active {
+  transform: scale(0.95);
 }
 
 .vbank-value.price {
   color: #f4e078;
   text-shadow: 0 0 10px rgba(244, 208, 63, 0.5);
   font-size: 1.1rem;
+}
+
+.vbank-value.due-date {
+  color: #fb923c;
+  text-shadow: 0 0 8px rgba(251, 146, 60, 0.4);
 }
 
 .vbank-warning {

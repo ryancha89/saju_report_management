@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download } from 'lucide-react';
+import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download, Copy, Check } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking } from '../lib/tracking';
 import Payment from '../components/Payment';
@@ -55,6 +55,7 @@ function UserInfoPage() {
   const [paymentResult, setPaymentResult] = useState(null); // 결제 결과 (vbank 정보 등)
   const [sajuData, setSajuData] = useState(null); // 사주 데이터
   const [sajuLoading, setSajuLoading] = useState(false); // 사주 로딩 상태
+  const [copied, setCopied] = useState(false); // 계좌번호 복사 상태
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
 
@@ -888,7 +889,20 @@ function UserInfoPage() {
                 </div>
                 <div className="vbank-row">
                   <span className="vbank-label">계좌 번호</span>
-                  <span className="vbank-value account-number">{paymentResult.vbankInfo.accountNumber}</span>
+                  <span className="vbank-value account-number">
+                    {paymentResult.vbankInfo.accountNumber}
+                    <button
+                      className="copy-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentResult.vbankInfo.accountNumber);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                    >
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                      <span>{copied ? '복사됨' : '복사'}</span>
+                    </button>
+                  </span>
                 </div>
                 <div className="vbank-row">
                   <span className="vbank-label">예금주</span>
@@ -896,8 +910,22 @@ function UserInfoPage() {
                 </div>
                 <div className="vbank-row">
                   <span className="vbank-label">입금 금액</span>
-                  <span className="vbank-value price">{productInfo.price.toLocaleString()}원</span>
+                  <span className="vbank-value price">{(paymentResult.amount || productInfo.price).toLocaleString()}원</span>
                 </div>
+                {paymentResult.vbankInfo.dueDate && (
+                  <div className="vbank-row">
+                    <span className="vbank-label">입금 기한</span>
+                    <span className="vbank-value due-date">
+                      {new Date(paymentResult.vbankInfo.dueDate * 1000).toLocaleString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                )}
                 <div className="vbank-warning">
                   입금 기한 내에 입금해주세요. 미입금 시 주문이 자동 취소됩니다.
                 </div>
@@ -911,8 +939,8 @@ function UserInfoPage() {
               <strong>{formData.email}</strong>
             </div>
 
-            {/* 앱 다운로드 유도 섹션 */}
-            <div className="app-download-section">
+            {/* 앱 다운로드 유도 섹션 - 임시 비표시 */}
+            {/* <div className="app-download-section">
               <div className="app-download-header">
                 <Smartphone size={24} />
                 <span>앱에서 더 많은 기능을 이용하세요!</span>
@@ -945,7 +973,7 @@ function UserInfoPage() {
               <p className="app-download-tip">
                 * 동일한 이메일 <strong>({formData.email})</strong>로 로그인하세요
               </p>
-            </div>
+            </div> */}
 
             <button
               className="order-complete-home-btn"
