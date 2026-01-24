@@ -1915,12 +1915,16 @@ function OrderDetail() {
     setChapter3Loading(true);
     setChapter3Error(null);
 
+    const apiUrl = `${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`;
+    console.log('[generateChapter3] 요청 시작:', apiUrl);
+    console.log('[generateChapter3] API_BASE_URL:', API_BASE_URL);
+
     try {
       // 5분 타임아웃 설정 (AI 생성에 시간이 오래 걸림)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 300000);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1968,9 +1972,15 @@ function OrderDetail() {
 
       return data.chapter;
     } catch (err) {
-      console.error('[generateChapter3] 에러:', err);
+      console.error('[generateChapter3] 에러 타입:', err.name);
+      console.error('[generateChapter3] 에러 메시지:', err.message);
+      console.error('[generateChapter3] 에러 전체:', err);
+      console.error('[generateChapter3] 요청 URL:', apiUrl);
+
       if (err.name === 'AbortError') {
         setChapter3Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
+      } else if (err.message === 'Failed to fetch') {
+        setChapter3Error(`네트워크 오류: 서버에 연결할 수 없습니다. URL: ${apiUrl}`);
       } else {
         setChapter3Error(err.message || '알 수 없는 오류가 발생했습니다.');
       }
