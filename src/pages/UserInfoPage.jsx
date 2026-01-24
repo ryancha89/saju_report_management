@@ -58,6 +58,7 @@ function UserInfoPage() {
   const [copied, setCopied] = useState(false); // 계좌번호 복사 상태
   const [paymentConfirmed, setPaymentConfirmed] = useState(false); // 입금 확인 상태
   const [checkingPayment, setCheckingPayment] = useState(false); // 입금 확인 중 상태
+  const [paymentCheckMessage, setPaymentCheckMessage] = useState(''); // 입금 확인 결과 메시지
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
   const pollingIntervalRef = useRef(null);
@@ -179,8 +180,13 @@ function UserInfoPage() {
   // 수동 입금 확인 버튼 핸들러
   const handleCheckPayment = async () => {
     setCheckingPayment(true);
-    await checkPaymentStatus();
+    setPaymentCheckMessage('');
+    const isPaid = await checkPaymentStatus();
     setCheckingPayment(false);
+    if (!isPaid) {
+      setPaymentCheckMessage('아직 입금이 확인되지 않았습니다. 입금 후 잠시 기다려주세요.');
+      setTimeout(() => setPaymentCheckMessage(''), 5000);
+    }
   };
 
   // Vbank 결제 상태 polling (5초 간격)
@@ -1001,6 +1007,11 @@ function UserInfoPage() {
                     >
                       {checkingPayment ? '확인 중...' : '계좌입금 확인하기'}
                     </button>
+                    {paymentCheckMessage && (
+                      <div className="payment-check-message">
+                        {paymentCheckMessage}
+                      </div>
+                    )}
                   </>
                 )}
               </div>

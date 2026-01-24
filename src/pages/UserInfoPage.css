@@ -1106,6 +1106,18 @@ body:has(.user-info-page) {
   cursor: not-allowed;
 }
 
+.payment-check-message {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #fca5a5;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
 /* 입금 확인 완료 */
 .payment-confirmed {
   display: flex;
