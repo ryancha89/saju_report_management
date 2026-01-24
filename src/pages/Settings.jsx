@@ -13,11 +13,66 @@ function Settings() {
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [loadingInvitations, setLoadingInvitations] = useState(true);
 
+  // Notification settings
+  const [notificationEmail, setNotificationEmail] = useState('');
+  const [savingNotification, setSavingNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState({ type: '', text: '' });
+
   useEffect(() => {
     if (isAdmin()) {
       fetchPendingInvitations();
+      fetchProfile();
     }
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/manager/profile`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.profile) {
+          setNotificationEmail(data.profile.notification_email || '');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+    }
+  };
+
+  const handleSaveNotificationEmail = async (e) => {
+    e.preventDefault();
+    setSavingNotification(true);
+    setNotificationMessage({ type: '', text: '' });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/manager/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notification_email: notificationEmail }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setNotificationMessage({ type: 'success', text: '알림 이메일이 저장되었습니다' });
+      } else {
+        setNotificationMessage({ type: 'error', text: data.error || '저장에 실패했습니다' });
+      }
+    } catch (err) {
+      setNotificationMessage({ type: 'error', text: '서버 연결에 실패했습니다' });
+    } finally {
+      setSavingNotification(false);
+    }
+  };
 
   const fetchPendingInvitations = async () => {
     try {
@@ -127,6 +182,38 @@ function Settings() {
       <div className="page-header">
         <h1>설정</h1>
         <p>시스템 설정을 관리합니다.</p>
+      </div>
+
+      <div className="settings-section">
+        <h2>알림 수신 설정</h2>
+        <p className="section-description">
+          신규 주문 알림을 받을 이메일 주소를 설정합니다. 설정하지 않으면 기본값(help@ftorch.com)으로 발송됩니다.
+        </p>
+
+        {notificationMessage.text && (
+          <div className={`message ${notificationMessage.type}`}>
+            {notificationMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveNotificationEmail} className="notification-form">
+          <div className="form-row">
+            <div className="form-group flex-grow">
+              <label htmlFor="notification_email">알림 수신 이메일</label>
+              <input
+                type="email"
+                id="notification_email"
+                value={notificationEmail}
+                onChange={(e) => setNotificationEmail(e.target.value)}
+                placeholder="help@ftorch.com"
+                disabled={savingNotification}
+              />
+            </div>
+          </div>
+          <button type="submit" className="save-button" disabled={savingNotification}>
+            {savingNotification ? '저장 중...' : '저장'}
+          </button>
+        </form>
       </div>
 
       <div className="settings-section">
