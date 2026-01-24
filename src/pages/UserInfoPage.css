@@ -1076,6 +1076,36 @@ body:has(.user-info-page) {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* 계좌입금 확인 버튼 */
+.check-payment-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.check-payment-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+}
+
+.check-payment-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.check-payment-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* 입금 확인 완료 */
 .payment-confirmed {
   display: flex;

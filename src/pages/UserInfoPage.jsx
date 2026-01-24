@@ -57,6 +57,7 @@ function UserInfoPage() {
   const [sajuLoading, setSajuLoading] = useState(false); // 사주 로딩 상태
   const [copied, setCopied] = useState(false); // 계좌번호 복사 상태
   const [paymentConfirmed, setPaymentConfirmed] = useState(false); // 입금 확인 상태
+  const [checkingPayment, setCheckingPayment] = useState(false); // 입금 확인 중 상태
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
   const pollingIntervalRef = useRef(null);
@@ -148,31 +149,43 @@ function UserInfoPage() {
     };
   }, []);
 
+  // 입금 확인 함수 (수동/자동 공용)
+  const checkPaymentStatus = async () => {
+    if (!paymentResult?.orderId) return false;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/orders/${paymentResult.orderId}/payment_status`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.is_paid) {
+          setPaymentConfirmed(true);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Payment status check failed:', error);
+      return false;
+    }
+  };
+
+  // 수동 입금 확인 버튼 핸들러
+  const handleCheckPayment = async () => {
+    setCheckingPayment(true);
+    await checkPaymentStatus();
+    setCheckingPayment(false);
+  };
+
   // Vbank 결제 상태 polling (5초 간격)
   useEffect(() => {
     if (isOrderComplete && paymentResult?.method === 'vbank' && paymentResult?.orderId && !paymentConfirmed) {
-      const checkPaymentStatus = async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/v1/orders/${paymentResult.orderId}/payment_status`, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Saju-Authorization': `Bearer-${API_TOKEN}`,
-            },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.is_paid) {
-              setPaymentConfirmed(true);
-              if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Payment status check failed:', error);
-        }
-      };
-
       // 처음 한 번 확인
       checkPaymentStatus();
       // 5초 간격으로 확인
@@ -981,6 +994,13 @@ function UserInfoPage() {
                     <div className="vbank-warning">
                       입금 기한 내에 입금해주세요. 미입금 시 주문이 자동 취소됩니다.
                     </div>
+                    <button
+                      className="check-payment-btn"
+                      onClick={handleCheckPayment}
+                      disabled={checkingPayment}
+                    >
+                      {checkingPayment ? '확인 중...' : '계좌입금 확인하기'}
+                    </button>
                   </>
                 )}
               </div>

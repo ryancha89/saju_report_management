@@ -22,7 +22,7 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
   const discountAmount = productInfo.price - discountedPrice;
 
   // 가상계좌 webhook은 항상 프로덕션 URL 사용 (PortOne 서버에서 호출하므로 localhost 불가)
-  const noticeUrl = 'https://api.fortunetorch.com/api/v1/payment_histories/portone_webhook';
+  const noticeUrl = 'https://api.perpetualtalk.com/api/v1/payment_histories/portone_webhook';
 
   const handlePayment = async () => {
     console.log('handlePayment called', { productInfo, userInfo, payMethod });
