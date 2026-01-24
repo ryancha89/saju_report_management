@@ -1162,6 +1162,7 @@ function OrderDetail() {
   const [chapter3Data, setChapter3Data] = useState(null);
   const [chapter3Loading, setChapter3Loading] = useState(false);
   const [chapter3Error, setChapter3Error] = useState(null);
+  const [chapter3Progress, setChapter3Progress] = useState(null); // { progress: 0-100, message: '...' }
 
   // 대운 해석 편집 상태 (격국/억부/조후)
   const [editingDecadeInterpretation, setEditingDecadeInterpretation] = useState(null); // { decadeIndex, area, ganji }
@@ -1910,83 +1911,114 @@ function OrderDetail() {
     }
   };
 
-  // 챕터3 생성 API 호출 (대운 흐름 그래프)
+  // 챕터3 생성 API 호출 (대운 흐름 그래프) - 비동기 방식
   const generateChapter3 = async () => {
     setChapter3Loading(true);
     setChapter3Error(null);
+    setChapter3Progress({ progress: 0, message: '작업 시작 중...' });
 
-    const apiUrl = `${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`;
-    console.log('[generateChapter3] 요청 시작:', apiUrl);
-    console.log('[generateChapter3] API_BASE_URL:', API_BASE_URL);
+    const asyncApiUrl = `${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3_async`;
+    console.log('[generateChapter3] 비동기 요청 시작:', asyncApiUrl);
 
     try {
-      // 5분 타임아웃 설정 (AI 생성에 시간이 오래 걸림)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000);
-
-      const response = await fetch(apiUrl, {
+      // 1. 비동기 작업 시작
+      const startResponse = await fetch(asyncApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Saju-Authorization': `Bearer-${API_TOKEN}`
-        },
-        signal: controller.signal
+        }
       });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[generateChapter3] 서버 에러:', response.status, errorText);
-        throw new Error(`서버 에러 (${response.status}): ${errorText || '알 수 없는 오류'}`);
+      if (!startResponse.ok) {
+        const errorText = await startResponse.text();
+        throw new Error(`서버 에러 (${startResponse.status}): ${errorText || '알 수 없는 오류'}`);
       }
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || '챕터3 생성에 실패했습니다.');
+      const startData = await startResponse.json();
+      if (!startData.success) {
+        throw new Error(startData.error || '작업 시작에 실패했습니다.');
       }
 
-      setChapter3Data(data.chapter);
+      const jobId = startData.job_id;
+      console.log('[generateChapter3] Job 시작됨:', jobId);
 
-      // 생성 후 즉시 DB에 저장 (chapter4 = 대운흐름)
-      if (data.chapter?.content || data.chapter?.decade_flow) {
-        const basisWithDecadeFlow = {
-          ...(data.chapter.basis || basis3Data || {}),
-          decade_flow: data.chapter.decade_flow
-        };
-        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Saju-Authorization': `Bearer-${API_TOKEN}`
-          },
-          body: JSON.stringify({
-            chapter_number: 4,  // 대운흐름은 chapter4
-            content: data.chapter.content,
-            basis: basisWithDecadeFlow
-          })
-        });
-        console.log('[generateChapter3] 챕터4(대운흐름) DB 저장 완료');
+      // 2. 폴링으로 상태 확인 (최대 10분)
+      const maxPollingTime = 600000; // 10분
+      const pollingInterval = 2000; // 2초
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < maxPollingTime) {
+        await new Promise(resolve => setTimeout(resolve, pollingInterval));
+
+        const statusResponse = await fetch(
+          `${API_BASE_URL}/api/v1/admin/orders/${id}/chapter3_job_status?job_id=${jobId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            }
+          }
+        );
+
+        const statusData = await statusResponse.json();
+        console.log('[generateChapter3] 상태 확인:', statusData.status, statusData.progress);
+
+        // 진행률 업데이트
+        if (statusData.progress !== undefined) {
+          setChapter3Progress({
+            progress: statusData.progress,
+            message: statusData.message || '처리 중...'
+          });
+        }
+
+        if (statusData.status === 'completed') {
+          console.log('[generateChapter3] 작업 완료');
+          setChapter3Data(statusData.chapter);
+
+          // 생성 후 즉시 DB에 저장 (chapter4 = 대운흐름)
+          if (statusData.chapter?.content || statusData.chapter?.decade_flow) {
+            const basisWithDecadeFlow = {
+              ...(statusData.chapter.basis || basis3Data || {}),
+              decade_flow: statusData.chapter.decade_flow
+            };
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Saju-Authorization': `Bearer-${API_TOKEN}`
+              },
+              body: JSON.stringify({
+                chapter_number: 4,
+                content: statusData.chapter.content,
+                basis: basisWithDecadeFlow
+              })
+            });
+            console.log('[generateChapter3] 챕터4(대운흐름) DB 저장 완료');
+          }
+
+          return statusData.chapter;
+        }
+
+        if (statusData.status === 'failed') {
+          throw new Error(statusData.error || '챕터3 생성에 실패했습니다.');
+        }
       }
 
-      return data.chapter;
+      throw new Error('작업 시간이 초과되었습니다. 다시 시도해주세요.');
     } catch (err) {
-      console.error('[generateChapter3] 에러 타입:', err.name);
-      console.error('[generateChapter3] 에러 메시지:', err.message);
-      console.error('[generateChapter3] 에러 전체:', err);
-      console.error('[generateChapter3] 요청 URL:', apiUrl);
+      console.error('[generateChapter3] 에러:', err.message);
 
-      if (err.name === 'AbortError') {
-        setChapter3Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
-      } else if (err.message === 'Failed to fetch') {
-        setChapter3Error(`네트워크 오류: 서버에 연결할 수 없습니다. URL: ${apiUrl}`);
+      if (err.message === 'Failed to fetch') {
+        setChapter3Error(`네트워크 오류: 서버에 연결할 수 없습니다.`);
       } else {
         setChapter3Error(err.message || '알 수 없는 오류가 발생했습니다.');
       }
       throw err;
     } finally {
       setChapter3Loading(false);
+      setChapter3Progress(null);
     }
   };
 
@@ -2825,46 +2857,83 @@ function OrderDetail() {
         setChapter2Loading(false);
       }
 
-      // 챕터3 생성 (대운 흐름 분석)
+      // 챕터3 생성 (대운 흐름 분석) - 비동기 방식
       setGeneratingChapter(3);
       if (forceRegenerate || !chapter3Data?.content) {
         setChapter3Loading(true);
+        setChapter3Progress({ progress: 0, message: '작업 시작 중...' });
         try {
-          console.log('[generateAllChapters] 챕터3 (대운흐름) 생성 시작');
-          const res3 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+          console.log('[generateAllChapters] 챕터3 (대운흐름) 비동기 생성 시작');
+
+          // 1. 비동기 작업 시작
+          const startRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3_async`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
-          const data3 = await res3.json();
-          console.log('[generateAllChapters] 챕터3 응답:', { ok: res3.ok, success: data3.success, hasContent: !!data3.chapter?.content });
-          if (res3.ok && data3.success) {
-            setChapter3Data(data3.chapter);
-            newChapter3Data = data3.chapter;
+          const startData = await startRes.json();
 
-            // 즉시 DB에 저장 (chapter4 = 대운흐름)
-            if (data3.chapter?.content || data3.chapter?.decade_flow) {
-              const basisWithDecadeFlow = {
-                ...(data3.chapter.basis || {}),
-                decade_flow: data3.chapter.decade_flow
-              };
-              await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-                body: JSON.stringify({
-                  chapter_number: 4,
-                  content: data3.chapter.content,
-                  basis: basisWithDecadeFlow
-                })
-              });
-              console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
+          if (!startRes.ok || !startData.success) {
+            throw new Error(startData.error || '작업 시작 실패');
+          }
+
+          const jobId = startData.job_id;
+          console.log('[generateAllChapters] 챕터3 Job 시작:', jobId);
+
+          // 2. 폴링으로 상태 확인 (최대 10분)
+          const maxPollingTime = 600000;
+          const pollingInterval = 2000;
+          const startTime = Date.now();
+
+          while (Date.now() - startTime < maxPollingTime) {
+            await new Promise(resolve => setTimeout(resolve, pollingInterval));
+
+            const statusRes = await fetch(
+              `${API_BASE_URL}/api/v1/admin/orders/${id}/chapter3_job_status?job_id=${jobId}`,
+              {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+              }
+            );
+            const statusData = await statusRes.json();
+
+            if (statusData.progress !== undefined) {
+              setChapter3Progress({ progress: statusData.progress, message: statusData.message || '처리 중...' });
             }
-          } else {
-            console.error('[generateAllChapters] 챕터3 생성 실패:', data3.error);
+
+            if (statusData.status === 'completed') {
+              console.log('[generateAllChapters] 챕터3 완료');
+              setChapter3Data(statusData.chapter);
+              newChapter3Data = statusData.chapter;
+
+              // 즉시 DB에 저장 (chapter4 = 대운흐름)
+              if (statusData.chapter?.content || statusData.chapter?.decade_flow) {
+                const basisWithDecadeFlow = {
+                  ...(statusData.chapter.basis || {}),
+                  decade_flow: statusData.chapter.decade_flow
+                };
+                await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                  body: JSON.stringify({
+                    chapter_number: 4,
+                    content: statusData.chapter.content,
+                    basis: basisWithDecadeFlow
+                  })
+                });
+                console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
+              }
+              break;
+            }
+
+            if (statusData.status === 'failed') {
+              throw new Error(statusData.error || '챕터3 생성 실패');
+            }
           }
         } catch (err) {
           console.error('[generateAllChapters] 챕터3 생성 에러:', err);
         }
         setChapter3Loading(false);
+        setChapter3Progress(null);
       }
 
       // 챕터4 생성 (향후 N년간의 운세 - 세운)
@@ -4939,8 +5008,21 @@ function OrderDetail() {
                                 </div>
                                 <div className="generation-text">
                                   <h3>대운흐름 분석 중</h3>
-                                  <p className="generation-chapter-title">전체 대운의 성패를 분석하고 있습니다...</p>
-                                  <p className="generation-note">잠시만 기다려주세요</p>
+                                  <p className="generation-chapter-title">
+                                    {chapter3Progress?.message || '전체 대운의 성패를 분석하고 있습니다...'}
+                                  </p>
+                                  {chapter3Progress && (
+                                    <div className="generation-progress">
+                                      <div className="progress-bar">
+                                        <div
+                                          className="progress-fill"
+                                          style={{ width: `${chapter3Progress.progress || 0}%` }}
+                                        />
+                                      </div>
+                                      <span className="progress-text">{chapter3Progress.progress || 0}%</span>
+                                    </div>
+                                  )}
+                                  <p className="generation-note">잠시만 기다려주세요 (최대 5분 소요)</p>
                                 </div>
                               </div>
                             </div>

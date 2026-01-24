@@ -2277,8 +2277,43 @@
 .generation-chapter-title {
   color: #d4af37;
   font-size: 1.1rem;
-  margin: 0 0 30px;
+  margin: 0 0 20px;
   animation: fadeInUp 0.5s ease-out 0.1s both;
+}
+
+/* Progress Bar Styles */
+.generation-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.generation-progress .progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.generation-progress .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4af37, #f4d03f);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.generation-progress .progress-text {
+  color: #d4af37;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 40px;
 }
 
 @keyframes fadeInUp {
