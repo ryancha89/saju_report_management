@@ -14,11 +14,9 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
   const { addToast } = useToast();
 
   // 쿠폰 적용 시 할인된 가격 계산
-  // TODO: 테스트 후 원래대로 복구
-  const discountedPrice = 1000; // 테스트용 1000원
-  // const discountedPrice = couponInfo?.discount_percent
-  //   ? Math.round(productInfo.price * (1 - couponInfo.discount_percent / 100))
-  //   : productInfo.price;
+  const discountedPrice = couponInfo?.discount_percent
+    ? Math.round(productInfo.price * (1 - couponInfo.discount_percent / 100))
+    : productInfo.price;
   const discountAmount = productInfo.price - discountedPrice;
 
   // 가상계좌 webhook은 항상 프로덕션 URL 사용 (PortOne 서버에서 호출하므로 localhost 불가)
@@ -128,7 +126,9 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
 
   const handleCallback = async (response) => {
     console.log('handleCallback response:', response);
+    console.log('handleCallback full response:', JSON.stringify(response, null, 2));
     const { success, imp_uid, merchant_uid, error_msg, error_code, pay_method: method } = response;
+    console.log('Payment result:', { success, imp_uid, merchant_uid, error_msg, error_code, method });
 
     // 결제 취소 또는 실패 처리
     if (error_code || error_msg) {
@@ -159,8 +159,9 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       return;
     }
 
-    // 카드 결제: success가 필요
-    if (success) {
+    // 카드 결제: success가 true이거나, imp_uid가 있으면 성공으로 처리
+    // (일부 PG는 success 필드를 반환하지 않음)
+    if (success || imp_uid) {
       await createOrder(merchant_uid, imp_uid, 'card', response);
     } else {
       setIsProcessing(false);
@@ -343,23 +344,16 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
       {/* 상품 정보 */}
       <div className="product-info">
         <div className="product-name">{productInfo.name}</div>
-        {/* TODO: 테스트 후 원래 로직으로 복구 - couponInfo 조건부 표시 */}
         <div className="price-with-discount">
-          <div className="original-price">{productInfo.price.toLocaleString()}원</div>
-          <div className="discount-badge">테스트</div>
-          <div className="discounted-price">{discountedPrice.toLocaleString()}원</div>
-        </div>
-        {/* 원래 코드:
-        {couponInfo?.discount_percent ? (
-          <div className="price-with-discount">
-            <div className="original-price">{productInfo.price.toLocaleString()}원</div>
-            <div className="discount-badge">-{couponInfo.discount_percent}%</div>
-            <div className="discounted-price">{discountedPrice.toLocaleString()}원</div>
+          <div className="original-price">
+            {productInfo.id === 'blueprint' ? '150,000원' : '99,000원'}
           </div>
-        ) : (
-          <div className="product-price">{productInfo.price.toLocaleString()}원</div>
-        )}
-        */}
+          <div className="discount-badge">
+            {productInfo.id === 'blueprint' ? '34% 할인' : '40% 할인'}
+          </div>
+          <div className="discounted-price">{productInfo.price.toLocaleString()}원</div>
+        </div>
+        <div className="vat-included">부가세 포함</div>
         {couponInfo && (
           <div className="coupon-applied">
             <span className="coupon-label">적용된 쿠폰:</span>
