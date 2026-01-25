@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader, FileText, User, Calendar, ChevronLeft, ChevronRight, Home, Share2, ChevronDown, MessageSquarePlus, Edit3, Trash2, X } from 'lucide-react';
+import { Loader, FileText, User, Calendar, ChevronLeft, ChevronRight, Home, Share2, ChevronDown, MessageSquarePlus, Edit3, Trash2, X, HelpCircle } from 'lucide-react';
 import './ReportPreview.css';
 import '../components/CounselorKeyPoint.css';
 
@@ -23,6 +23,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const [currentLoveYearPage, setCurrentLoveYearPage] = useState(1); // 연애운 연도별 페이지
   const [showChapterImage, setShowChapterImage] = useState(false); // 챕터 이미지 표시 여부
   const [showManagerGreeting, setShowManagerGreeting] = useState(true); // 매니저 인사말 표시 여부
+  const [termExplanationModal, setTermExplanationModal] = useState({ isOpen: false, term: null }); // 용어 설명 모달
   const dropdownRef = useRef(null);
   const chapterDisplayRef = useRef(null);
   const touchStartX = useRef(null);
@@ -758,6 +759,119 @@ function ReportPreview({ isAdminPreview = false }) {
     return null;
   };
 
+  // FortuneEditor/CareerEditor와 동일한 extractYearLuckResult 로직
+  // type_analysis에서 해당 연도의 성패를 계산
+  const extractYearLuckResult = (year, sky, earth, type_analysis, current_decade) => {
+    if (!type_analysis || !current_decade) {
+      return { sky: {}, earth: {} };
+    }
+
+    // 한글 → 한자 변환 (type_analysis의 키가 한자이므로)
+    const toHanja = (char) => {
+      const map = {
+        '갑': '甲', '을': '乙', '병': '丙', '정': '丁', '무': '戊',
+        '기': '己', '경': '庚', '신': '辛', '임': '壬', '계': '癸',
+        '자': '子', '축': '丑', '인': '寅', '묘': '卯', '진': '辰', '사': '巳',
+        '오': '午', '미': '未', '申': '申', '유': '酉', '술': '戌', '해': '亥'
+      };
+      return map[char] || char;
+    };
+
+    const skyHanja = toHanja(sky);
+    const earthHanja = toHanja(earth);
+
+    const decadeSky = current_decade.ganji?.charAt(0);
+    const decadeEarth = current_decade.ganji?.charAt(1);
+
+    const skyDecadeLucks = type_analysis.sky_result?.lucks?.decade_lucks;
+    const earthDecadeLucks = type_analysis.earth_result?.lucks?.decade_lucks;
+
+    const skyYearLucks = skyDecadeLucks?.[decadeSky]?.year_lucks;
+    const earthYearLucks = earthDecadeLucks?.[decadeEarth]?.year_lucks;
+
+    // 한자로 변환된 키로 조회
+    const skyResult = skyYearLucks?.[skyHanja];
+    const earthResult = earthYearLucks?.[earthHanja];
+
+    // 결과 판정 - outcome에서 성/패 판단
+    const determineResult = (outcomes) => {
+      if (!outcomes || !Array.isArray(outcomes)) return '';
+      const flat = outcomes.flat().filter(Boolean);
+
+      // deep_level이 가장 높은 outcome의 결과를 우선 사용
+      const sortedByDeepLevel = [...flat].sort((a, b) => (b?.deep_level || 0) - (a?.deep_level || 0));
+
+      // 먼저 outcome에 이미 복합 결과가 있는지 확인 (deep_level 높은 순)
+      for (const o of sortedByDeepLevel) {
+        const r = o?.result;
+        if (r === '패중유성' || r?.includes?.('패중유성')) return '패중유성';
+        if (r === '성중유패' || r?.includes?.('성중유패')) return '성중유패';
+      }
+
+      // 단순 성/패 결과 확인 (복합 결과 문자열은 제외)
+      const simpleResults = flat.filter(o => {
+        const r = o?.result;
+        return r === '성' || r === '成' || r === '패' || r === '敗';
+      });
+
+      const successCount = simpleResults.filter(o => o?.result === '성' || o?.result === '成').length;
+      const failCount = simpleResults.filter(o => o?.result === '패' || o?.result === '敗').length;
+
+      if (successCount > 0 && failCount > 0) {
+        // 실패가 더 많거나 같으면 패중유성, 성공이 더 많으면 성중유패
+        return failCount >= successCount ? '패중유성' : '성중유패';
+      }
+      if (successCount > 0) return '성';
+      if (failCount > 0) return '패';
+      return '';
+    };
+
+    const skyOutcomes = skyResult?.result?.year_luck_sky_outcome || [];
+    const earthOutcomes = earthResult?.result?.year_luck_earth_outcome || [];
+
+    return {
+      sky: {
+        result: determineResult(skyOutcomes)
+      },
+      earth: {
+        result: determineResult(earthOutcomes)
+      }
+    };
+  };
+
+  // 연도에 해당하는 대운 찾기
+  const findDecadeForYear = (year) => {
+    if (!reportData?.decade_luck?.decade_array) return null;
+
+    const birthYear = reportData.order?.birth_year || parseInt(reportData.order?.birth_info?.match(/(\d+)년/)?.[1]) || 2000;
+    const age = year - birthYear;
+    const startAge = reportData.decade_luck?.start_age || 1;
+    const decadeArray = reportData.decade_luck?.decade_array || [];
+
+    for (let i = 0; i < decadeArray.length; i++) {
+      const decadeStartAge = (startAge - 1) + (i * 10);
+      const decadeEndAge = decadeStartAge + 9;
+      if (age >= decadeStartAge && age <= decadeEndAge) {
+        return {
+          index: i,
+          ganji: decadeArray[i],
+          start_age: decadeStartAge,
+          end_age: decadeEndAge
+        };
+      }
+    }
+    return null;
+  };
+
+  // 간지로 연도 계산 (한자 → 한글)
+  const getYearGanji = (year) => {
+    const heavenlyStems = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
+    const earthlyBranches = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+    const stemIndex = (year - 4) % 10;
+    const branchIndex = (year - 4) % 12;
+    return heavenlyStems[stemIndex] + earthlyBranches[branchIndex];
+  };
+
   // 챕터 5, 6, 7 연도별 데이터 가져오기 (재물운, 직업운, 연애운)
   const getYearsData = (chapterNum) => {
     if (!reportData) return null;
@@ -771,13 +885,26 @@ function ReportPreview({ isAdminPreview = false }) {
           .sort((a, b) => (a[1].year || parseInt(a[0]) || 0) - (b[1].year || parseInt(b[0]) || 0));
       }
     }
-    // 직업운 (챕터 6) - career_years.yearlyFortunes 또는 yearlyCareers
+    // 직업운 (챕터 6) - career_years.yearlyCareers 우선 (CareerEditor에서 저장하는 형식)
     if (chapterNum === 6 && reportData.career_years) {
-      const yearlyData = reportData.career_years.yearlyFortunes || reportData.career_years.yearlyCareers || reportData.career_years;
+      console.log('[ReportPreview] career_years raw:', reportData.career_years);
+      console.log('[ReportPreview] career_years.yearlyCareers:', reportData.career_years.yearlyCareers);
+      const yearlyData = reportData.career_years.yearlyCareers || reportData.career_years.yearlyFortunes || reportData.career_years;
+      console.log('[ReportPreview] yearlyData selected:', yearlyData);
       if (yearlyData && typeof yearlyData === 'object') {
-        return Object.entries(yearlyData)
+        const result = Object.entries(yearlyData)
           .filter(([key, value]) => value && typeof value === 'object' && key !== 'baseFortune' && key !== 'baseCareer')
           .sort((a, b) => (a[1].year || parseInt(a[0]) || 0) - (b[1].year || parseInt(b[0]) || 0));
+        console.log('[ReportPreview] yearlyData entries:', result);
+        // 2030년 데이터 상세 출력
+        const year2030 = result.find(([k, v]) => v.year === 2030);
+        if (year2030) {
+          console.log('[ReportPreview] 2030 data:', year2030[1]);
+          console.log('[ReportPreview] 2030 sky:', year2030[1].sky);
+          console.log('[ReportPreview] 2030 earth:', year2030[1].earth);
+          console.log('[ReportPreview] 2030 earth_analysis:', year2030[1].earth_analysis);
+        }
+        return result;
       }
     }
     // 연애운 (챕터 7) - love_fortune에서 연도별 데이터 추출
@@ -1065,6 +1192,86 @@ function ReportPreview({ isAdminPreview = false }) {
     return String(result);
   };
 
+  // 성중유패/패중유성 용어인지 확인
+  const isMixedTerm = (result) => {
+    if (!result || typeof result !== 'string') return false;
+    return result.includes('성중유패') || result.includes('成中有敗') ||
+           result.includes('패중유성') || result.includes('敗中有成');
+  };
+
+  // 용어 타입 추출 (성중유패 또는 패중유성)
+  const getMixedTermType = (result) => {
+    if (!result || typeof result !== 'string') return null;
+    if (result.includes('성중유패') || result.includes('成中有敗')) return '성중유패';
+    if (result.includes('패중유성') || result.includes('敗中有成')) return '패중유성';
+    return null;
+  };
+
+  // 용어 설명 모달 렌더링
+  const renderTermExplanationModal = () => {
+    if (!termExplanationModal.isOpen) return null;
+
+    const explanations = {
+      '성중유패': {
+        title: '성중유패(成中有敗)',
+        description: '성공(成)한 사주나 운세 속에 실패(敗)의 요소가 숨어 있다는 뜻입니다.',
+        detail: '이는 사주가 잘 구성되어 있어도(성격) 용신(用神)을 충극하는 요소가 섞여 있어, 운에 따라 길함이 흉함으로 변할 수 있음을 경계하는 말입니다.',
+        meaning: '좋은 흐름 속에서도 방심하지 말고 신중하게 대처해야 합니다.'
+      },
+      '패중유성': {
+        title: '패중유성(敗中有成)',
+        description: '실패한 구조 속에서도 성공할 수 있는 희망이나 조화가 있다는 뜻입니다.',
+        detail: '어려운 상황이나 불리한 조건 속에서도 긍정적인 요소가 숨어 있어, 노력과 때를 만나면 상황이 호전될 수 있음을 의미합니다.',
+        meaning: '힘든 시기라도 포기하지 말고 기회를 모색해야 합니다.'
+      }
+    };
+
+    const info = explanations[termExplanationModal.term];
+    if (!info) return null;
+
+    return (
+      <div className="term-explanation-modal-overlay" onClick={() => setTermExplanationModal({ isOpen: false, term: null })}>
+        <div className="term-explanation-modal" onClick={(e) => e.stopPropagation()}>
+          <button className="term-modal-close" onClick={() => setTermExplanationModal({ isOpen: false, term: null })}>
+            <X size={20} />
+          </button>
+          <h3 className="term-modal-title">{info.title}</h3>
+          <p className="term-modal-description">{info.description}</p>
+          <p className="term-modal-detail">{info.detail}</p>
+          <div className="term-modal-meaning">
+            <span className="meaning-label">핵심</span>
+            <span className="meaning-text">{info.meaning}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 결과 배지 렌더링 (info 아이콘 포함)
+  const renderResultBadge = (result, score, degree) => {
+    const rating = getSingleRating(result, score, degree);
+    const resultStr = safeResultString(result, '');
+    const mixedTerm = getMixedTermType(result);
+
+    return (
+      <span className={`result-badge ${rating.class}`}>
+        {rating.icon} {resultStr}
+        {mixedTerm && (
+          <button
+            className="term-info-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setTermExplanationModal({ isOpen: true, term: mixedTerm });
+            }}
+            aria-label={`${mixedTerm} 설명 보기`}
+          >
+            <HelpCircle size={14} />
+          </button>
+        )}
+      </span>
+    );
+  };
+
   // 대운 흐름 결과 클래스
   const getDecadeResultClass = (result) => {
     if (!result) return 'none';
@@ -1094,7 +1301,7 @@ function ReportPreview({ isAdminPreview = false }) {
 
   // 종합 판정 계산 (Degree 우선, 없으면 result, 그 다음 score로 판단)
   const getOverallRating = (decade) => {
-    // 0. Degree 필드가 있으면 최우선으로 사용
+    // 0. Degree 필드가 있으면 최우선으로 사용 (매니저가 직접 설정한 경우)
     if (decade.degree || decade.Degree) {
       const deg = (decade.degree || decade.Degree).toLowerCase();
       if (deg === 'excellent' || deg === '대길') return 'excellent';
@@ -1114,57 +1321,251 @@ function ReportPreview({ isAdminPreview = false }) {
       if (level === 'difficult') return 'difficult';
     }
 
-    // 0.6. 재물운 manager_edit.sky/earth.fortune_level 필드 확인
-    if (decade.manager_edit?.sky?.fortune_level || decade.manager_edit?.earth?.fortune_level) {
-      const skyLevel = decade.manager_edit?.sky?.fortune_level;
-      const earthLevel = decade.manager_edit?.earth?.fortune_level;
+    // 0.55. type_analysis가 있으면 extractYearLuckResult로 직접 계산 (FortuneEditor와 동일)
+    if (decade.year === 2026 || decade.year === 2030) {
+      console.log('[getOverallRating] 0.55 check:', {
+        year: decade.year,
+        hasTypeAnalysis: !!reportData?.type_analysis,
+        hasDecadeLuck: !!reportData?.decade_luck,
+        ganji: decade.ganji,
+        keys: Object.keys(decade)
+      });
+    }
+    if (decade.year && reportData?.type_analysis) {
+      const ganji = decade.ganji || getYearGanji(decade.year);
+      const sky = ganji?.charAt(0);
+      const earth = ganji?.charAt(1);
+      const decadeForYear = findDecadeForYear(decade.year);
 
-      // sky와 earth 점수 합산으로 전체 등급 계산
-      const levelToScore = (level) => {
-        if (level === 'very_good') return 2;
-        if (level === 'good') return 1;
-        if (level === 'normal') return 0;
-        if (level === 'caution') return -1;
-        if (level === 'difficult') return -2;
-        return 0;
-      };
+      if (decadeForYear && sky && earth) {
+        const yearLuckResult = extractYearLuckResult(decade.year, sky, earth, reportData.type_analysis, decadeForYear);
+        const skyResult = yearLuckResult.sky?.result;
+        const earthResult = yearLuckResult.earth?.result;
 
-      const totalScore = levelToScore(skyLevel) + levelToScore(earthLevel);
-      if (totalScore >= 3) return 'excellent';
-      if (totalScore >= 1) return 'good';
-      if (totalScore >= -1) return 'neutral';
-      if (totalScore >= -3) return 'caution';
-      return 'difficult';
+        console.log('[getOverallRating] 0.55 extractYearLuckResult:', {
+          year: decade.year,
+          ganji,
+          decadeForYear,
+          skyResult,
+          earthResult
+        });
+
+        if (skyResult || earthResult) {
+          // 성패 판정 로직 (FortuneEditor와 동일)
+          const isPureSuccess = (result) => {
+            if (!result) return false;
+            if (result.includes('성중유패') || result.includes('패중유성') || result.includes('성패공존')) return false;
+            return result.includes('성') || result.includes('成');
+          };
+          const isSuccess = (result) => {
+            if (!result) return false;
+            if (result.includes('성중유패')) return false;
+            if (result.includes('성패공존')) return false;
+            return result.includes('성') || result.includes('패중유성');
+          };
+          const isFailure = (result) => {
+            if (!result) return false;
+            if (result.includes('패중유성')) return false;
+            if (result.includes('성패공존')) return false;
+            return result.includes('패') || result.includes('성중유패');
+          };
+
+          const skyIsSuccess = isSuccess(skyResult);
+          const skyIsFailure = isFailure(skyResult);
+          const earthIsSuccess = isSuccess(earthResult);
+          const earthIsFailure = isFailure(earthResult);
+          const skyIsPure = isPureSuccess(skyResult);
+          const earthIsPure = isPureSuccess(earthResult);
+
+          // 둘 다 순수 성공 (成) → 최고
+          if (skyIsPure && earthIsPure) return 'excellent';
+          // 성공 + 실패 혼재 → 도전
+          if ((skyIsSuccess && earthIsFailure) || (skyIsFailure && earthIsSuccess)) return 'caution';
+          // 둘 다 성공 패턴
+          if (skyIsSuccess && earthIsSuccess) {
+            if (skyIsPure || earthIsPure) return 'good';
+            return 'neutral'; // 둘 다 패중유성
+          }
+          // 둘 다 실패 패턴 → 어려움
+          if (skyIsFailure && earthIsFailure) return 'difficult';
+          // 하나만 성공
+          if (skyIsSuccess || earthIsSuccess) {
+            if (skyIsPure || earthIsPure) return 'good';
+            return 'neutral';
+          }
+          // 하나만 실패 → 도전
+          if (skyIsFailure || earthIsFailure) return 'caution';
+          return 'neutral';
+        }
+      }
     }
 
-    // 1. result 문자열로 판정
-    const isGood = (result) => {
-      if (!result || typeof result !== 'string') return false;
-      return result === '成' || result === '성' ||
-             result.includes('敗中有成') || result.includes('패중유성');
-    };
-    const isBad = (result) => {
-      if (!result || typeof result !== 'string') return false;
-      return result === '敗' || result === '패' ||
-             result.includes('成中有敗') || result.includes('성중유패');
-    };
+    // 0.6. 재물운/직업운 - sky.result/earth.result가 있으면 그걸 우선 사용 (아래 1에서 처리)
+    // sky.result/earth.result가 없을 때만 manager_edit.fortune_level/career_level 사용
+    const hasSkyResult = decade.sky?.result;
+    const hasEarthResult = decade.earth?.result;
 
-    const skyGood = isGood(decade.sky_result);
-    const skyBad = isBad(decade.sky_result);
-    const earthGood = isGood(decade.earth_result);
-    const earthBad = isBad(decade.earth_result);
+    if (!hasSkyResult && !hasEarthResult) {
+      const skyFortuneLevel = decade.manager_edit?.sky?.fortune_level || decade.manager_edit?.sky?.career_level;
+      const earthFortuneLevel = decade.manager_edit?.earth?.fortune_level || decade.manager_edit?.earth?.career_level;
 
-    // 결과가 있으면 결과로 판정
-    if (decade.sky_result || decade.earth_result) {
-      if (skyGood && earthGood) return 'excellent';
-      if (skyGood && !earthBad) return 'good';
-      if (earthGood && !skyBad) return 'good';
-      if (skyBad && earthBad) return 'difficult';
-      if (skyBad || earthBad) return 'caution';
-      if (skyGood || earthGood) return 'neutral';
+      // 디버그 로그
+      console.log('[getOverallRating] 0.6 check (no sky/earth result):', {
+        year: decade.year,
+        manager_edit: decade.manager_edit,
+        skyFortuneLevel,
+        earthFortuneLevel
+      });
+
+      if (skyFortuneLevel || earthFortuneLevel) {
+        const skyLevel = skyFortuneLevel;
+        const earthLevel = earthFortuneLevel;
+
+        // sky와 earth 점수 합산으로 전체 등급 계산
+        const levelToScore = (level) => {
+          if (level === 'very_good') return 2;
+          if (level === 'good') return 1;
+          if (level === 'normal') return 0;
+          if (level === 'caution') return -1;
+          if (level === 'difficult') return -2;
+          return 0;
+        };
+
+        const totalScore = levelToScore(skyLevel) + levelToScore(earthLevel);
+        if (totalScore >= 3) return 'excellent';
+        if (totalScore >= 1) return 'good';
+        if (totalScore >= -1) return 'neutral';
+        if (totalScore >= -3) return 'caution';
+        return 'difficult';
+      }
     }
 
-    // 2. score로 판정 (fallback)
+    // 1. result 문자열로 판정 (sky_result/earth_result 또는 sky_analysis.result/earth_analysis.result)
+    // 백엔드 calculate_default_fortune_level 로직과 일치시킴:
+    // - 成/성: 순수 성공, 敗中有成/패중유성: 어려움 속 성공 → 좋음
+    // - 敗/패: 순수 실패, 成中有敗/성중유패: 성공 속 실패 → 나쁨
+    // - 成敗共存/성패공존: 중립
+    const normalizeResult = (result) => {
+      if (!result || typeof result !== 'string') return '';
+      return result.trim();
+    };
+    const isPureSuccess = (result) => {
+      const r = normalizeResult(result);
+      // 순수 성공: '成' 또는 '성'만 (복합 결과 제외)
+      if (r.includes('成中有敗') || r.includes('성중유패') ||
+          r.includes('敗中有成') || r.includes('패중유성') ||
+          r.includes('成敗共存') || r.includes('성패공존')) return false;
+      return r.includes('成') || r.includes('성');
+    };
+    const isSuccess = (result) => {
+      const r = normalizeResult(result);
+      // 먼저 실패 패턴 제외 (成中有敗는 실패로 분류)
+      if (r.includes('成中有敗') || r.includes('성중유패')) return false;
+      // 성패공존도 성공이 아님
+      if (r.includes('成敗共存') || r.includes('성패공존')) return false;
+      // 成/성 또는 敗中有成/패중유성 (어려움 속에서 성공 찾음)
+      return r.includes('成') || r.includes('성') ||
+             r.includes('敗中有成') || r.includes('패중유성');
+    };
+    const isFailure = (result) => {
+      const r = normalizeResult(result);
+      // 먼저 성공 패턴 제외 (敗中有成은 성공으로 분류)
+      if (r.includes('敗中有成') || r.includes('패중유성')) return false;
+      // 성패공존도 실패가 아님
+      if (r.includes('成敗共存') || r.includes('성패공존')) return false;
+      // 敗/패 또는 成中有敗/성중유패 (성공 속에서 실패 있음)
+      return r.includes('敗') || r.includes('패') ||
+             r.includes('成中有敗') || r.includes('성중유패');
+    };
+    const isMixed = (result) => {
+      const r = normalizeResult(result);
+      // 成敗共存/성패공존 (성공과 실패가 공존)
+      return r.includes('成敗共存') || r.includes('성패공존');
+    };
+
+    // FortuneEditor/CareerEditor에서 저장된 데이터를 우선 사용
+    // 우선순위: sky.result → sky_result → sky_analysis.result
+    if (decade.year === 2030) {
+      console.log('[getOverallRating 2030] keys:', Object.keys(decade));
+      console.log('[getOverallRating 2030] sky_result:', decade.sky_result);
+      console.log('[getOverallRating 2030] earth_result:', decade.earth_result);
+    }
+    const skyResult = decade.sky?.result || decade.sky_result || decade.sky_analysis?.result;
+    const earthResult = decade.earth?.result || decade.earth_result || decade.earth_analysis?.result;
+
+    // 결과가 있으면 결과로 판정 (백엔드 로직과 일치)
+    if (skyResult || earthResult) {
+      const skyIsSuccess = isSuccess(skyResult);
+      const skyIsFailure = isFailure(skyResult);
+      const skyIsMixed = isMixed(skyResult);
+      const earthIsSuccess = isSuccess(earthResult);
+      const earthIsFailure = isFailure(earthResult);
+      const earthIsMixed = isMixed(earthResult);
+      const bothPureSuccess = isPureSuccess(skyResult) && isPureSuccess(earthResult);
+
+      // 디버그 로그 (개발 환경에서만)
+      if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') {
+        console.log('[getOverallRating] results:', {
+          year: decade.year,
+          skyResult,
+          earthResult,
+          source: {
+            sky: decade.sky?.result ? 'sky.result' : (decade.sky_result ? 'sky_result' : 'sky_analysis.result'),
+            earth: decade.earth?.result ? 'earth.result' : (decade.earth_result ? 'earth_result' : 'earth_analysis.result')
+          },
+          skyIsSuccess, skyIsFailure, skyIsMixed,
+          earthIsSuccess, earthIsFailure, earthIsMixed,
+          bothPureSuccess
+        });
+      }
+
+      // 순수 성공 여부 체크
+      const skyIsPure = isPureSuccess(skyResult);
+      const earthIsPure = isPureSuccess(earthResult);
+
+      // 둘 다 순수 성공 (成) → 최고
+      if (bothPureSuccess) {
+        console.log('[getOverallRating] → excellent (bothPureSuccess)');
+        return 'excellent';
+      }
+      // 성공 + 실패 혼재 → 도전 (먼저 체크해야 함!)
+      if ((skyIsSuccess && earthIsFailure) || (skyIsFailure && earthIsSuccess)) return 'caution';
+      // 둘 다 성공 패턴
+      if (skyIsSuccess && earthIsSuccess) {
+        // 하나라도 순수 성공(成)이면 좋음, 둘 다 패중유성이면 보통
+        if (skyIsPure || earthIsPure) return 'good';
+        return 'neutral'; // 둘 다 패중유성
+      }
+      // 둘 다 실패 패턴 (敗 또는 成中有敗) → 어려움
+      if (skyIsFailure && earthIsFailure) return 'difficult';
+      // 성공 + 성패공존 → 평탄 (좋음으로 표시하면 안됨)
+      if ((skyIsSuccess && earthIsMixed) || (skyIsMixed && earthIsSuccess)) return 'neutral';
+      // 실패 + 성패공존 → 도전
+      if ((skyIsFailure && earthIsMixed) || (skyIsMixed && earthIsFailure)) return 'caution';
+      // 하나만 성공 (다른 쪽은 중립/없음)
+      if (skyIsSuccess || earthIsSuccess) {
+        // 순수 성공이면 좋음, 패중유성이면 보통
+        if (skyIsPure || earthIsPure) return 'good';
+        return 'neutral';
+      }
+      // 하나만 실패 (다른 쪽은 중립/없음) → 도전
+      if (skyIsFailure || earthIsFailure) return 'caution';
+      // 둘 다 중립 (成敗共存 등) → 평탄
+      return 'neutral';
+    }
+
+    // 2. fortune_level 또는 career_level로 판정 (fallback - 백엔드에서 '좋음', '나쁨', '보통' 한국어로 반환)
+    const levelField = decade.fortune_level || decade.career_level;
+    if (levelField) {
+      const level = levelField;
+      if (level === 'very_good' || level === 'excellent') return 'excellent';
+      if (level === 'good' || level === '좋음') return 'good';
+      if (level === 'caution') return 'caution';
+      if (level === 'difficult' || level === 'bad' || level === '나쁨') return 'difficult';
+      if (level === 'normal' || level === 'neutral' || level === '보통') return 'neutral';
+    }
+
+    // 3. score로 판정 (fallback)
     if (typeof decade.sky_score === 'number' && typeof decade.earth_score === 'number') {
       const totalScore = decade.sky_score + decade.earth_score;
       if (totalScore >= 3) return 'excellent';
@@ -1540,9 +1941,7 @@ function ReportPreview({ isAdminPreview = false }) {
                       <div className="analysis-header">
                         <span className={`analysis-icon ${getElementClass(decade.sky)}`}>{decade.sky}</span>
                         <span className="analysis-title">천간 격국 <small>(정신·의지·계획)</small></span>
-                        <span className={`result-badge ${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
-                          {getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).icon} {safeResultString(decade.sky_result, '')}
-                        </span>
+                        {renderResultBadge(decade.sky_result, decade.sky_score, decade.sky_degree)}
                       </div>
                       <div className="analysis-body">
                         {renderContent(skyAnalysisText)}
@@ -1554,9 +1953,7 @@ function ReportPreview({ isAdminPreview = false }) {
                       <div className="analysis-header">
                         <span className={`analysis-icon ${getElementClass(decade.earth)}`}>{decade.earth}</span>
                         <span className="analysis-title">지지 격국 <small>(현실·환경·실행)</small></span>
-                        <span className={`result-badge ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
-                          {getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).icon} {safeResultString(decade.earth_result, '')}
-                        </span>
+                        {renderResultBadge(decade.earth_result, decade.earth_score, decade.earth_degree)}
                       </div>
                       {(decade.keywords?.length > 0 || decade.samhap) && (
                         <div className="analysis-keywords">
@@ -2672,6 +3069,7 @@ function ReportPreview({ isAdminPreview = false }) {
     if (currentChapter > 1) {
       setCurrentChapter(currentChapter - 1);
       setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
+      setShowManagerGreeting(false); // 매니저 인사말 화면 해제
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -2680,6 +3078,7 @@ function ReportPreview({ isAdminPreview = false }) {
     if (currentChapter < totalChapters) {
       setCurrentChapter(currentChapter + 1);
       setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
+      setShowManagerGreeting(false); // 매니저 인사말 화면 해제
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -2752,6 +3151,11 @@ function ReportPreview({ isAdminPreview = false }) {
 
   // 이전 페이지로 이동 (페이지 → 챕터 순)
   const goToPrevPage = () => {
+    // 0. 매니저 인사말에서는 더 이상 뒤로 갈 곳이 없음 (무시)
+    if (showManagerGreeting) {
+      return;
+    }
+
     // 1. 연도별 페이지가 있는 챕터에서 2페이지 이상이면 → 이전 페이지로
     const [currentPage, setCurrentPage] = getChapterPageState();
     if (setCurrentPage && currentPage > 1) {
@@ -2760,13 +3164,14 @@ function ReportPreview({ isAdminPreview = false }) {
       return;
     }
 
-    // 2. 챕터 콘텐츠 1페이지면 → 현재 챕터 커버로
-    if (!showChapterImage && !showManagerGreeting) {
+    // 2. 챕터 콘텐츠 1페이지에서 → 현재 챕터 커버로 (모든 챕터에 동일하게 적용)
+    if (!showChapterImage) {
       setShowChapterImage(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // 3. 챕터 커버면 → 이전 챕터 마지막 페이지로
+    // 3. 챕터 커버에서 첫번째 챕터가 아니면 → 이전 챕터 마지막 페이지로
     if (showChapterImage && currentChapter > 1) {
       const prevChapter = currentChapter - 1;
       setCurrentChapter(prevChapter);
@@ -2793,6 +3198,7 @@ function ReportPreview({ isAdminPreview = false }) {
     if (showChapterImage && currentChapter === 1 && reportData?.order?.manager) {
       setShowChapterImage(false);
       setShowManagerGreeting(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -2825,6 +3231,7 @@ function ReportPreview({ isAdminPreview = false }) {
     setCurrentChapter(num);
     setShowChapterDropdown(false);
     setShowChapterImage(true); // 챕터 전환 시 이미지 먼저 보여줌
+    setShowManagerGreeting(false); // 매니저 인사말 화면 해제
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -3110,6 +3517,9 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
         </div>
       )}
+
+      {/* 용어 설명 모달 */}
+      {renderTermExplanationModal()}
     </div>
   );
 }

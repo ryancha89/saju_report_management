@@ -4388,3 +4388,128 @@ h3.coaching-item-topic:active {
   line-height: 1.5;
   margin: 0;
 }
+
+/* ========== 용어 설명 모달 ========== */
+.term-info-btn {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  margin-left: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  vertical-align: middle;
+}
+
+.term-info-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.1);
+}
+
+.term-explanation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.term-explanation-modal {
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.term-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+}
+
+.term-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.term-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f0d78c;
+  margin: 0 0 16px 0;
+  padding-right: 32px;
+}
+
+.term-modal-description {
+  font-size: 1rem;
+  color: #fff;
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.term-modal-detail {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #f0d78c;
+}
+
+.term-modal-meaning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(240, 215, 140, 0.1);
+  border-radius: 8px;
+}
+
+.meaning-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f0d78c;
+  background: rgba(240, 215, 140, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.meaning-text {
+  font-size: 0.9rem;
+  color: #fff;
+  line-height: 1.5;
+}
+
+/* result-badge 내 info 버튼 위치 조정 */
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}

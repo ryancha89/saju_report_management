@@ -8822,6 +8822,392 @@
   border-radius: 10px;
 }
 
+.interpretation-card-header .btn-regenerate-decade {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6366f1;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.interpretation-card-header .btn-regenerate-decade:hover:not(:disabled) {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+  color: #4f46e5;
+}
+
+.interpretation-card-header .btn-regenerate-decade:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 대운 재생성 모달 */
+.regenerate-decade-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.regenerate-decade-modal {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  border-radius: 20px;
+  padding: 40px 50px;
+  text-align: center;
+  box-shadow: 0 25px 80px rgba(99, 102, 241, 0.4), 0 0 60px rgba(139, 92, 246, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  animation: modalSlideIn 0.4s ease;
+  max-width: 400px;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-spinner-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+}
+
+.modal-spinner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(139, 92, 246, 0.2);
+  border-top-color: #a78bfa;
+  border-right-color: #818cf8;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+.modal-taiji {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 40px;
+  animation: pulse 2s ease-in-out infinite, rotate 8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes rotate {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.modal-title {
+  color: #e0e7ff;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.modal-ganji {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #a78bfa;
+  margin-right: 8px;
+}
+
+.modal-age {
+  color: #a5b4fc;
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+.modal-progress-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.progress-item.active {
+  background: rgba(139, 92, 246, 0.2);
+  color: #e0e7ff;
+  animation: itemPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes itemPulse {
+  0%, 100% { background: rgba(139, 92, 246, 0.2); }
+  50% { background: rgba(139, 92, 246, 0.35); }
+}
+
+.progress-icon {
+  font-size: 1.1rem;
+}
+
+.modal-hint {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-top: 16px;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* 전체 대운 순차 생성 모달 */
+.regenerate-all-decades-modal {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 25px 80px rgba(99, 102, 241, 0.4), 0 0 60px rgba(139, 92, 246, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  animation: modalSlideIn 0.4s ease;
+  max-width: 500px;
+  width: 90%;
+}
+
+.regenerate-all-decades-modal .modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: transparent !important;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.regenerate-all-decades-modal .modal-spinner-container {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 16px;
+}
+
+.regenerate-all-decades-modal .modal-title {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.regenerate-all-decades-modal .modal-subtitle {
+  color: #a5b4fc;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.decades-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.decades-progress-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.decades-progress-list::-webkit-scrollbar-track {
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 3px;
+}
+
+.decades-progress-list::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.4);
+  border-radius: 3px;
+}
+
+.decade-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.decade-progress-item.pending {
+  opacity: 0.5;
+}
+
+.decade-progress-item.generating {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.3));
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  animation: generatingPulse 1.5s ease-in-out infinite;
+}
+
+.decade-progress-item.completed {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+@keyframes generatingPulse {
+  0%, 100% {
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.3));
+    transform: scale(1);
+  }
+  50% {
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.5), rgba(99, 102, 241, 0.5));
+    transform: scale(1.02);
+  }
+}
+
+.decade-status-icon {
+  font-size: 1.2rem;
+  width: 28px;
+  text-align: center;
+}
+
+.decade-ganji {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e0e7ff;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.decade-ganji.current-decade {
+  color: #fbbf24;
+}
+
+.current-badge {
+  font-size: 0.65rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.decade-age {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  flex: 1;
+}
+
+.decade-status-text {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  min-width: 50px;
+  text-align: right;
+}
+
+.decade-progress-item.generating .decade-status-text {
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+.decade-progress-item.completed .decade-status-text {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+.generating-animation {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.generating-animation .dot {
+  width: 6px;
+  height: 6px;
+  background: #a78bfa;
+  border-radius: 50%;
+  animation: dotBounce 1.4s ease-in-out infinite;
+}
+
+.generating-animation .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.generating-animation .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.modal-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.modal-progress-bar .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #6366f1, #8b5cf6);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  animation: progressShimmer 2s linear infinite;
+}
+
+@keyframes progressShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
 .interpretation-areas {
   padding: 16px;
   display: flex;
@@ -9215,4 +9601,178 @@
   .edit-actions .btn {
     justify-content: center;
   }
+}
+
+/* 연도별 AI 생성 진행 모달 (재물운/직업운/연애운) */
+.regenerate-years-modal {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 25px 80px rgba(99, 102, 241, 0.4), 0 0 60px rgba(139, 92, 246, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  animation: modalSlideIn 0.4s ease;
+  max-width: 450px;
+  width: 90%;
+}
+
+.regenerate-years-modal .modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: transparent !important;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.regenerate-years-modal .modal-spinner-container {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regenerate-years-modal .modal-spinner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid rgba(139, 92, 246, 0.2);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.regenerate-years-modal .modal-taiji {
+  font-size: 2.5rem;
+  animation: pulse 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.regenerate-years-modal .modal-title {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #e0e7ff;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.regenerate-years-modal .modal-subtitle {
+  color: #a5b4fc;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 500;
+  background: rgba(139, 92, 246, 0.15);
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+.years-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.years-progress-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.years-progress-list::-webkit-scrollbar-track {
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 3px;
+}
+
+.years-progress-list::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.4);
+  border-radius: 3px;
+}
+
+.year-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.year-progress-item.pending {
+  opacity: 0.5;
+}
+
+.year-progress-item.generating {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.3));
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  animation: generatingPulse 1.5s ease-in-out infinite;
+}
+
+.year-progress-item.completed {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.year-progress-item.failed {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.year-status-icon {
+  font-size: 1.3rem;
+  width: 30px;
+  text-align: center;
+}
+
+.year-label {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #e0e7ff;
+  flex: 1;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.year-label.current-year {
+  color: #fbbf24;
+}
+
+.year-status-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  min-width: 60px;
+  text-align: right;
+}
+
+.year-progress-item.generating .year-status-text {
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+.year-progress-item.completed .year-status-text {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+.year-progress-item.failed .year-status-text {
+  color: #f87171;
+  font-weight: 500;
 }

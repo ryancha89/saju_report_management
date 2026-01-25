@@ -15,6 +15,27 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 const REPORT_BASE_URL = import.meta.env.DEV ? 'http://localhost:5173' : 'https://fortunetorch.com';
 
+// 재시도 로직이 포함된 fetch 함수
+const fetchWithRetry = async (url, options, maxRetries = 3, delay = 1000) => {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 500) {
+        throw new Error(`Server error (500) - attempt ${attempt}`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      console.warn(`[fetchWithRetry] Attempt ${attempt}/${maxRetries} failed:`, error.message);
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delay * attempt));
+      }
+    }
+  }
+  throw lastError;
+};
+
 function JsonViewer({ data, name = 'root', level = 0 }) {
   const [isExpanded, setIsExpanded] = useState(level < 2);
 
@@ -1169,6 +1190,18 @@ function OrderDetail() {
   const [decadeInterpretationText, setDecadeInterpretationText] = useState('');
   const [decadeInterpretationSaving, setDecadeInterpretationSaving] = useState(false);
   const [decadeAiGenerating, setDecadeAiGenerating] = useState(false);
+  const [regeneratingDecadeIndex, setRegeneratingDecadeIndex] = useState(null); // 개별 대운 재생성 중인 인덱스
+  const [regeneratingDecadeGanji, setRegeneratingDecadeGanji] = useState(null); // 재생성 중인 대운 간지 (모달 표시용)
+
+  // 전체 대운 순차 생성 상태
+  const [regeneratingAllDecades, setRegeneratingAllDecades] = useState(false);
+  const [allDecadesProgress, setAllDecadesProgress] = useState({
+    total: 0,
+    current: 0,
+    currentGanji: null,
+    completedDecades: [], // 완료된 대운 목록
+    allDecades: [] // 전체 대운 목록
+  });
 
   // 챕터4 상태 (5년운세 - 격국/억부/조후/합형충파해)
   const [fiveYearFortuneData, setFiveYearFortuneData] = useState(null);
@@ -1193,6 +1226,19 @@ function OrderDetail() {
   const [careerProgress, setCareerProgress] = useState(null);
   const [loveProgress, setLoveProgress] = useState(null);
   const [coachingProgress, setCoachingProgress] = useState(null);
+
+  // 연도별 진행 상태 (재물운/직업운/연애운 전체 생성용)
+  const [yearsProgress, setYearsProgress] = useState({
+    isActive: false,
+    type: null, // 'fortune' | 'career' | 'love'
+    title: '',
+    total: 0,
+    current: 0,
+    currentYear: null,
+    completedYears: [],
+    allYears: [],
+    failedYears: []
+  });
 
   // Q&A 상태 (고객 질문 답변)
   const [qaAnswers, setQaAnswers] = useState([]);
@@ -1985,17 +2031,176 @@ function OrderDetail() {
     }
   };
 
-  // 챕터3 생성 및 자동 저장
+  // 챕터3 생성 및 자동 저장 (대운별 순차 생성)
   const generateChapter3WithAutoSave = async () => {
     try {
-      const ch3Data = await generateChapter3();
+      // 1. 먼저 기본 구조만 가져오기 (skip_ai=true로 AI 생성 건너뛰기)
+      setChapter3Loading(true);
+      setChapter3Progress({ progress: 10, message: '대운 기본 정보 가져오는 중...' });
 
-      // 자동 저장
-      if (ch3Data) {
-        await saveFullReportWithData(chapter1Data, chapter2Data, ch3Data, fiveYearFortuneData, loveFortuneData);
+      const basicResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3?skip_ai=true`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        }
+      });
+
+      if (!basicResponse.ok) {
+        throw new Error('대운 기본 정보를 가져오는데 실패했습니다.');
       }
+
+      const basicData = await basicResponse.json();
+      const ch3Data = basicData.chapter;
+
+      if (!ch3Data?.decade_flow || ch3Data.decade_flow.length === 0) {
+        throw new Error('대운 정보를 가져올 수 없습니다.');
+      }
+
+      // 기본 구조 데이터 먼저 설정
+      setChapter3Data(ch3Data);
+      // 로딩 표시 끄고 모달로 전환
+      setChapter3Loading(false);
+      setChapter3Progress(null);
+
+      // 2. 대운별 순차 AI 생성 시작 - 모달 표시
+      const decades = ch3Data.decade_flow;
+      setRegeneratingAllDecades(true);
+      setAllDecadesProgress({
+        total: decades.length,
+        current: 0,
+        currentGanji: null,
+        completedDecades: [],
+        allDecades: decades.map(d => ({
+          ganji: d.ganji,
+          startAge: d.start_age,
+          endAge: d.end_age,
+          isCurrent: d.is_current
+        }))
+      });
+
+      // 3. 각 대운별로 순차 생성
+      for (let idx = 0; idx < decades.length; idx++) {
+        const decade = decades[idx];
+
+        setAllDecadesProgress(prev => ({
+          ...prev,
+          current: idx + 1,
+          currentGanji: decade.ganji
+        }));
+
+        try {
+          // 개별 대운 재생성 API 호출
+          const response = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_single_decade`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              decade_index: decade.index !== undefined ? decade.index : idx,
+              ganji: decade.ganji,
+              start_age: decade.start_age,
+              end_age: decade.end_age
+            })
+          }, 3, 2000);
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            // 성공 - completedDecades에 추가
+            setAllDecadesProgress(prev => ({
+              ...prev,
+              completedDecades: [...prev.completedDecades, decade.ganji]
+            }));
+
+            // chapter3Data 업데이트 - 백엔드는 updated_decade로 반환함
+            const decadeData = data.updated_decade || data.decade_data;
+            if (decadeData) {
+              setChapter3Data(prevData => {
+                if (!prevData?.decade_flow) return prevData;
+                const updatedDecadeFlow = [...prevData.decade_flow];
+                updatedDecadeFlow[idx] = {
+                  ...updatedDecadeFlow[idx],
+                  ...decadeData,
+                  ai_gyeokguk: decadeData.ai_gyeokguk,
+                  ai_sky_gyeokguk: decadeData.ai_sky_gyeokguk,
+                  ai_earth_gyeokguk: decadeData.ai_earth_gyeokguk,
+                  ai_eokbu: decadeData.ai_eokbu,
+                  ai_johu: decadeData.ai_johu,
+                  sky_analysis: decadeData.sky_analysis,
+                  earth_analysis: decadeData.earth_analysis
+                };
+                return { ...prevData, decade_flow: updatedDecadeFlow };
+              });
+            }
+
+            console.log(`[generateChapter3WithAutoSave] ${decade.ganji} 생성 완료 (${idx + 1}/${decades.length})`);
+          } else {
+            console.warn(`[generateChapter3WithAutoSave] ${decade.ganji} 생성 실패:`, data.error);
+            // 실패한 대운 표시
+            setAllDecadesProgress(prev => ({
+              ...prev,
+              failedDecades: [...(prev.failedDecades || []), decade.ganji]
+            }));
+          }
+        } catch (err) {
+          console.error(`[generateChapter3WithAutoSave] ${decade.ganji} 생성 오류:`, err);
+          // 오류 발생한 대운 표시
+          setAllDecadesProgress(prev => ({
+            ...prev,
+            failedDecades: [...(prev.failedDecades || []), decade.ganji]
+          }));
+        }
+
+        // 약간의 딜레이 (API 부하 방지)
+        if (idx < decades.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+
+      // 4. 전체 완료 후 저장
+      const finalProgress = await new Promise(resolve => {
+        setAllDecadesProgress(prev => {
+          resolve(prev);
+          return { ...prev, currentGanji: null };
+        });
+      });
+
+      // 최신 chapter3Data로 저장
+      const latestCh3Data = await new Promise(resolve => {
+        setChapter3Data(prev => {
+          resolve(prev);
+          return prev;
+        });
+      });
+
+      if (latestCh3Data) {
+        await saveFullReportWithData(chapter1Data, chapter2Data, latestCh3Data, fiveYearFortuneData, loveFortuneData);
+      }
+
+      // 실패한 대운이 있으면 알림
+      const failedDecades = finalProgress.failedDecades || [];
+      if (failedDecades.length > 0) {
+        alert(`대운 생성 완료 (일부 실패)\n\n실패한 대운: ${failedDecades.join(', ')}\n\n해당 대운은 개별 "재생성" 버튼으로 다시 시도해주세요.`);
+      }
+
+      console.log('[generateChapter3WithAutoSave] 전체 대운 생성 및 저장 완료');
+
     } catch (err) {
       console.error('챕터3 생성 및 저장 실패:', err);
+      alert(`대운 생성 실패: ${err.message}`);
+    } finally {
+      setChapter3Loading(false);
+      setChapter3Progress(null);
+      setRegeneratingAllDecades(false);
+      setAllDecadesProgress({
+        total: 0,
+        current: 0,
+        currentGanji: null,
+        completedDecades: [],
+        allDecades: []
+      });
     }
   };
 
@@ -2168,6 +2373,63 @@ function OrderDetail() {
     }
   };
 
+  // 개별 대운 해석 전체 재생성 (격국/억부/조후 모두)
+  const regenerateSingleDecade = async (decadeIndex, ganji, startAge, endAge) => {
+    if (regeneratingDecadeIndex !== null) {
+      alert('이미 재생성 중입니다. 잠시 기다려주세요.');
+      return;
+    }
+
+    if (!window.confirm(`${ganji} 대운의 해석을 재생성하시겠습니까?\n(격국/억부/조후 모두 새로 생성됩니다)`)) {
+      return;
+    }
+
+    setRegeneratingDecadeIndex(decadeIndex);
+    setRegeneratingDecadeGanji({ ganji, startAge, endAge });
+    try {
+      const response = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_single_decade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({ decade_index: decadeIndex })
+      }, 3, 2000);
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '대운 재생성에 실패했습니다.');
+      }
+
+      // chapter3Data 업데이트
+      if (chapter3Data?.decade_flow) {
+        const updatedDecadeFlow = chapter3Data.decade_flow.map((decade, idx) => {
+          if (idx === decadeIndex) {
+            return {
+              ...decade,
+              ...data.updated_decade,
+              has_custom_interpretation: true
+            };
+          }
+          return decade;
+        });
+        setChapter3Data({
+          ...chapter3Data,
+          decade_flow: updatedDecadeFlow
+        });
+      }
+
+      alert(`${ganji} 대운 해석이 재생성되었습니다.`);
+    } catch (err) {
+      console.error('개별 대운 재생성 실패:', err);
+      alert(err.message);
+    } finally {
+      setRegeneratingDecadeIndex(null);
+      setRegeneratingDecadeGanji(null);
+    }
+  };
+
   // 영역 라벨 매핑
   const AREA_LABELS = {
     gyeokguk: '격국',
@@ -2269,7 +2531,7 @@ function OrderDetail() {
     return startData.job_id;
   };
 
-  // 챕터 4, 5, 6, 7 전체 생성 (재물운, 직업운, 연애운, 코칭) - 비동기 방식
+  // 챕터 4, 5, 6, 7 전체 생성 (재물운, 직업운, 연애운, 코칭) - 연도별 순차 생성
   const handleRegenerateAllChapters = async () => {
     if (!validationResult) {
       alert('먼저 사주 검증을 실행해주세요.');
@@ -2278,150 +2540,259 @@ function OrderDetail() {
 
     // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
     const yearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: yearCount }, (_, i) => currentYear + i);
 
     setRegeneratingAllChapters(true);
-    // 초기 진행률 설정
-    setFortuneProgress({ progress: 0, message: '대기 중...' });
-    setCareerProgress({ progress: 0, message: '대기 중...' });
-    setLoveProgress({ progress: 0, message: '대기 중...' });
-    setCoachingProgress({ progress: 0, message: '대기 중...' });
 
     try {
       const results = [];
 
-      // 재물운 - 동기 생성
-      try {
-        setFortuneProgress({ progress: 50, message: '재물운 생성 중...' });
-        console.log('[handleRegenerateAllChapters] 재물운 동기 생성 시작');
+      // ===== 재물운 - 연도별 순차 생성 =====
+      console.log('[handleRegenerateAllChapters] 재물운 연도별 순차 생성 시작');
+      setYearsProgress({
+        isActive: true,
+        type: 'fortune',
+        title: '재물운 AI 생성',
+        total: years.length,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: years,
+        failedYears: []
+      });
 
-        const fortuneRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const fortuneData = await fortuneRes.json();
+      const fortuneResults = [];
+      const fortuneFailedYears = [];
 
-        if (fortuneRes.ok && fortuneData.fortunes) {
-          const yearlyFortunes = Object.entries(fortuneData.fortunes).map(([year, fortune]) => ({
-            year: parseInt(year),
-            ...fortune
-          })).sort((a, b) => a.year - b.year);
+      for (let i = 0; i < years.length; i++) {
+        const year = years[i];
+        setYearsProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          currentYear: year
+        }));
 
-          setFortuneEditorData(yearlyFortunes);
-
-          // 재물운 저장
-          await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
+        try {
+          const res = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_year`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({
-              fortune_data: {
-                baseFortune: {},
-                yearlyFortunes: yearlyFortunes
-              }
-            })
-          });
-          results.push('재물운 ✓');
-        } else {
-          results.push(`재물운 ✗ (${fortuneData.error || '생성 실패'})`);
+            body: JSON.stringify({ year })
+          }, 3, 2000);
+          const data = await res.json();
+
+          if (res.ok && data.fortune) {
+            fortuneResults.push({ year, ...data.fortune });
+            setYearsProgress(prev => ({
+              ...prev,
+              completedYears: [...prev.completedYears, year]
+            }));
+          } else {
+            fortuneFailedYears.push(year);
+            setYearsProgress(prev => ({
+              ...prev,
+              failedYears: [...prev.failedYears, year]
+            }));
+          }
+        } catch (err) {
+          console.error(`재물운 ${year}년 생성 실패:`, err);
+          fortuneFailedYears.push(year);
+          setYearsProgress(prev => ({
+            ...prev,
+            failedYears: [...prev.failedYears, year]
+          }));
         }
-      } catch (err) {
+      }
+
+      if (fortuneResults.length > 0) {
+        setFortuneEditorData(fortuneResults.sort((a, b) => a.year - b.year));
+        await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({
+            fortune_data: { baseFortune: {}, yearlyFortunes: fortuneResults }
+          })
+        }, 3, 2000);
+        results.push(fortuneFailedYears.length > 0
+          ? `재물운 △ (${fortuneResults.length}/${years.length}년)`
+          : '재물운 ✓');
+      } else {
         results.push('재물운 ✗');
-        console.error('재물운 생성 실패:', err);
-      } finally {
-        setFortuneProgress(null);
       }
 
-      // 직업운 - 동기 생성
-      try {
-        setCareerProgress({ progress: 50, message: '직업운 생성 중...' });
-        console.log('[handleRegenerateAllChapters] 직업운 동기 생성 시작');
+      // ===== 직업운 - 연도별 순차 생성 =====
+      console.log('[handleRegenerateAllChapters] 직업운 연도별 순차 생성 시작');
+      setYearsProgress({
+        isActive: true,
+        type: 'career',
+        title: '직장사회운 AI 생성',
+        total: years.length,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: years,
+        failedYears: []
+      });
 
-        const careerRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const careerData = await careerRes.json();
+      const careerResults = [];
+      const careerFailedYears = [];
 
-        if (careerRes.ok && careerData.careers) {
-          const yearlyCareers = Object.entries(careerData.careers).map(([year, career]) => ({
-            year: parseInt(year),
-            ...career
-          })).sort((a, b) => a.year - b.year);
+      for (let i = 0; i < years.length; i++) {
+        const year = years[i];
+        setYearsProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          currentYear: year
+        }));
 
-          setCareerEditorData(yearlyCareers);
-
-          // 직업운 저장
-          await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
+        try {
+          const res = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_year`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({
-              career_data: {
-                baseCareer: {},
-                yearlyCareers: yearlyCareers
-              }
-            })
-          });
-          results.push('직업운 ✓');
-        } else {
-          results.push(`직업운 ✗ (${careerData.error || '생성 실패'})`);
+            body: JSON.stringify({ year })
+          }, 3, 2000);
+          const data = await res.json();
+
+          if (res.ok && data.career) {
+            careerResults.push({ year, ...data.career });
+            setYearsProgress(prev => ({
+              ...prev,
+              completedYears: [...prev.completedYears, year]
+            }));
+          } else {
+            careerFailedYears.push(year);
+            setYearsProgress(prev => ({
+              ...prev,
+              failedYears: [...prev.failedYears, year]
+            }));
+          }
+        } catch (err) {
+          console.error(`직업운 ${year}년 생성 실패:`, err);
+          careerFailedYears.push(year);
+          setYearsProgress(prev => ({
+            ...prev,
+            failedYears: [...prev.failedYears, year]
+          }));
         }
-      } catch (err) {
+      }
+
+      if (careerResults.length > 0) {
+        setCareerEditorData(careerResults.sort((a, b) => a.year - b.year));
+        await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({
+            career_data: { baseCareer: {}, yearlyCareers: careerResults }
+          })
+        }, 3, 2000);
+        results.push(careerFailedYears.length > 0
+          ? `직업운 △ (${careerResults.length}/${years.length}년)`
+          : '직업운 ✓');
+      } else {
         results.push('직업운 ✗');
-        console.error('직업운 생성 실패:', err);
-      } finally {
-        setCareerProgress(null);
       }
 
-      // 연애운 - 동기 생성
-      try {
-        setLoveProgress({ progress: 50, message: '연애운 생성 중...' });
-        console.log('[handleRegenerateAllChapters] 연애운 동기 생성 시작');
+      // ===== 연애운 - 연도별 순차 생성 =====
+      console.log('[handleRegenerateAllChapters] 연애운 연도별 순차 생성 시작');
+      setYearsProgress({
+        isActive: true,
+        type: 'love',
+        title: '연애운 AI 생성',
+        total: years.length,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: years,
+        failedYears: []
+      });
 
-        const loveRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const loveData = await loveRes.json();
+      const loveResults = [];
+      const loveFailedYears = [];
 
-        if (loveRes.ok && loveData.success) {
-          const loveFortuneResult = {
-            baseAnalysis: {},
-            yearlyLoveFortunes: loveData.yearly_love_fortunes || [{
-              year: new Date().getFullYear(),
-              generated_content: loveData.content || ''
-            }]
-          };
-          setLoveFortuneData(loveFortuneResult);
+      for (let i = 0; i < years.length; i++) {
+        const year = years[i];
+        setYearsProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          currentYear: year
+        }));
 
-          // 연애운 저장
-          await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+        try {
+          const res = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ love_fortune_data: loveFortuneResult })
-          });
-          results.push('연애운 ✓');
-        } else {
-          results.push(`연애운 ✗ (${loveData.error || '생성 실패'})`);
+            body: JSON.stringify({ year })
+          }, 3, 2000);
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            loveResults.push({
+              year,
+              generated_content: data.generated_content || data.content || '',
+              content_sections: data.content_sections
+            });
+            setYearsProgress(prev => ({
+              ...prev,
+              completedYears: [...prev.completedYears, year]
+            }));
+          } else {
+            loveFailedYears.push(year);
+            setYearsProgress(prev => ({
+              ...prev,
+              failedYears: [...prev.failedYears, year]
+            }));
+          }
+        } catch (err) {
+          console.error(`연애운 ${year}년 생성 실패:`, err);
+          loveFailedYears.push(year);
+          setYearsProgress(prev => ({
+            ...prev,
+            failedYears: [...prev.failedYears, year]
+          }));
         }
-      } catch (err) {
-        results.push('연애운 ✗');
-        console.error('연애운 생성 실패:', err);
-      } finally {
-        setLoveProgress(null);
       }
 
-      // 코칭 - 동기 생성
+      if (loveResults.length > 0) {
+        const loveFortuneResult = {
+          baseAnalysis: {},
+          yearlyLoveFortunes: loveResults.sort((a, b) => a.year - b.year)
+        };
+        setLoveFortuneData(loveFortuneResult);
+        await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ love_fortune_data: loveFortuneResult })
+        }, 3, 2000);
+        results.push(loveFailedYears.length > 0
+          ? `연애운 △ (${loveResults.length}/${years.length}년)`
+          : '연애운 ✓');
+      } else {
+        results.push('연애운 ✗');
+      }
+
+      // 모달 닫기
+      setYearsProgress({
+        isActive: false,
+        type: null,
+        title: '',
+        total: 0,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: [],
+        failedYears: []
+      });
+
+      // ===== 코칭 - 동기 생성 =====
       try {
         setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
         console.log('[handleRegenerateAllChapters] 코칭 동기 생성 시작');
 
-        const coachingRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
+        const coachingRes = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
           body: JSON.stringify({})
-        });
+        }, 3, 2000);
         const coachingData = await coachingRes.json();
 
         if (coachingRes.ok && coachingData.success) {
@@ -2472,24 +2843,24 @@ function OrderDetail() {
     if (!chapter3Data?.content && !chapter3Data?.decade_flow) missingChapters.push('chapter3');
     if (!fiveYearFortuneData?.content && (!fiveYearFortuneData?.years || fiveYearFortuneData.years.length === 0)) missingChapters.push('chapter4');
 
-    // 재물운 - 실제 generated_content가 있는지 확인
+    // 재물운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
     const hasFortuneContent = fortuneEditorData && fortuneEditorData.length > 0 &&
-      fortuneEditorData.some(item => item.generated_content && item.generated_content.trim().length > 0);
+      fortuneEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
     if (!hasFortuneContent) missingChapters.push('fortune');
 
-    // 직업운 - 실제 generated_content가 있는지 확인
+    // 직업운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
     const hasCareerContent = careerEditorData && careerEditorData.length > 0 &&
-      careerEditorData.some(item => item.generated_content && item.generated_content.trim().length > 0);
+      careerEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
     if (!hasCareerContent) missingChapters.push('career');
 
-    // 연애운 - 실제 generated_content가 있는지 확인
+    // 연애운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
     const hasLoveContent = loveFortuneData?.yearlyLoveFortunes && loveFortuneData.yearlyLoveFortunes.length > 0 &&
-      loveFortuneData.yearlyLoveFortunes.some(item => item.generated_content && item.generated_content.trim().length > 0);
+      loveFortuneData.yearlyLoveFortunes.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
     if (!hasLoveContent) missingChapters.push('love');
 
-    // 코칭 - 실제 content가 있는지 확인
+    // 코칭 - 실제 content가 있는지 확인 (문자열 타입 체크 포함)
     const hasCoachingContent = coachingData && coachingData.length > 0 &&
-      coachingData.some(item => item.content && item.content.trim().length > 0);
+      coachingData.some(item => typeof item.content === 'string' && item.content.trim().length > 0);
     if (!hasCoachingContent) missingChapters.push('coaching');
 
     console.log('[handleRegenerateMissingChapters] 누락 체크:', {
@@ -2562,24 +2933,102 @@ function OrderDetail() {
       // 챕터3 (대운흐름) 생성
       if (missingChapters.includes('chapter3')) {
         setGeneratingChapter(3);
-        setChapter3Progress({ progress: 50, message: '대운흐름 생성 중...' });
         try {
-          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+          // 1. 기본 구조만 먼저 가져오기 (skip_ai=true)
+          setChapter3Progress({ progress: 10, message: '대운 기본 정보 가져오는 중...' });
+          const basicRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3?skip_ai=true`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            setChapter3Data(data.chapter);
-            results.push('대운흐름 ✓');
-          } else {
-            results.push(`대운흐름 ✗`);
+          const basicData = await basicRes.json();
+
+          if (!basicRes.ok || !basicData.success || !basicData.chapter?.decade_flow) {
+            throw new Error('대운 기본 정보 가져오기 실패');
           }
+
+          const ch3Data = basicData.chapter;
+          setChapter3Data(ch3Data);
+          setChapter3Progress(null);
+
+          // 2. 대운별 순차 AI 생성 - 모달 표시
+          const decades = ch3Data.decade_flow;
+          setRegeneratingAllDecades(true);
+          setAllDecadesProgress({
+            total: decades.length,
+            current: 0,
+            currentGanji: null,
+            completedDecades: [],
+            allDecades: decades.map(d => ({
+              ganji: d.ganji,
+              startAge: d.start_age,
+              endAge: d.end_age,
+              isCurrent: d.is_current
+            }))
+          });
+
+          // 3. 각 대운별로 순차 생성
+          for (let idx = 0; idx < decades.length; idx++) {
+            const decade = decades[idx];
+            setAllDecadesProgress(prev => ({
+              ...prev,
+              current: idx + 1,
+              currentGanji: decade.ganji
+            }));
+
+            try {
+              const decadeRes = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_single_decade`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                body: JSON.stringify({
+                  decade_index: decade.index !== undefined ? decade.index : idx,
+                  ganji: decade.ganji,
+                  start_age: decade.start_age,
+                  end_age: decade.end_age
+                })
+              }, 3, 2000);
+              const decadeData = await decadeRes.json();
+
+              // 백엔드는 updated_decade로 반환
+              const responseDecadeData = decadeData.updated_decade || decadeData.decade_data;
+              if (decadeRes.ok && decadeData.success && responseDecadeData) {
+                setAllDecadesProgress(prev => ({
+                  ...prev,
+                  completedDecades: [...prev.completedDecades, decade.ganji]
+                }));
+                setChapter3Data(prevData => {
+                  if (!prevData?.decade_flow) return prevData;
+                  const updatedDecadeFlow = [...prevData.decade_flow];
+                  updatedDecadeFlow[idx] = { ...updatedDecadeFlow[idx], ...responseDecadeData };
+                  return { ...prevData, decade_flow: updatedDecadeFlow };
+                });
+              } else {
+                console.warn(`${decade.ganji} 대운 생성 실패:`, decadeData.error);
+                setAllDecadesProgress(prev => ({
+                  ...prev,
+                  failedDecades: [...(prev.failedDecades || []), decade.ganji]
+                }));
+              }
+            } catch (err) {
+              console.error(`${decade.ganji} 대운 생성 오류:`, err);
+              setAllDecadesProgress(prev => ({
+                ...prev,
+                failedDecades: [...(prev.failedDecades || []), decade.ganji]
+              }));
+            }
+
+            if (idx < decades.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+
+          setRegeneratingAllDecades(false);
+          setAllDecadesProgress({ total: 0, current: 0, currentGanji: null, completedDecades: [], allDecades: [] });
+          results.push('대운흐름 ✓');
         } catch (err) {
           results.push('대운흐름 ✗');
           console.error('챕터3 생성 실패:', err);
-        } finally {
           setChapter3Progress(null);
+          setRegeneratingAllDecades(false);
         }
       }
 
@@ -3188,50 +3637,148 @@ function OrderDetail() {
         setChapter2Loading(false);
       }
 
-      // 챕터3 생성 (대운 흐름 분석) - 동기 방식
+      // 챕터3 생성 (대운 흐름 분석) - 대운별 순차 생성
       setGeneratingChapter(3);
       if (forceRegenerate || !chapter3Data?.content) {
-        setChapter3Loading(true);
-        setChapter3Progress({ progress: 50, message: '대운 흐름 분석 생성 중...' });
         try {
-          console.log('[generateAllChapters] 챕터3 (대운흐름) 동기 생성 시작');
+          console.log('[generateAllChapters] 챕터3 (대운흐름) 순차 생성 시작');
 
-          const res3 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+          // 1. 기본 구조만 먼저 가져오기 (skip_ai=true)
+          setChapter3Loading(true);
+          setChapter3Progress({ progress: 10, message: '대운 기본 정보 가져오는 중...' });
+
+          const basicRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3?skip_ai=true`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
-          const data3 = await res3.json();
+          const basicData = await basicRes.json();
 
-          if (res3.ok && data3.success) {
-            console.log('[generateAllChapters] 챕터3 완료');
-            setChapter3Data(data3.chapter);
-            newChapter3Data = data3.chapter;
+          if (!basicRes.ok || !basicData.success || !basicData.chapter?.decade_flow) {
+            throw new Error('대운 기본 정보를 가져오는데 실패했습니다.');
+          }
 
-            // 즉시 DB에 저장 (chapter4 = 대운흐름)
-            if (data3.chapter?.content || data3.chapter?.decade_flow) {
-              const basisWithDecadeFlow = {
-                ...(data3.chapter.basis || {}),
-                decade_flow: data3.chapter.decade_flow
-              };
-              await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+          const ch3Data = basicData.chapter;
+          setChapter3Data(ch3Data);
+          setChapter3Loading(false);
+          setChapter3Progress(null);
+
+          // 2. 대운별 순차 AI 생성 - 모달 표시
+          const decades = ch3Data.decade_flow;
+          setRegeneratingAllDecades(true);
+          setAllDecadesProgress({
+            total: decades.length,
+            current: 0,
+            currentGanji: null,
+            completedDecades: [],
+            allDecades: decades.map(d => ({
+              ganji: d.ganji,
+              startAge: d.start_age,
+              endAge: d.end_age,
+              isCurrent: d.is_current
+            }))
+          });
+
+          // 3. 각 대운별로 순차 생성
+          for (let idx = 0; idx < decades.length; idx++) {
+            const decade = decades[idx];
+
+            setAllDecadesProgress(prev => ({
+              ...prev,
+              current: idx + 1,
+              currentGanji: decade.ganji
+            }));
+
+            try {
+              const decadeRes = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_single_decade`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
                 body: JSON.stringify({
-                  chapter_number: 4,
-                  content: data3.chapter.content,
-                  basis: basisWithDecadeFlow
+                  decade_index: decade.index !== undefined ? decade.index : idx,
+                  ganji: decade.ganji,
+                  start_age: decade.start_age,
+                  end_age: decade.end_age
                 })
-              });
-              console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
+              }, 3, 2000);
+
+              const decadeDataResponse = await decadeRes.json();
+
+              // 백엔드는 updated_decade로 반환
+              const responseDecadeData = decadeDataResponse.updated_decade || decadeDataResponse.decade_data;
+              if (decadeRes.ok && decadeDataResponse.success && responseDecadeData) {
+                setAllDecadesProgress(prev => ({
+                  ...prev,
+                  completedDecades: [...prev.completedDecades, decade.ganji]
+                }));
+
+                // chapter3Data 업데이트
+                setChapter3Data(prevData => {
+                  if (!prevData?.decade_flow) return prevData;
+                  const updatedDecadeFlow = [...prevData.decade_flow];
+                  updatedDecadeFlow[idx] = {
+                    ...updatedDecadeFlow[idx],
+                    ...responseDecadeData
+                  };
+                  return { ...prevData, decade_flow: updatedDecadeFlow };
+                });
+
+                console.log(`[generateAllChapters] ${decade.ganji} 대운 생성 완료 (${idx + 1}/${decades.length})`);
+              } else {
+                console.warn(`[generateAllChapters] ${decade.ganji} 대운 생성 실패:`, decadeDataResponse.error);
+                setAllDecadesProgress(prev => ({
+                  ...prev,
+                  failedDecades: [...(prev.failedDecades || []), decade.ganji]
+                }));
+              }
+            } catch (err) {
+              console.error(`[generateAllChapters] ${decade.ganji} 대운 생성 오류:`, err);
+              setAllDecadesProgress(prev => ({
+                ...prev,
+                failedDecades: [...(prev.failedDecades || []), decade.ganji]
+              }));
             }
-          } else {
-            console.error('[generateAllChapters] 챕터3 생성 실패:', data3.error);
+
+            if (idx < decades.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+
+          setRegeneratingAllDecades(false);
+          setAllDecadesProgress({ total: 0, current: 0, currentGanji: null, completedDecades: [], allDecades: [] });
+
+          // 최신 chapter3Data 가져오기
+          const latestCh3Data = await new Promise(resolve => {
+            setChapter3Data(prev => {
+              resolve(prev);
+              return prev;
+            });
+          });
+
+          newChapter3Data = latestCh3Data;
+          console.log('[generateAllChapters] 챕터3 전체 대운 생성 완료');
+
+          // DB 저장
+          if (latestCh3Data?.decade_flow) {
+            const basisWithDecadeFlow = {
+              ...(latestCh3Data.basis || {}),
+              decade_flow: latestCh3Data.decade_flow
+            };
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+              body: JSON.stringify({
+                chapter_number: 4,
+                content: latestCh3Data.content,
+                basis: basisWithDecadeFlow
+              })
+            });
+            console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
           }
         } catch (err) {
           console.error('[generateAllChapters] 챕터3 생성 에러:', err);
+          setChapter3Loading(false);
+          setChapter3Progress(null);
+          setRegeneratingAllDecades(false);
         }
-        setChapter3Loading(false);
-        setChapter3Progress(null);
       }
 
       // 챕터4 생성 (향후 N년간의 운세 - 세운)
@@ -3366,154 +3913,258 @@ function OrderDetail() {
         setChapter4Loading(false);
       }
 
-      // 챕터5 (재물운) - 동기 생성
+      // 챕터5 (재물운) - 연도별 순차 생성
       setGeneratingChapter(5);
-      setFortuneProgress({ progress: 50, message: '재물운 생성 중...' });
-      try {
-        console.log(`[generateAllChapters] 재물운 동기 생성 시작 (${yearCount}년)`);
-        const fortuneRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const fortuneData = await fortuneRes.json();
-        console.log('[generateAllChapters] 재물운 생성 응답:', fortuneData);
+      const currentYear = new Date().getFullYear();
+      const years = Array.from({ length: yearCount }, (_, i) => currentYear + i);
 
-        if (fortuneRes.ok && fortuneData.fortunes) {
-          const yearlyFortunes = Object.entries(fortuneData.fortunes).map(([year, fortune]) => ({
-            year: parseInt(year),
-            ...fortune
-          })).sort((a, b) => a.year - b.year);
+      console.log(`[generateAllChapters] 재물운 연도별 순차 생성 시작 (${yearCount}년)`);
+      setYearsProgress({
+        isActive: true,
+        type: 'fortune',
+        title: '재물운 AI 생성',
+        total: years.length,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: years,
+        failedYears: []
+      });
 
-          setFortuneEditorData(yearlyFortunes);
+      const fortuneResults = [];
+      const fortuneFailedYears = [];
 
-          // 재물운 저장
-          console.log('[generateAllChapters] 재물운 저장 시작');
-          const saveRes5 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
+      for (let i = 0; i < years.length; i++) {
+        const year = years[i];
+        setYearsProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          currentYear: year
+        }));
+
+        try {
+          const res = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_year`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({
-              fortune_data: {
-                baseFortune: {},
-                yearlyFortunes: yearlyFortunes
-              }
-            })
-          });
-          const saveData5 = await saveRes5.json();
-          console.log('[generateAllChapters] 재물운 저장 응답:', saveData5);
-          generationResults.push('재물운 ✓');
-        } else {
-          console.error('[generateAllChapters] 재물운 생성 실패:', fortuneData.error);
-          generationResults.push(`재물운 ✗ (${fortuneData.error || '생성 실패'})`);
+            body: JSON.stringify({ year })
+          }, 3, 2000);
+          const data = await res.json();
+
+          if (res.ok && data.fortune) {
+            fortuneResults.push({ year, ...data.fortune });
+            setYearsProgress(prev => ({
+              ...prev,
+              completedYears: [...prev.completedYears, year]
+            }));
+          } else {
+            fortuneFailedYears.push(year);
+            setYearsProgress(prev => ({
+              ...prev,
+              failedYears: [...prev.failedYears, year]
+            }));
+          }
+        } catch (err) {
+          console.error(`재물운 ${year}년 생성 실패:`, err);
+          fortuneFailedYears.push(year);
+          setYearsProgress(prev => ({
+            ...prev,
+            failedYears: [...prev.failedYears, year]
+          }));
         }
-      } catch (err) {
-        console.error('재물운 생성/저장 실패:', err);
-        generationResults.push(`재물운 ✗ (${err.message})`);
-      } finally {
-        setFortuneProgress(null);
       }
 
-      // 챕터6 (직업운) - 동기 생성
+      if (fortuneResults.length > 0) {
+        setFortuneEditorData(fortuneResults.sort((a, b) => a.year - b.year));
+        await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({
+            fortune_data: { baseFortune: {}, yearlyFortunes: fortuneResults }
+          })
+        }, 3, 2000);
+        generationResults.push(fortuneFailedYears.length > 0
+          ? `재물운 △ (${fortuneResults.length}/${years.length}년)`
+          : '재물운 ✓');
+      } else {
+        generationResults.push('재물운 ✗');
+      }
+
+      // 챕터6 (직업운) - 연도별 순차 생성
       setGeneratingChapter(6);
-      setCareerProgress({ progress: 50, message: '직업운 생성 중...' });
-      try {
-        console.log(`[generateAllChapters] 직업운 동기 생성 시작 (${yearCount}년)`);
-        const careerRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const careerData = await careerRes.json();
-        console.log('[generateAllChapters] 직업운 생성 응답:', careerData);
+      console.log(`[generateAllChapters] 직업운 연도별 순차 생성 시작 (${yearCount}년)`);
+      setYearsProgress({
+        isActive: true,
+        type: 'career',
+        title: '직장사회운 AI 생성',
+        total: years.length,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: years,
+        failedYears: []
+      });
 
-        if (careerRes.ok && careerData.careers) {
-          const yearlyCareers = Object.entries(careerData.careers).map(([year, career]) => ({
-            year: parseInt(year),
-            ...career
-          })).sort((a, b) => a.year - b.year);
+      const careerResults = [];
+      const careerFailedYears = [];
 
-          setCareerEditorData(yearlyCareers);
+      for (let i = 0; i < years.length; i++) {
+        const year = years[i];
+        setYearsProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          currentYear: year
+        }));
 
-          // 직업운 저장
-          console.log('[generateAllChapters] 직업운 저장 시작');
-          const saveRes6 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
+        try {
+          const res = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_year`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({
-              career_data: {
-                baseCareer: {},
-                yearlyCareers: yearlyCareers
-              }
-            })
-          });
-          const saveData6 = await saveRes6.json();
-          console.log('[generateAllChapters] 직업운 저장 응답:', saveData6);
-          generationResults.push('직업운 ✓');
-        } else {
-          console.error('[generateAllChapters] 직업운 생성 실패:', careerData.error);
-          generationResults.push(`직업운 ✗ (${careerData.error || '생성 실패'})`);
+            body: JSON.stringify({ year })
+          }, 3, 2000);
+          const data = await res.json();
+
+          if (res.ok && data.career) {
+            careerResults.push({ year, ...data.career });
+            setYearsProgress(prev => ({
+              ...prev,
+              completedYears: [...prev.completedYears, year]
+            }));
+          } else {
+            careerFailedYears.push(year);
+            setYearsProgress(prev => ({
+              ...prev,
+              failedYears: [...prev.failedYears, year]
+            }));
+          }
+        } catch (err) {
+          console.error(`직업운 ${year}년 생성 실패:`, err);
+          careerFailedYears.push(year);
+          setYearsProgress(prev => ({
+            ...prev,
+            failedYears: [...prev.failedYears, year]
+          }));
         }
-      } catch (err) {
-        console.error('직업운 생성/저장 실패:', err);
-        generationResults.push(`직업운 ✗ (${err.message})`);
-      } finally {
-        setCareerProgress(null);
       }
 
-      // 챕터7 (연애운) - 동기 생성
+      if (careerResults.length > 0) {
+        setCareerEditorData(careerResults.sort((a, b) => a.year - b.year));
+        await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({
+            career_data: { baseCareer: {}, yearlyCareers: careerResults }
+          })
+        }, 3, 2000);
+        generationResults.push(careerFailedYears.length > 0
+          ? `직업운 △ (${careerResults.length}/${years.length}년)`
+          : '직업운 ✓');
+      } else {
+        generationResults.push('직업운 ✗');
+      }
+
+      // 챕터7 (연애운) - 연도별 순차 생성
       setGeneratingChapter(7);
-      setLoveProgress({ progress: 50, message: '연애운 생성 중...' });
-      try {
-        console.log(`[generateAllChapters] 연애운 동기 생성 시작 (${yearCount}년)`);
-        const loveRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-          body: JSON.stringify({ year_count: yearCount })
-        });
-        const loveData = await loveRes.json();
-        console.log('[generateAllChapters] 연애운 생성 응답:', loveData);
+      console.log(`[generateAllChapters] 연애운 연도별 순차 생성 시작 (${yearCount}년)`);
+      setYearsProgress({
+        isActive: true,
+        type: 'love',
+        title: '연애운 AI 생성',
+        total: years.length,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: years,
+        failedYears: []
+      });
 
-        if (loveRes.ok && loveData.success) {
-          const loveFortuneResult = {
-            baseAnalysis: {},
-            yearlyLoveFortunes: loveData.yearly_love_fortunes || [{
-              year: new Date().getFullYear(),
-              generated_content: loveData.content || ''
-            }]
-          };
-          setLoveFortuneData(loveFortuneResult);
-          newChapter6Data = loveFortuneResult;
+      const loveResults = [];
+      const loveFailedYears = [];
 
-          console.log('[generateAllChapters] 연애운 저장 시작');
-          const saveRes7 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+      for (let i = 0; i < years.length; i++) {
+        const year = years[i];
+        setYearsProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          currentYear: year
+        }));
+
+        try {
+          const res = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ love_fortune_data: loveFortuneResult })
-          });
-          const saveData7 = await saveRes7.json();
-          console.log('[generateAllChapters] 연애운 저장 응답:', saveData7);
-          generationResults.push('연애운 ✓');
-        } else {
-          console.error('[generateAllChapters] 연애운 생성 실패:', loveData.error);
-          generationResults.push(`연애운 ✗ (${loveData.error || '생성 실패'})`);
+            body: JSON.stringify({ year })
+          }, 3, 2000);
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            loveResults.push({
+              year,
+              generated_content: data.generated_content || data.content || '',
+              content_sections: data.content_sections
+            });
+            setYearsProgress(prev => ({
+              ...prev,
+              completedYears: [...prev.completedYears, year]
+            }));
+          } else {
+            loveFailedYears.push(year);
+            setYearsProgress(prev => ({
+              ...prev,
+              failedYears: [...prev.failedYears, year]
+            }));
+          }
+        } catch (err) {
+          console.error(`연애운 ${year}년 생성 실패:`, err);
+          loveFailedYears.push(year);
+          setYearsProgress(prev => ({
+            ...prev,
+            failedYears: [...prev.failedYears, year]
+          }));
         }
-      } catch (err) {
-        console.error('연애운 생성/저장 실패:', err);
-        generationResults.push(`연애운 ✗ (${err.message})`);
-      } finally {
-        setLoveProgress(null);
       }
+
+      if (loveResults.length > 0) {
+        const loveFortuneResult = {
+          baseAnalysis: {},
+          yearlyLoveFortunes: loveResults.sort((a, b) => a.year - b.year)
+        };
+        setLoveFortuneData(loveFortuneResult);
+        newChapter6Data = loveFortuneResult;
+        await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ love_fortune_data: loveFortuneResult })
+        }, 3, 2000);
+        generationResults.push(loveFailedYears.length > 0
+          ? `연애운 △ (${loveResults.length}/${years.length}년)`
+          : '연애운 ✓');
+      } else {
+        generationResults.push('연애운 ✗');
+      }
+
+      // 모달 닫기
+      setYearsProgress({
+        isActive: false,
+        type: null,
+        title: '',
+        total: 0,
+        current: 0,
+        currentYear: null,
+        completedYears: [],
+        allYears: [],
+        failedYears: []
+      });
 
       // 챕터8 (코칭) - 동기 생성
       setGeneratingChapter(8);
       setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
       try {
         console.log('[generateAllChapters] 코칭 동기 생성 시작');
-        const coachingRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
+        const coachingRes = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
           body: JSON.stringify({})
-        });
+        }, 3, 2000);
         const coachingData = await coachingRes.json();
         console.log('[generateAllChapters] 코칭 생성 응답:', coachingData);
 
@@ -3523,11 +4174,11 @@ function OrderDetail() {
 
           // 코칭 저장
           console.log('[generateAllChapters] 코칭 저장 시작');
-          const saveRes8 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_coaching`, {
+          const saveRes8 = await fetchWithRetry(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_coaching`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
             body: JSON.stringify({ coaching_items: coachingItems })
-          });
+          }, 3, 2000);
           const saveData8 = await saveRes8.json();
           console.log('[generateAllChapters] 코칭 저장 응답:', saveData8);
           generationResults.push('코칭 ✓');
@@ -5310,7 +5961,7 @@ function OrderDetail() {
                                 <button
                                   className="btn-generate-chapter3"
                                   onClick={generateChapter3WithAutoSave}
-                                  disabled={chapter3Loading}
+                                  disabled={chapter3Loading || regeneratingAllDecades}
                                 >
                                   <Sparkles size={18} />
                                   AI 대운 분석 생성하기
@@ -5715,6 +6366,15 @@ function OrderDetail() {
                                             <span className={`overall-rating-badge ${getOverallRatingClass(decade)}`}>
                                               {getOverallRatingText(decade)}
                                             </span>
+                                            {/* 개별 대운 재생성 버튼 */}
+                                            <button
+                                              className="btn-regenerate-decade"
+                                              onClick={() => regenerateSingleDecade(idx, decade.ganji, decade.start_age, decade.end_age)}
+                                              disabled={regeneratingDecadeIndex !== null}
+                                              title="이 대운의 해석을 재생성합니다 (격국/억부/조후 모두)"
+                                            >
+                                              {regeneratingDecadeIndex === idx ? '⏳ 생성중' : '🔄 재생성'}
+                                            </button>
                                           </div>
 
                                           {/* 키워드 */}
@@ -5864,7 +6524,7 @@ function OrderDetail() {
 
                                                   {isEditing ? (
                                                     <DecadeInterpretationEditor
-                                                      initialText={interp?.primary_interpretation || interp?.effective_interpretation || ''}
+                                                      initialText={decade.ai_eokbu || interp?.primary_interpretation || interp?.effective_interpretation || ''}
                                                       placeholder="억부 해석을 입력하세요..."
                                                       onSavePrimary={(text) => saveDecadeInterpretation(false, text)}
                                                       onSaveFinal={(text) => saveDecadeInterpretation(true, text)}
@@ -5875,7 +6535,7 @@ function OrderDetail() {
                                                     />
                                                   ) : (
                                                     <div className="area-content">
-                                                      <p>{interp?.effective_interpretation || decade.strength?.description || '해석이 없습니다.'}</p>
+                                                      <p>{decade.ai_eokbu || interp?.effective_interpretation || decade.strength?.description || '해석이 없습니다.'}</p>
                                                     </div>
                                                   )}
                                                 </div>
@@ -5917,7 +6577,7 @@ function OrderDetail() {
 
                                                   {isEditing ? (
                                                     <DecadeInterpretationEditor
-                                                      initialText={interp?.primary_interpretation || interp?.effective_interpretation || ''}
+                                                      initialText={decade.ai_johu || interp?.primary_interpretation || interp?.effective_interpretation || ''}
                                                       placeholder="조후 해석을 입력하세요..."
                                                       onSavePrimary={(text) => saveDecadeInterpretation(false, text)}
                                                       onSaveFinal={(text) => saveDecadeInterpretation(true, text)}
@@ -5931,7 +6591,7 @@ function OrderDetail() {
                                                       {isEspeciallyGood && decade.temperature?.especially_good_reason && (
                                                         <p className="especially-good-reason">⭐ {decade.temperature.especially_good_reason}</p>
                                                       )}
-                                                      <p>{interp?.effective_interpretation || decade.temperature?.description || '해석이 없습니다.'}</p>
+                                                      <p>{decade.ai_johu || interp?.effective_interpretation || decade.temperature?.description || '해석이 없습니다.'}</p>
                                                     </div>
                                                   )}
                                                 </div>
@@ -5988,10 +6648,10 @@ function OrderDetail() {
                                 <button
                                   className="btn btn-regenerate"
                                   onClick={generateChapter3WithAutoSave}
-                                  disabled={chapter3Loading}
+                                  disabled={chapter3Loading || regeneratingAllDecades}
                                 >
-                                  <Sparkles size={14} />
-                                  다시 생성 + 저장
+                                  {regeneratingAllDecades ? <Loader size={14} className="spinning" /> : <Sparkles size={14} />}
+                                  {regeneratingAllDecades ? '생성 중...' : '다시 생성 + 저장'}
                                 </button>
                                 <button
                                   className="btn btn-preview"
@@ -6339,6 +6999,172 @@ function OrderDetail() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 대운 재생성 모달 */}
+      {regeneratingDecadeGanji && (
+        <div className="regenerate-decade-modal-overlay">
+          <div className="regenerate-decade-modal">
+            <div className="modal-spinner-container">
+              <div className="modal-spinner"></div>
+              <div className="modal-taiji">☯</div>
+            </div>
+            <h3 className="modal-title">
+              <span className="modal-ganji">{regeneratingDecadeGanji.ganji}</span> 대운 해석 생성 중
+            </h3>
+            <p className="modal-age">{regeneratingDecadeGanji.startAge}~{regeneratingDecadeGanji.endAge}세</p>
+            <div className="modal-progress-items">
+              <div className="progress-item active">
+                <span className="progress-icon">🔮</span>
+                <span>천간 격국 분석</span>
+              </div>
+              <div className="progress-item">
+                <span className="progress-icon">🌍</span>
+                <span>지지 격국 분석</span>
+              </div>
+              <div className="progress-item">
+                <span className="progress-icon">⚖️</span>
+                <span>억부 분석</span>
+              </div>
+              <div className="progress-item">
+                <span className="progress-icon">🌡️</span>
+                <span>조후 분석</span>
+              </div>
+            </div>
+            <p className="modal-hint">AI가 상세한 해석을 작성하고 있습니다...</p>
+          </div>
+        </div>
+      )}
+
+      {/* 전체 대운 순차 생성 진행 모달 */}
+      {regeneratingAllDecades && (
+        <div className="regenerate-decade-modal-overlay">
+          <div className="regenerate-all-decades-modal">
+            <div className="modal-header">
+              <div className="modal-spinner-container">
+                <div className="modal-spinner"></div>
+                <div className="modal-taiji">☯</div>
+              </div>
+              <h3 className="modal-title">전체 대운 AI 해석 생성</h3>
+              <p className="modal-subtitle">
+                {allDecadesProgress.current}/{allDecadesProgress.total} 대운 처리 중
+              </p>
+            </div>
+
+            <div className="decades-progress-list">
+              {allDecadesProgress.allDecades.map((decade, idx) => {
+                const isCompleted = allDecadesProgress.completedDecades.includes(decade.ganji);
+                const isCurrent = allDecadesProgress.currentGanji === decade.ganji;
+                const isPending = !isCompleted && !isCurrent;
+
+                return (
+                  <div
+                    key={decade.ganji}
+                    className={`decade-progress-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'generating' : ''} ${isPending ? 'pending' : ''}`}
+                  >
+                    <span className="decade-status-icon">
+                      {isCompleted ? '✅' : isCurrent ? '⏳' : '⏸️'}
+                    </span>
+                    <span className={`decade-ganji ${decade.isCurrent ? 'current-decade' : ''}`}>
+                      {decade.ganji}
+                      {decade.isCurrent && <span className="current-badge">현재</span>}
+                    </span>
+                    <span className="decade-age">{decade.startAge}~{decade.endAge}세</span>
+                    <span className="decade-status-text">
+                      {isCompleted ? '완료' : isCurrent ? '생성중...' : '대기'}
+                    </span>
+                    {isCurrent && (
+                      <div className="generating-animation">
+                        <span className="dot"></span>
+                        <span className="dot"></span>
+                        <span className="dot"></span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="modal-progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${(allDecadesProgress.completedDecades.length / allDecadesProgress.total) * 100}%` }}
+              />
+            </div>
+            <p className="modal-hint">
+              {allDecadesProgress.currentGanji
+                ? `${allDecadesProgress.currentGanji} 대운 해석을 AI가 작성하고 있습니다...`
+                : '저장 중...'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 연도별 AI 생성 진행 모달 (재물운/직업운/연애운) */}
+      {yearsProgress.isActive && (
+        <div className="regenerate-decade-modal-overlay">
+          <div className="regenerate-years-modal">
+            <div className="modal-header">
+              <div className="modal-spinner-container">
+                <div className="modal-spinner"></div>
+                <div className="modal-taiji">
+                  {yearsProgress.type === 'fortune' ? '💰' :
+                   yearsProgress.type === 'career' ? '💼' : '💕'}
+                </div>
+              </div>
+              <h3 className="modal-title">{yearsProgress.title}</h3>
+              <p className="modal-subtitle">
+                {yearsProgress.current}/{yearsProgress.total} 연도 처리 중
+              </p>
+            </div>
+
+            <div className="years-progress-list">
+              {yearsProgress.allYears.map((year, idx) => {
+                const isCompleted = yearsProgress.completedYears.includes(year);
+                const isFailed = yearsProgress.failedYears.includes(year);
+                const isCurrent = yearsProgress.currentYear === year && !isCompleted && !isFailed;
+                const isPending = !isCompleted && !isCurrent && !isFailed;
+
+                return (
+                  <div
+                    key={year}
+                    className={`year-progress-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'generating' : ''} ${isPending ? 'pending' : ''} ${isFailed ? 'failed' : ''}`}
+                  >
+                    <span className="year-status-icon">
+                      {isCompleted ? '✅' : isFailed ? '❌' : isCurrent ? '⏳' : '⏸️'}
+                    </span>
+                    <span className={`year-label ${idx === 0 ? 'current-year' : ''}`}>
+                      {year}년
+                      {idx === 0 && <span className="current-badge">올해</span>}
+                    </span>
+                    <span className="year-status-text">
+                      {isCompleted ? '완료' : isFailed ? '실패' : isCurrent ? '생성중...' : '대기'}
+                    </span>
+                    {isCurrent && (
+                      <div className="generating-animation">
+                        <span className="dot"></span>
+                        <span className="dot"></span>
+                        <span className="dot"></span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="modal-progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${(yearsProgress.completedYears.length / yearsProgress.total) * 100}%` }}
+              />
+            </div>
+            <p className="modal-hint">
+              {yearsProgress.currentYear
+                ? `${yearsProgress.currentYear}년 ${yearsProgress.type === 'fortune' ? '재물운' : yearsProgress.type === 'career' ? '직장사회운' : '연애운'}을 AI가 작성하고 있습니다...`
+                : '처리 중...'}
+            </p>
           </div>
         </div>
       )}

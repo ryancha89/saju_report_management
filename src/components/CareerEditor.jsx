@@ -779,6 +779,9 @@ const CareerEditor = forwardRef(function CareerEditor({
           ganji,
           sky: skyData,
           earth: earthData,
+          // sky_result/earth_result를 최상위 레벨에도 저장 (ReportPreview 호환성)
+          sky_result: skyData.result,
+          earth_result: earthData.result,
           // content 또는 generated_content 필드 모두 지원
           generated_content: item.generated_content || item.content || '',
           manager_edit: calculatedManagerEdit,
@@ -838,21 +841,27 @@ const CareerEditor = forwardRef(function CareerEditor({
       // 세운 성패 추출
       const yearLuckResult = extractYearLuckResult(year, sky, earth, type_analysis, decadeForYear);
 
+      const skyObj = {
+        type: '천간',
+        gyeokguk: skyType,
+        char: sky,
+        ...yearLuckResult.sky
+      };
+      const earthObj = {
+        type: '지지',
+        gyeokguk: earthType,
+        char: earth,
+        ...yearLuckResult.earth
+      };
+
       years.push({
         year,
         ganji,
-        sky: {
-          type: '천간',
-          gyeokguk: skyType,
-          char: sky,
-          ...yearLuckResult.sky
-        },
-        earth: {
-          type: '지지',
-          gyeokguk: earthType,
-          char: earth,
-          ...yearLuckResult.earth
-        },
+        sky: skyObj,
+        earth: earthObj,
+        // sky_result/earth_result를 최상위 레벨에도 저장 (ReportPreview 호환성)
+        sky_result: skyObj.result,
+        earth_result: earthObj.result,
         manager_edit: {
           sky: {
             career_level: calculateDefaultLevel(yearLuckResult).sky,
@@ -969,6 +978,22 @@ const CareerEditor = forwardRef(function CareerEditor({
     const skyOutcomes = skyResult?.result?.year_luck_sky_outcome || [];
     const earthOutcomes = earthResult?.result?.year_luck_earth_outcome || [];
 
+    // 디버그 로그
+    console.log(`[CareerEditor extractYearLuckResult] year=${year}`, {
+      decadeSky,
+      decadeEarth,
+      skyYearLucks: skyYearLucks ? Object.keys(skyYearLucks) : null,
+      earthYearLucks: earthYearLucks ? Object.keys(earthYearLucks) : null,
+      sky,
+      earth,
+      skyResult,
+      earthResult,
+      skyOutcomes,
+      earthOutcomes,
+      skyDetermineResult: determineResult(skyOutcomes),
+      earthDetermineResult: determineResult(earthOutcomes)
+    });
+
     const skySipsung = extractSipsung(skyResult, skyOutcomes);
     const earthSipsung = extractSipsung(earthResult, earthOutcomes);
 
@@ -1052,13 +1077,32 @@ const CareerEditor = forwardRef(function CareerEditor({
         throw new Error(data.error || '재생성에 실패했습니다.');
       }
 
+      // 세운 성패 재계산을 위한 정보
+      const { type_analysis, decade_luck } = validationResult;
+      const decadeArray = decade_luck?.decade_array || [];
+      const decadeStartAge = decade_luck?.start_age || 1;
+      const birthDateStr = validationResult?.order_info?.birth_date || '';
+      const birthYearMatch = birthDateStr.match(/(\d+)년/);
+      const birthYear = birthYearMatch ? parseInt(birthYearMatch[1]) : validationResult?.order_info?.birth_year || new Date().getFullYear();
+      const ageAtYear = year - birthYear;
+
+      const targetItem = careerData.find(item => item.year === year);
+      const ganji = targetItem?.ganji || getYearGanji(year);
+      const sky = ganji?.charAt(0);
+      const earth = ganji?.charAt(1);
+      const decadeForYear = targetItem?.decade || findDecadeForAge(decadeArray, decadeStartAge, ageAtYear);
+      const yearLuckResult = extractYearLuckResult(year, sky, earth, type_analysis, decadeForYear);
+
       const updatedData = careerData.map(item =>
         item.year === year
           ? {
               ...item,
               generated_content: data.career?.generated_content,
               sky_analysis: data.career?.sky_analysis || item.sky_analysis,
-              earth_analysis: data.career?.earth_analysis || item.earth_analysis
+              earth_analysis: data.career?.earth_analysis || item.earth_analysis,
+              // sky_result/earth_result도 업데이트 (ReportPreview 호환성)
+              sky_result: yearLuckResult.sky?.result || data.career?.sky_analysis?.result || item.sky_result,
+              earth_result: yearLuckResult.earth?.result || data.career?.earth_analysis?.result || item.earth_result
             }
           : item
       );
@@ -1173,13 +1217,31 @@ const CareerEditor = forwardRef(function CareerEditor({
 
           const data = await response.json();
           if (response.ok && data.career) {
+            // 세운 성패 계산
+            const { type_analysis, decade_luck } = validationResult;
+            const decadeArray = decade_luck?.decade_array || [];
+            const decadeStartAge = decade_luck?.start_age || 1;
+            const birthDateStr = validationResult?.order_info?.birth_date || '';
+            const birthYearMatch = birthDateStr.match(/(\d+)년/);
+            const birthYear = birthYearMatch ? parseInt(birthYearMatch[1]) : validationResult?.order_info?.birth_year || new Date().getFullYear();
+            const ageAtYear = year - birthYear;
+            const targetItem = updatedCareerData.find(item => item.year === year);
+            const ganji = targetItem?.ganji || getYearGanji(year);
+            const sky = ganji?.charAt(0);
+            const earth = ganji?.charAt(1);
+            const decadeForYear = targetItem?.decade || findDecadeForAge(decadeArray, decadeStartAge, ageAtYear);
+            const yearLuckResult = extractYearLuckResult(year, sky, earth, type_analysis, decadeForYear);
+
             updatedCareerData = updatedCareerData.map(item =>
               item.year === year
                 ? {
                     ...item,
                     generated_content: data.career?.generated_content,
                     sky_analysis: data.career?.sky_analysis || item.sky_analysis,
-                    earth_analysis: data.career?.earth_analysis || item.earth_analysis
+                    earth_analysis: data.career?.earth_analysis || item.earth_analysis,
+                    // sky_result/earth_result도 업데이트 (ReportPreview 호환성)
+                    sky_result: yearLuckResult.sky?.result || data.career?.sky_analysis?.result || item.sky_result,
+                    earth_result: yearLuckResult.earth?.result || data.career?.earth_analysis?.result || item.earth_result
                   }
                 : item
             );
