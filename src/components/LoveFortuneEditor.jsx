@@ -466,6 +466,7 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
   const [loading, setLoading] = useState(false);
   const [regeneratingYear, setRegeneratingYear] = useState(null);
   const [regeneratingAll, setRegeneratingAll] = useState(false);
+  const [regeneratingProgress, setRegeneratingProgress] = useState({ progress: 0, message: '' });
   const dataLoaded = useRef(false);
 
   // yearCount 결정 (prop > validationResult > 기본값 5)
@@ -682,56 +683,93 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     }
   };
 
-  // 전체 재생성
-  const handleRegenerateAll = async () => {
-    setRegeneratingAll(true);
-    try {
-      let updatedData = [...loveFortuneData];
+  // Job 상태 폴링
+  const pollJobStatus = async (jobId, maxPollingTime = 600000) => {
+    const startTime = Date.now();
+    const pollInterval = 2000;
 
-      for (const yearData of loveFortuneData) {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_love_fortune`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Saju-Authorization': `Bearer-${API_TOKEN}`
-            },
-            body: JSON.stringify({
-              year: yearData.year,
-              manager_input: yearData.manager_edit || {}
-            })
-          });
+    while (Date.now() - startTime < maxPollingTime) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-          const data = await response.json();
-          if (response.ok) {
-            updatedData = updatedData.map(item =>
-              item.year === yearData.year
-                ? {
-                    ...item,
-                    generated_content: data.generated_content,
-                    content_sections: data.content_sections || null,
-                    day_earth_outcome: data.day_earth_outcome || item.day_earth_outcome,
-                    day_earth_relations: data.day_earth_relations || item.day_earth_relations,
-                    johu_analysis: data.johu_analysis || item.johu_analysis
-                  }
-                : item
-            );
-          }
-        } catch (err) {
-          console.error(`Year ${yearData.year} generation failed:`, err);
+      const statusResponse = await fetch(
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status/${jobId}`,
+        {
+          headers: { 'Saju-Authorization': `Bearer-${API_TOKEN}` }
         }
+      );
+
+      const statusData = await statusResponse.json();
+      console.log(`[LoveFortuneEditor] Job ${jobId} 상태:`, statusData.status, statusData.progress);
+
+      // 진행 상태 업데이트
+      if (statusData.progress !== undefined || statusData.message) {
+        setRegeneratingProgress({
+          progress: statusData.progress || 0,
+          message: statusData.message || '처리 중...'
+        });
       }
 
-      setLoveFortuneData(updatedData);
-      notifyParent(updatedData);
+      if (statusData.status === 'completed') {
+        return { success: true, result: statusData.result };
+      }
 
-      // 자동 저장
-      await saveLoveFortuneData(updatedData);
+      if (statusData.status === 'failed') {
+        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
+      }
+    }
+
+    return { success: false, error: '작업 시간이 초과되었습니다.' };
+  };
+
+  // 비동기 Job 시작 헬퍼
+  const startAsyncJob = async (chapterType, options = {}) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Saju-Authorization': `Bearer-${API_TOKEN}`
+      },
+      body: JSON.stringify({ chapter_type: chapterType, options })
+    });
+
+    if (!response.ok) {
+      throw new Error('비동기 작업 시작에 실패했습니다.');
+    }
+
+    const data = await response.json();
+    return data.job_id;
+  };
+
+  // 전체 재생성 - 비동기 방식
+  const handleRegenerateAll = async () => {
+    setRegeneratingAll(true);
+    setRegeneratingProgress({ progress: 0, message: '연애운 생성 시작...' });
+    try {
+      console.log('연애운 비동기 생성 시작...');
+      const loveJobId = await startAsyncJob('love', { year_count: loveFortuneData.length || 5 });
+      const loveResult = await pollJobStatus(loveJobId);
+
+      if (loveResult.success && loveResult.result?.love_fortune) {
+        console.log('연애운 생성 완료');
+        const result = loveResult.result.love_fortune;
+        // 결과를 현재 데이터에 반영
+        let updatedData = loveFortuneData.map(item => ({
+          ...item,
+          generated_content: result.content || item.generated_content
+        }));
+        setLoveFortuneData(updatedData);
+        notifyParent(updatedData);
+        await saveLoveFortuneData(updatedData);
+      } else {
+        console.warn('연애운 생성 실패:', loveResult.error);
+        alert(`연애운 생성 실패: ${loveResult.error}`);
+      }
     } catch (err) {
       console.error('Regenerate all error:', err);
       alert(`전체 재생성 실패: ${err.message}`);
     } finally {
       setRegeneratingAll(false);
+      setRegeneratingProgress({ progress: 0, message: '' });
     }
   };
 
@@ -821,7 +859,7 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     if (regeneratingAll) {
       return {
         title: '연애운 생성 중...',
-        subtitle: 'AI가 5년치 연애운을 분석하고 있습니다. 잠시만 기다려주세요.'
+        subtitle: regeneratingProgress.message || 'AI가 연애운을 분석하고 있습니다.'
       };
     }
     return {
@@ -841,6 +879,26 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
             <div className="loading-spinner"></div>
             <div className="loading-text">{loadingMessage.title}</div>
             <div className="loading-subtext">{loadingMessage.subtitle}</div>
+            {regeneratingAll && regeneratingProgress.progress > 0 && (
+              <div className="loading-progress" style={{ marginTop: '16px', width: '280px' }}>
+                <div style={{
+                  background: '#fce7f3',
+                  borderRadius: '6px',
+                  height: '10px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    background: '#ec4899',
+                    height: '100%',
+                    width: `${regeneratingProgress.progress}%`,
+                    transition: 'width 0.3s ease'
+                  }}></div>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '14px', color: '#be185d', fontWeight: '500' }}>
+                  {regeneratingProgress.progress}%
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

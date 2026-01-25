@@ -1101,7 +1101,7 @@ const CareerEditor = forwardRef(function CareerEditor({
       await new Promise(resolve => setTimeout(resolve, pollingInterval));
 
       const statusResponse = await fetch(
-        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status?job_id=${jobId}`,
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status/${jobId}`,
         {
           method: 'GET',
           headers: {
@@ -1342,10 +1342,32 @@ const CareerEditor = forwardRef(function CareerEditor({
               {regeneratingAll ? '직업운 생성 중...' : '기본 설명 생성 중...'}
             </div>
             <div className="loading-subtext">
-              {regeneratingAll
-                ? 'AI가 5년치 직업운/사회운을 분석하고 있습니다. 잠시만 기다려주세요.'
-                : 'AI가 핵심 사회적 역할과 커리어 방향을 분석하고 있습니다.'}
+              {regeneratingAll && regeneratingAllProgress?.message
+                ? regeneratingAllProgress.message
+                : regeneratingAll
+                  ? 'AI가 5년치 직업운/사회운을 분석하고 있습니다.'
+                  : 'AI가 핵심 사회적 역할과 커리어 방향을 분석하고 있습니다.'}
             </div>
+            {regeneratingAll && regeneratingAllProgress?.progress > 0 && (
+              <div className="loading-progress" style={{ marginTop: '12px', width: '200px' }}>
+                <div style={{
+                  background: '#e5e7eb',
+                  borderRadius: '4px',
+                  height: '8px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    background: '#3b82f6',
+                    height: '100%',
+                    width: `${regeneratingAllProgress.progress}%`,
+                    transition: 'width 0.3s ease'
+                  }}></div>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+                  {regeneratingAllProgress.progress}%
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

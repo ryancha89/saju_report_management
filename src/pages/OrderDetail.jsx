@@ -1254,12 +1254,12 @@ function OrderDetail() {
 
     // 1. result 문자열로 판정
     const isGood = (result) => {
-      if (!result) return false;
+      if (!result || typeof result !== 'string') return false;
       return result === '成' || result === '성' ||
              result.includes('敗中有成') || result.includes('패중유성');
     };
     const isBad = (result) => {
-      if (!result) return false;
+      if (!result || typeof result !== 'string') return false;
       return result === '敗' || result === '패' ||
              result.includes('成中有敗') || result.includes('성중유패');
     };
@@ -1319,7 +1319,7 @@ function OrderDetail() {
     }
 
     // 1. result 문자열로 판정
-    if (result) {
+    if (result && typeof result === 'string') {
       // 길: 成, 敗中有成 (결국 좋아짐)
       if (result === '成' || result === '성') return { class: 'good', text: '○ 길', icon: '○' };
       if (result.includes('敗中有成') || result.includes('패중유성')) return { class: 'good', text: '○ 길', icon: '○' };
@@ -2255,7 +2255,7 @@ function OrderDetail() {
       await new Promise(resolve => setTimeout(resolve, pollingInterval));
 
       const statusResponse = await fetch(
-        `${API_BASE_URL}/api/v1/admin/orders/${id}/job_status?job_id=${jobId}`,
+        `${API_BASE_URL}/api/v1/admin/orders/${id}/job_status/${jobId}`,
         {
           method: 'GET',
           headers: {
@@ -5094,7 +5094,7 @@ function OrderDetail() {
                                 <div className="decade-timeline-overview">
                                   {chapter3Data.decade_flow?.map((decade, idx) => {
                                     const getResultClass = (result) => {
-                                      if (!result) return 'none';
+                                      if (!result || typeof result !== 'string') return 'none';
                                       if (result === '成' || result === '성') return 'success';
                                       if (result === '敗' || result === '패') return 'failure';
                                       if (result.includes('成中有敗') || result.includes('성중유패')) return 'mixed-good';
@@ -5104,7 +5104,7 @@ function OrderDetail() {
                                     };
 
                                     const getResultSymbol = (result) => {
-                                      if (!result) return '―';
+                                      if (!result || typeof result !== 'string') return '―';
                                       if (result === '成' || result === '성') return '●';
                                       if (result === '敗' || result === '패') return '✕';
                                       if (result.includes('成中有敗') || result.includes('성중유패')) return '✕';
@@ -5115,13 +5115,13 @@ function OrderDetail() {
 
                                     // 성공/실패 판단 (성, 패중유성 = O / 패, 성중유패 = X)
                                     const isSuccess = (result) => {
-                                      if (!result) return false;
+                                      if (!result || typeof result !== 'string') return false;
                                       if (result === '成' || result === '성') return true;
                                       if (result.includes('敗中有成') || result.includes('패중유성')) return true;
                                       return false;
                                     };
                                     const isFailure = (result) => {
-                                      if (!result) return false;
+                                      if (!result || typeof result !== 'string') return false;
                                       if (result === '敗' || result === '패') return true;
                                       if (result.includes('成中有敗') || result.includes('성중유패')) return true;
                                       return false;
@@ -5383,13 +5383,14 @@ function OrderDetail() {
                                             </td>
                                             <td>
                                               <span className={`result-badge ${
-                                                decade.sky_result?.includes('成中有敗') || decade.sky_result?.includes('성중유패') ? 'mixed-good' :
-                                                decade.sky_result?.includes('敗中有成') || decade.sky_result?.includes('패중유성') ? 'mixed-bad' :
-                                                decade.sky_result === '成' || decade.sky_result === '성' ? 'success' :
-                                                decade.sky_result === '敗' || decade.sky_result === '패' ? 'failure' :
-                                                decade.sky_result ? 'mixed' : 'none'
+                                                typeof decade.sky_result === 'string' ? (
+                                                  decade.sky_result.includes('成中有敗') || decade.sky_result.includes('성중유패') ? 'mixed-good' :
+                                                  decade.sky_result.includes('敗中有成') || decade.sky_result.includes('패중유성') ? 'mixed-bad' :
+                                                  decade.sky_result === '成' || decade.sky_result === '성' ? 'success' :
+                                                  decade.sky_result === '敗' || decade.sky_result === '패' ? 'failure' : 'mixed'
+                                                ) : 'none'
                                               }`}>
-                                                {decade.sky_result || '-'}
+                                                {typeof decade.sky_result === 'string' ? decade.sky_result : '-'}
                                               </span>
                                             </td>
                                             <td>
@@ -5398,13 +5399,14 @@ function OrderDetail() {
                                             </td>
                                             <td>
                                               <span className={`result-badge ${
-                                                decade.earth_result?.includes('成中有敗') || decade.earth_result?.includes('성중유패') ? 'mixed-good' :
-                                                decade.earth_result?.includes('敗中有成') || decade.earth_result?.includes('패중유성') ? 'mixed-bad' :
-                                                decade.earth_result === '成' || decade.earth_result === '성' ? 'success' :
-                                                decade.earth_result === '敗' || decade.earth_result === '패' ? 'failure' :
-                                                decade.earth_result ? 'mixed' : 'none'
+                                                typeof decade.earth_result === 'string' ? (
+                                                  decade.earth_result.includes('成中有敗') || decade.earth_result.includes('성중유패') ? 'mixed-good' :
+                                                  decade.earth_result.includes('敗中有成') || decade.earth_result.includes('패중유성') ? 'mixed-bad' :
+                                                  decade.earth_result === '成' || decade.earth_result === '성' ? 'success' :
+                                                  decade.earth_result === '敗' || decade.earth_result === '패' ? 'failure' : 'mixed'
+                                                ) : 'none'
                                               }`}>
-                                                {decade.earth_result || '-'}
+                                                {typeof decade.earth_result === 'string' ? decade.earth_result : '-'}
                                               </span>
                                             </td>
                                           </tr>

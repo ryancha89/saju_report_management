@@ -1427,7 +1427,7 @@ const FortuneEditor = forwardRef(function FortuneEditor({
       await new Promise(resolve => setTimeout(resolve, pollingInterval));
 
       const statusResponse = await fetch(
-        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status?job_id=${jobId}`,
+        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status/${jobId}`,
         {
           method: 'GET',
           headers: {
@@ -1699,6 +1699,26 @@ const FortuneEditor = forwardRef(function FortuneEditor({
             <div className="loading-spinner"></div>
             <div className="loading-text">{loadingMessage.title}</div>
             <div className="loading-subtext">{loadingMessage.subtitle}</div>
+            {regeneratingAll && regeneratingAllProgress?.progress > 0 && (
+              <div className="loading-progress" style={{ marginTop: '16px', width: '280px' }}>
+                <div style={{
+                  background: '#fef3c7',
+                  borderRadius: '6px',
+                  height: '10px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    background: '#f59e0b',
+                    height: '100%',
+                    width: `${regeneratingAllProgress.progress}%`,
+                    transition: 'width 0.3s ease'
+                  }}></div>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '14px', color: '#92400e', fontWeight: '500' }}>
+                  {regeneratingAllProgress.progress}%
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
