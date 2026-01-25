@@ -740,30 +740,72 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     return data.job_id;
   };
 
-  // 전체 재생성 - 비동기 방식
+  // 전체 재생성 - 연도별 순차 호출 방식
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     setRegeneratingProgress({ progress: 0, message: '연애운 생성 시작...' });
     try {
-      console.log('연애운 비동기 생성 시작...');
-      const loveJobId = await startAsyncJob('love', { year_count: loveFortuneData.length || 5 });
-      const loveResult = await pollJobStatus(loveJobId);
+      console.log('연애운 전체 생성 시작 (연도별 순차 호출)...');
+      let updatedData = [...loveFortuneData];
+      const totalYears = loveFortuneData.length;
 
-      if (loveResult.success && loveResult.result?.love_fortune) {
-        console.log('연애운 생성 완료');
-        const result = loveResult.result.love_fortune;
-        // 결과를 현재 데이터에 반영
-        let updatedData = loveFortuneData.map(item => ({
-          ...item,
-          generated_content: result.content || item.generated_content
-        }));
-        setLoveFortuneData(updatedData);
-        notifyParent(updatedData);
-        await saveLoveFortuneData(updatedData);
-      } else {
-        console.warn('연애운 생성 실패:', loveResult.error);
-        alert(`연애운 생성 실패: ${loveResult.error}`);
+      for (let i = 0; i < totalYears; i++) {
+        const yearData = loveFortuneData[i];
+        const year = yearData.year;
+        const managerInput = yearData?.manager_edit || {};
+
+        // 진행률 업데이트
+        const progress = Math.round(((i) / totalYears) * 100);
+        setRegeneratingProgress({
+          progress,
+          message: `${year}년 연애운 생성 중... (${i + 1}/${totalYears})`
+        });
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_love_fortune`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              year,
+              manager_input: managerInput
+            })
+          });
+
+          const data = await response.json();
+          if (response.ok) {
+            // 해당 연도 데이터 업데이트
+            updatedData = updatedData.map(item =>
+              item.year === year
+                ? {
+                    ...item,
+                    generated_content: data.generated_content,
+                    content_sections: data.content_sections || null,
+                    day_earth_outcome: data.day_earth_outcome || item.day_earth_outcome,
+                    day_earth_relations: data.day_earth_relations || item.day_earth_relations,
+                    johu_analysis: data.johu_analysis || item.johu_analysis
+                  }
+                : item
+            );
+            console.log(`${year}년 연애운 생성 완료`);
+          } else {
+            console.warn(`${year}년 연애운 생성 실패:`, data.error);
+          }
+        } catch (yearErr) {
+          console.error(`${year}년 연애운 생성 오류:`, yearErr);
+        }
       }
+
+      // 최종 진행률 업데이트
+      setRegeneratingProgress({ progress: 100, message: '저장 중...' });
+
+      setLoveFortuneData(updatedData);
+      notifyParent(updatedData);
+      await saveLoveFortuneData(updatedData);
+
+      console.log('연애운 전체 생성 완료');
     } catch (err) {
       console.error('Regenerate all error:', err);
       alert(`전체 재생성 실패: ${err.message}`);
