@@ -1266,10 +1266,39 @@ ${johuInterp}
           ) : yearData.generated_content ? (
             <div className="generated-content-section five-year-content">
               <div className="content-title">생성된 운세</div>
-              <div
-                className="generated-content"
-                dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
-              />
+              {yearData.content_sections && yearData.content_sections.sky ? (
+                <div className="structured-content">
+                  {yearData.content_sections.sky && (
+                    <div className="content-block">
+                      <div className="content-block-title">🏢 사회운/활동운</div>
+                      <div className="content-block-text">{yearData.content_sections.sky}</div>
+                    </div>
+                  )}
+                  {yearData.content_sections.earth && (
+                    <div className="content-block">
+                      <div className="content-block-title">💰 재물운/현실운</div>
+                      <div className="content-block-text">{yearData.content_sections.earth}</div>
+                    </div>
+                  )}
+                  {yearData.content_sections.johu && (
+                    <div className="content-block">
+                      <div className="content-block-title">💪 건강운/컨디션</div>
+                      <div className="content-block-text">{yearData.content_sections.johu}</div>
+                    </div>
+                  )}
+                  {yearData.content_sections.summary && (
+                    <div className="content-block">
+                      <div className="content-block-title">📌 종합 조언</div>
+                      <div className="content-block-text">{yearData.content_sections.summary}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="generated-content"
+                  dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
+                />
+              )}
             </div>
           ) : (
             <div className="generated-content-section" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
@@ -1780,6 +1809,7 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
           return {
             ...item,
             generated_content: data.generated_content,
+            content_sections: data.content_sections || null,
             sky_outcome: newSkyOutcome,
             earth_outcome: newEarthOutcome,
             relations: newRelations,
@@ -1905,16 +1935,23 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
           });
 
           const data = await response.json();
-          if (response.ok && data.five_year_fortune) {
+          if (response.ok && (data.five_year_fortune || data.generated_content)) {
+            const fortune = data.five_year_fortune || data;
             updatedData = updatedData.map(item =>
               item.year === year
                 ? {
                     ...item,
-                    generated_content: data.five_year_fortune.content || data.five_year_fortune.generated_content || item.generated_content,
-                    sky_type: data.five_year_fortune.sky_type || item.sky_type,
-                    earth_type: data.five_year_fortune.earth_type || item.earth_type,
-                    sky_outcome: data.five_year_fortune.sky_outcome || item.sky_outcome,
-                    earth_outcome: data.five_year_fortune.earth_outcome || item.earth_outcome
+                    generated_content: fortune.content || fortune.generated_content || item.generated_content,
+                    content_sections: fortune.content_sections || data.content_sections || null,
+                    sky_type: fortune.sky_type || item.sky_type,
+                    earth_type: fortune.earth_type || item.earth_type,
+                    sky_outcome: data.sky_outcome || fortune.sky_outcome || item.sky_outcome,
+                    earth_outcome: data.earth_outcome || fortune.earth_outcome || item.earth_outcome,
+                    strength: data.strength || item.strength,
+                    temperature: data.temperature || item.temperature,
+                    johu: data.johu || item.johu,
+                    life_areas: data.life_areas || item.life_areas,
+                    combined_score: data.combined_score || item.combined_score
                   }
                 : item
             );

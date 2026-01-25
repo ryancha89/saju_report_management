@@ -1095,3 +1095,53 @@
   font-size: 0.85rem;
   color: #059669;
 }
+
+/* Structured content styles for 두괄식 format */
+.five-year-fortune-editor .structured-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.five-year-fortune-editor .content-block {
+  padding: 16px;
+  border-radius: 8px;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+}
+
+.five-year-fortune-editor .content-block:nth-child(1) {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-color: #7dd3fc;
+}
+
+.five-year-fortune-editor .content-block:nth-child(2) {
+  background: linear-gradient(135deg, #fef9c3, #fef08a);
+  border-color: #fde047;
+}
+
+.five-year-fortune-editor .content-block:nth-child(3) {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border-color: #86efac;
+}
+
+.five-year-fortune-editor .content-block:nth-child(4) {
+  background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+  border-color: #d8b4fe;
+}
+
+.five-year-fortune-editor .content-block-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #374151;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.five-year-fortune-editor .content-block-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #4b5563;
+  white-space: pre-wrap;
+}
