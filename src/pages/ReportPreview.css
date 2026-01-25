@@ -3408,14 +3408,16 @@ body:has(.report-page) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgb(255, 244, 200);
-  border-radius: 50%;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #000000;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1.5px solid rgba(255, 244, 200, 0.6);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgb(255, 244, 200);
   flex-shrink: 0;
+  font-family: 'Playfair Display', serif;
 }
 
 h3.coaching-item-topic {
