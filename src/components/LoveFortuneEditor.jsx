@@ -683,63 +683,6 @@ const LoveFortuneEditor = forwardRef(function LoveFortuneEditor({
     }
   };
 
-  // Job 상태 폴링
-  const pollJobStatus = async (jobId, maxPollingTime = 600000) => {
-    const startTime = Date.now();
-    const pollInterval = 2000;
-
-    while (Date.now() - startTime < maxPollingTime) {
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-      const statusResponse = await fetch(
-        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status/${jobId}`,
-        {
-          headers: { 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-        }
-      );
-
-      const statusData = await statusResponse.json();
-      console.log(`[LoveFortuneEditor] Job ${jobId} 상태:`, statusData.status, statusData.progress);
-
-      // 진행 상태 업데이트
-      if (statusData.progress !== undefined || statusData.message) {
-        setRegeneratingProgress({
-          progress: statusData.progress || 0,
-          message: statusData.message || '처리 중...'
-        });
-      }
-
-      if (statusData.status === 'completed') {
-        return { success: true, result: statusData.result };
-      }
-
-      if (statusData.status === 'failed') {
-        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
-      }
-    }
-
-    return { success: false, error: '작업 시간이 초과되었습니다.' };
-  };
-
-  // 비동기 Job 시작 헬퍼
-  const startAsyncJob = async (chapterType, options = {}) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Saju-Authorization': `Bearer-${API_TOKEN}`
-      },
-      body: JSON.stringify({ chapter_type: chapterType, options })
-    });
-
-    if (!response.ok) {
-      throw new Error('비동기 작업 시작에 실패했습니다.');
-    }
-
-    const data = await response.json();
-    return data.job_id;
-  };
-
   // 전체 재생성 - 연도별 순차 호출 방식
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);

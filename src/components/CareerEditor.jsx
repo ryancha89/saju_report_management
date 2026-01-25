@@ -1092,48 +1092,7 @@ const CareerEditor = forwardRef(function CareerEditor({
     }
   };
 
-  // 비동기 Job 폴링 헬퍼 함수
-  const pollJobStatus = async (jobId, maxPollingTime = 600000) => {
-    const pollingInterval = 2000;
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < maxPollingTime) {
-      await new Promise(resolve => setTimeout(resolve, pollingInterval));
-
-      const statusResponse = await fetch(
-        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status/${jobId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Saju-Authorization': `Bearer-${API_TOKEN}`
-          }
-        }
-      );
-
-      const statusData = await statusResponse.json();
-      console.log(`[CareerEditor] Job ${jobId} 상태:`, statusData.status, statusData.progress);
-
-      if (statusData.progress !== undefined) {
-        setRegeneratingAllProgress({
-          progress: statusData.progress,
-          message: statusData.message || '처리 중...'
-        });
-      }
-
-      if (statusData.status === 'completed') {
-        return { success: true, result: statusData.result };
-      }
-
-      if (statusData.status === 'failed') {
-        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
-      }
-    }
-
-    return { success: false, error: '작업 시간이 초과되었습니다.' };
-  };
-
-  // 전체 재생성 - 비동기 방식
+  // 전체 재생성 - 순차 호출 방식
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     setRegeneratingIntro(true);

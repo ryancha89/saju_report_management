@@ -1840,67 +1840,6 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     }
   };
 
-  // 비동기 Job 폴링 헬퍼 함수
-  const pollJobStatus = async (jobId, maxPollingTime = 600000) => {
-    const pollingInterval = 2000;
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < maxPollingTime) {
-      await new Promise(resolve => setTimeout(resolve, pollingInterval));
-
-      const statusResponse = await fetch(
-        `${API_BASE_URL}/api/v1/admin/orders/${orderId}/job_status/${jobId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Saju-Authorization': `Bearer-${API_TOKEN}`
-          }
-        }
-      );
-
-      const statusData = await statusResponse.json();
-      console.log(`[FiveYearFortuneEditor] Job ${jobId} 상태:`, statusData.status, statusData.progress);
-
-      // 진행 상태 업데이트
-      if (statusData.progress !== undefined || statusData.message) {
-        setRegeneratingProgress({
-          progress: statusData.progress || 0,
-          message: statusData.message || '처리 중...'
-        });
-      }
-
-      if (statusData.status === 'completed') {
-        return { success: true, result: statusData.result };
-      }
-
-      if (statusData.status === 'failed') {
-        return { success: false, error: statusData.error || '생성에 실패했습니다.' };
-      }
-    }
-
-    return { success: false, error: '작업 시간이 초과되었습니다.' };
-  };
-
-  // 비동기 Job 시작 헬퍼 함수
-  const startAsyncJob = async (chapterType, options = {}) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Saju-Authorization': `Bearer-${API_TOKEN}`
-      },
-      body: JSON.stringify({ chapter_type: chapterType, options })
-    });
-
-    if (!response.ok) {
-      throw new Error('비동기 작업 시작에 실패했습니다.');
-    }
-
-    const data = await response.json();
-    return data.job_id;
-  };
-
   // 5년 운세 전체 재생성 - 순차 호출 방식 (5년 운세만 생성, 재물운/직업운/연애운/코칭은 별도)
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
