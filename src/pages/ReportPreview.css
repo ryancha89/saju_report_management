@@ -34,13 +34,18 @@
   display: flex;
   justify-content: center;
   background: #ffffff;
+  /* Prevent mobile swipe-back navigation */
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior: none;
 }
 
-/* Prevent flash on scroll */
+/* Prevent flash on scroll and swipe-back gesture */
 html:has(.report-page),
 body:has(.report-page) {
   background: #ffffff;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  /* Prevent iOS Safari swipe-back navigation */
+  touch-action: pan-y pinch-zoom;
 }
 
 .report-wrapper {
@@ -60,6 +65,9 @@ body:has(.report-page) {
   padding-bottom: env(safe-area-inset-bottom);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
   -webkit-tap-highlight-color: transparent;
+  /* Prevent horizontal swipe gestures that trigger browser back */
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior-x: none;
 }
 
 .report-wrapper * {

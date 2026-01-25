@@ -24,6 +24,7 @@ function ReportPreview({ isAdminPreview = false }) {
   const [showChapterImage, setShowChapterImage] = useState(false); // 챕터 이미지 표시 여부
   const [showManagerGreeting, setShowManagerGreeting] = useState(true); // 매니저 인사말 표시 여부
   const dropdownRef = useRef(null);
+  const chapterDisplayRef = useRef(null);
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
@@ -132,6 +133,29 @@ function ReportPreview({ isAdminPreview = false }) {
       setShowChapterImage(false);
     }
   }, [currentChapter]);
+
+  // 모바일 브라우저 뒤로가기 제스처 방지 (non-passive listener 필요)
+  useEffect(() => {
+    const el = chapterDisplayRef.current;
+    if (!el) return;
+
+    const handleTouchMoveNonPassive = (e) => {
+      if (!touchStartX.current) return;
+      const currentX = e.touches[0].clientX;
+      touchEndX.current = currentX;
+
+      // 화면 왼쪽 가장자리에서 시작된 오른쪽 스와이프는 브라우저 뒤로가기 방지
+      const isEdgeSwipe = touchStartX.current < 30;
+      const isSwipingRight = currentX > touchStartX.current;
+
+      if (isEdgeSwipe && isSwipingRight) {
+        e.preventDefault();
+      }
+    };
+
+    el.addEventListener('touchmove', handleTouchMoveNonPassive, { passive: false });
+    return () => el.removeEventListener('touchmove', handleTouchMoveNonPassive);
+  }, []);
 
   const fetchReport = async () => {
     setLoading(true);
@@ -2777,10 +2801,6 @@ function ReportPreview({ isAdminPreview = false }) {
     touchStartX.current = e.touches[0].clientX;
   };
 
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
 
@@ -2920,9 +2940,9 @@ function ReportPreview({ isAdminPreview = false }) {
 
         {/* Chapter Content */}
         <div
+          ref={chapterDisplayRef}
           className="chapter-display"
           onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
           {showManagerGreeting && currentChapter === 1 && reportData?.order?.manager ? (
