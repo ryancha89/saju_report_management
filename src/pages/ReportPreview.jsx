@@ -2946,10 +2946,6 @@ function ReportPreview({ isAdminPreview = false }) {
                   <p className="manager-greeting-message">"{reportData.order.manager.message}"</p>
                 )}
               </div>
-              <div className="scroll-indicator">
-                <span className="scroll-hint">탭하여 시작하기</span>
-                <ChevronDown size={28} />
-              </div>
             </div>
           ) : showChapterImage && currentChapter >= 1 && currentChapter <= 9 ? (
             <div className="chapter-image-overlay" onClick={() => setShowChapterImage(false)}>
@@ -2961,10 +2957,6 @@ function ReportPreview({ isAdminPreview = false }) {
               <div className="chapter-image-text">
                 <span className="chapter-label">Chapter {currentChapter}</span>
                 <h2 className="chapter-title-overlay">{chapterInfo[currentChapter].title}</h2>
-              </div>
-              <div className="scroll-indicator">
-                <span className="scroll-hint">탭하여 계속</span>
-                <ChevronDown size={28} />
               </div>
             </div>
           ) : (
