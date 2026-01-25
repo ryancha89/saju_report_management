@@ -1173,56 +1173,67 @@ const CareerEditor = forwardRef(function CareerEditor({
         setRegeneratingIntro(false);
       }
 
-      // 2. 연도별 직업운 생성 - 비동기 방식
-      setRegeneratingAllProgress({ progress: 10, message: '연도별 직업운 생성 중...' });
+      // 2. 연도별 직업운 생성 - 순차 호출 방식
+      const totalYears = careerData.length;
 
-      // 비동기 Job 시작
-      const startResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`
-        },
-        body: JSON.stringify({
-          chapter_type: 'career',
-          options: { year_count: careerData.length || 5 }
-        })
-      });
+      for (let i = 0; i < totalYears; i++) {
+        const yearData = careerData[i];
+        const year = yearData.year;
+        const managerInput = yearData?.manager_edit || {};
 
-      if (!startResponse.ok) {
-        const errorData = await startResponse.json();
-        throw new Error(errorData.error || '비동기 작업 시작에 실패했습니다.');
-      }
+        // 진행률 업데이트
+        const progress = Math.round(10 + ((i) / totalYears) * 80);
+        setRegeneratingAllProgress({
+          progress,
+          message: `${year}년 직업운 생성 중... (${i + 1}/${totalYears})`
+        });
 
-      const startData = await startResponse.json();
-      if (!startData.success) {
-        throw new Error(startData.error || '작업 시작에 실패했습니다.');
-      }
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_career_year`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              year,
+              manager_input: {
+                sky: {
+                  career_level: managerInput.sky?.career_level || 'normal',
+                  reason: managerInput.sky?.reason || ''
+                },
+                earth: {
+                  career_level: managerInput.earth?.career_level || 'normal',
+                  reason: managerInput.earth?.reason || ''
+                },
+                advice: managerInput.advice || '',
+                memo: managerInput.memo || ''
+              }
+            })
+          });
 
-      const jobId = startData.job_id;
-      console.log('[CareerEditor] 직업운 Job 시작:', jobId);
-
-      // 폴링으로 결과 대기
-      const result = await pollJobStatus(jobId);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      // 결과 처리
-      const careers = result.result?.careers || {};
-      updatedCareerData = careerData.map(item => {
-        const newCareer = careers[item.year];
-        if (newCareer) {
-          return {
-            ...item,
-            generated_content: newCareer.content || newCareer.generated_content,
-            sky_analysis: newCareer.sky_analysis || item.sky_analysis,
-            earth_analysis: newCareer.earth_analysis || item.earth_analysis
-          };
+          const data = await response.json();
+          if (response.ok && data.career) {
+            updatedCareerData = updatedCareerData.map(item =>
+              item.year === year
+                ? {
+                    ...item,
+                    generated_content: data.career?.generated_content,
+                    sky_analysis: data.career?.sky_analysis || item.sky_analysis,
+                    earth_analysis: data.career?.earth_analysis || item.earth_analysis
+                  }
+                : item
+            );
+            console.log(`${year}년 직업운 생성 완료`);
+          } else {
+            console.warn(`${year}년 직업운 생성 실패:`, data.error);
+          }
+        } catch (yearErr) {
+          console.error(`${year}년 직업운 생성 오류:`, yearErr);
         }
-        return item;
-      });
+      }
+
+      setRegeneratingAllProgress({ progress: 95, message: '저장 중...' });
       setCareerData(updatedCareerData);
 
       notifyParent(updatedCareerData, updatedBaseCareer);

@@ -1871,43 +1871,70 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
     return data.job_id;
   };
 
-  // 5년 운세 전체 재생성 - 비동기 방식 (5년 운세만 생성, 재물운/직업운/연애운/코칭은 별도)
+  // 5년 운세 전체 재생성 - 순차 호출 방식 (5년 운세만 생성, 재물운/직업운/연애운/코칭은 별도)
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     setRegeneratingProgress({ progress: 0, message: '5년 운세 생성 시작...' });
     try {
       let updatedData = [...fiveYearData];
-      const yearCount = fiveYearData.length || 5;
+      const totalYears = fiveYearData.length;
 
-      // 5년 운세 생성 - 비동기 방식
-      setRegeneratingProgress({ progress: 5, message: '5년 운세 생성 중...' });
-      console.log('5년 운세 비동기 생성 시작...');
-      const fiveYearJobId = await startAsyncJob('five_year', { year_count: yearCount });
-      const fiveYearResult = await pollJobStatus(fiveYearJobId);
+      // 5년 운세 생성 - 순차 호출 방식
+      for (let i = 0; i < totalYears; i++) {
+        const yearData = fiveYearData[i];
+        const year = yearData.year;
+        const managerInput = yearData?.manager_edit || {};
 
-      if (fiveYearResult.success && fiveYearResult.result?.five_year_fortunes) {
-        console.log('5년 운세 생성 완료');
-        const fortunes = fiveYearResult.result.five_year_fortunes;
-        updatedData = updatedData.map(item => {
-          const fortune = fortunes.find(f => f.year === item.year);
-          if (fortune) {
-            return {
-              ...item,
-              generated_content: fortune.content || item.generated_content,
-              sky_type: fortune.sky_type || item.sky_type,
-              earth_type: fortune.earth_type || item.earth_type
-            };
-          }
-          return item;
+        const progress = Math.round(((i) / totalYears) * 90);
+        setRegeneratingProgress({
+          progress,
+          message: `${year}년 운세 생성 중... (${i + 1}/${totalYears})`
         });
-      } else {
-        console.warn('5년 운세 생성 실패:', fiveYearResult.error);
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_five_year_fortune`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              year,
+              manager_input: managerInput
+            })
+          });
+
+          const data = await response.json();
+          if (response.ok && data.five_year_fortune) {
+            updatedData = updatedData.map(item =>
+              item.year === year
+                ? {
+                    ...item,
+                    generated_content: data.five_year_fortune.content || data.five_year_fortune.generated_content || item.generated_content,
+                    sky_type: data.five_year_fortune.sky_type || item.sky_type,
+                    earth_type: data.five_year_fortune.earth_type || item.earth_type,
+                    sky_outcome: data.five_year_fortune.sky_outcome || item.sky_outcome,
+                    earth_outcome: data.five_year_fortune.earth_outcome || item.earth_outcome
+                  }
+                : item
+            );
+            setFiveYearData(updatedData);
+            console.log(`${year}년 운세 생성 완료`);
+          } else {
+            console.warn(`${year}년 운세 생성 실패:`, data.error);
+          }
+        } catch (yearErr) {
+          console.error(`${year}년 운세 생성 오류:`, yearErr);
+        }
       }
 
-      setFiveYearData(updatedData);
+      setRegeneratingProgress({ progress: 95, message: '저장 중...' });
+
       saveToCache(updatedData, baseAnalysis);
       notifyParent(updatedData);
       await saveFiveYearData(updatedData);
+
+      setRegeneratingProgress({ progress: 100, message: '완료!' });
     } catch (err) {
       console.error('Regenerate all error:', err);
     } finally {
@@ -1988,7 +2015,7 @@ const FiveYearFortuneEditor = forwardRef(function FiveYearFortuneEditor({
                 </div>
               </div>
             )}
-            <p className="regenerating-note" style={{ marginTop: '12px' }}>비동기로 생성 중입니다. 잠시만 기다려주세요.</p>
+            <p className="regenerating-note" style={{ marginTop: '12px' }}>연도별로 생성 중입니다. 잠시만 기다려주세요.</p>
           </div>
         </div>
       )}

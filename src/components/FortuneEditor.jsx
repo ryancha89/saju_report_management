@@ -1459,14 +1459,14 @@ const FortuneEditor = forwardRef(function FortuneEditor({
     return { success: false, error: '작업 시간이 초과되었습니다.' };
   };
 
-  // 전체 재생성 (기본 설명 + 연도별 재물운) - 비동기 방식
+  // 전체 재생성 (기본 설명 + 연도별 재물운) - 순차 호출 방식
   const handleRegenerateAll = async () => {
     setRegeneratingAll(true);
     setRegeneratingIntro(true);
     setRegeneratingAllProgress({ progress: 0, message: '재물운 생성 시작...' });
 
     let updatedBaseFortune = baseFortune;
-    let updatedFortuneData = fortuneData;
+    let updatedFortuneData = [...fortuneData];
 
     try {
       // 1. 먼저 기본 재물운 설명 생성
@@ -1499,59 +1499,68 @@ const FortuneEditor = forwardRef(function FortuneEditor({
         setRegeneratingIntro(false);
       }
 
-      // 2. 연도별 재물운 생성 - 비동기 방식
-      setRegeneratingAllProgress({ progress: 10, message: '연도별 재물운 생성 중...' });
+      // 2. 연도별 재물운 생성 - 순차 호출 방식
+      const totalYears = fortuneData.length;
 
-      // 비동기 Job 시작
-      const startResponse = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/generate_async`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Saju-Authorization': `Bearer-${API_TOKEN}`
-        },
-        body: JSON.stringify({
-          chapter_type: 'fortune',
-          options: { year_count: fortuneData.length || 5 }
-        })
-      });
+      for (let i = 0; i < totalYears; i++) {
+        const yearData = fortuneData[i];
+        const year = yearData.year;
+        const managerInput = yearData?.manager_edit || {};
 
-      if (!startResponse.ok) {
-        const errorData = await startResponse.json();
-        throw new Error(errorData.error || '비동기 작업 시작에 실패했습니다.');
-      }
+        const progress = Math.round(10 + ((i) / totalYears) * 80);
+        setRegeneratingAllProgress({
+          progress,
+          message: `${year}년 재물운 생성 중... (${i + 1}/${totalYears})`
+        });
 
-      const startData = await startResponse.json();
-      if (!startData.success) {
-        throw new Error(startData.error || '작업 시작에 실패했습니다.');
-      }
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${orderId}/regenerate_fortune_year`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Saju-Authorization': `Bearer-${API_TOKEN}`
+            },
+            body: JSON.stringify({
+              year,
+              manager_input: {
+                sky: {
+                  fortune_level: managerInput.sky?.fortune_level || 'normal',
+                  reason: managerInput.sky?.reason || ''
+                },
+                earth: {
+                  fortune_level: managerInput.earth?.fortune_level || 'normal',
+                  reason: managerInput.earth?.reason || ''
+                },
+                advice: managerInput.advice || '',
+                memo: managerInput.memo || ''
+              }
+            })
+          });
 
-      const jobId = startData.job_id;
-      console.log('[FortuneEditor] 재물운 Job 시작:', jobId);
-
-      // 폴링으로 결과 대기
-      const result = await pollJobStatus(jobId);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      // 결과 처리
-      const fortunes = result.result?.fortunes || {};
-      updatedFortuneData = fortuneData.map(item => {
-        const newFortune = fortunes[item.year];
-        if (newFortune) {
-          return {
-            ...item,
-            generated_content: newFortune.content || newFortune.generated_content,
-            content_sections: newFortune.content_sections || null,
-            sky_analysis: newFortune.sky_analysis || item.sky_analysis,
-            earth_analysis: newFortune.earth_analysis || item.earth_analysis,
-            johu_analysis: newFortune.johu_analysis || item.johu_analysis
-          };
+          const data = await response.json();
+          if (response.ok && data.fortune) {
+            updatedFortuneData = updatedFortuneData.map(item =>
+              item.year === year
+                ? {
+                    ...item,
+                    generated_content: data.fortune?.generated_content,
+                    content_sections: data.fortune?.content_sections || null,
+                    sky_analysis: data.fortune?.sky_analysis || item.sky_analysis,
+                    earth_analysis: data.fortune?.earth_analysis || item.earth_analysis,
+                    johu_analysis: data.fortune?.johu_analysis || item.johu_analysis
+                  }
+                : item
+            );
+            setFortuneData(updatedFortuneData);
+          } else {
+            console.error(`${year}년 재물운 생성 실패:`, data.error);
+          }
+        } catch (yearErr) {
+          console.error(`${year}년 재물운 생성 오류:`, yearErr);
         }
-        return item;
-      });
-      setFortuneData(updatedFortuneData);
+      }
+
+      setRegeneratingAllProgress({ progress: 95, message: '저장 중...' });
 
       // 부모에게 전체 데이터 알림
       notifyParent(updatedFortuneData, updatedBaseFortune);
@@ -1581,6 +1590,8 @@ const FortuneEditor = forwardRef(function FortuneEditor({
       } catch (saveErr) {
         console.error('Auto-save error:', saveErr);
       }
+
+      setRegeneratingAllProgress({ progress: 100, message: '완료!' });
     } catch (err) {
       console.error('Regenerate all error:', err);
       alert(`전체 재생성 실패: ${err.message}`);
