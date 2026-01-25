@@ -810,9 +810,7 @@ body:has(.report-page) {
 /* Manager Greeting Overlay (처음 표시) */
 .manager-greeting-overlay {
   position: relative;
-  width: calc(100% + 32px);
-  margin-left: -16px;
-  margin-right: -16px;
+  width: 100%;
   min-height: calc(100vh - 120px);
   min-height: calc(100dvh - 120px);
   display: flex;
@@ -823,6 +821,7 @@ body:has(.report-page) {
   overflow: hidden;
   cursor: pointer;
   padding: 40px 24px;
+  box-sizing: border-box;
 }
 
 .manager-greeting-overlay::before {
@@ -841,30 +840,36 @@ body:has(.report-page) {
 .manager-greeting-content {
   position: relative;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  width: 100%;
   max-width: 340px;
-  margin-bottom: 60px;
+  margin: 0 auto 60px auto;
 }
 
 .manager-greeting-badge {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: rgb(255, 244, 200);
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  padding: 8px 16px;
-  border: 1px solid rgba(255, 244, 200, 0.3);
-  border-radius: 20px;
-  margin-bottom: 32px;
-  background: rgba(255, 244, 200, 0.05);
+  padding: 10px 24px;
+  border: 1.5px solid rgba(255, 244, 200, 0.4);
+  border-radius: 24px;
+  margin-bottom: 20px;
+  background: rgba(255, 244, 200, 0.08);
+  font-weight: 500;
 }
 
 .manager-greeting-role {
-  font-size: 0.85rem;
-  color: rgba(255, 244, 200, 0.7);
-  letter-spacing: 1px;
-  margin-bottom: 12px;
-  text-transform: uppercase;
+  font-size: 0.95rem;
+  color: rgba(255, 244, 200, 0.8);
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+  font-weight: 400;
 }
 
 .manager-greeting-name {
