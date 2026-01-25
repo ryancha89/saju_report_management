@@ -1921,14 +1921,13 @@ function OrderDetail() {
   const generateChapter3 = async () => {
     setChapter3Loading(true);
     setChapter3Error(null);
-    setChapter3Progress({ progress: 0, message: '작업 시작 중...' });
+    setChapter3Progress({ progress: 50, message: '대운 흐름 분석 생성 중...' });
 
-    const asyncApiUrl = `${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3_async`;
-    console.log('[generateChapter3] 비동기 요청 시작:', asyncApiUrl);
+    const apiUrl = `${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`;
+    console.log('[generateChapter3] 동기 요청 시작:', apiUrl);
 
     try {
-      // 1. 비동기 작업 시작
-      const startResponse = await fetch(asyncApiUrl, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1936,83 +1935,41 @@ function OrderDetail() {
         }
       });
 
-      if (!startResponse.ok) {
-        const errorText = await startResponse.text();
-        throw new Error(`서버 에러 (${startResponse.status}): ${errorText || '알 수 없는 오류'}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`서버 에러 (${response.status}): ${errorText || '알 수 없는 오류'}`);
       }
 
-      const startData = await startResponse.json();
-      if (!startData.success) {
-        throw new Error(startData.error || '작업 시작에 실패했습니다.');
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || '챕터3 생성에 실패했습니다.');
       }
 
-      const jobId = startData.job_id;
-      console.log('[generateChapter3] Job 시작됨:', jobId);
+      console.log('[generateChapter3] 작업 완료');
+      setChapter3Data(data.chapter);
 
-      // 2. 폴링으로 상태 확인 (최대 10분)
-      const maxPollingTime = 600000; // 10분
-      const pollingInterval = 2000; // 2초
-      const startTime = Date.now();
-
-      while (Date.now() - startTime < maxPollingTime) {
-        await new Promise(resolve => setTimeout(resolve, pollingInterval));
-
-        const statusResponse = await fetch(
-          `${API_BASE_URL}/api/v1/admin/orders/${id}/chapter3_job_status?job_id=${jobId}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Saju-Authorization': `Bearer-${API_TOKEN}`
-            }
-          }
-        );
-
-        const statusData = await statusResponse.json();
-        console.log('[generateChapter3] 상태 확인:', statusData.status, statusData.progress);
-
-        // 진행률 업데이트
-        if (statusData.progress !== undefined) {
-          setChapter3Progress({
-            progress: statusData.progress,
-            message: statusData.message || '처리 중...'
-          });
-        }
-
-        if (statusData.status === 'completed') {
-          console.log('[generateChapter3] 작업 완료');
-          setChapter3Data(statusData.chapter);
-
-          // 생성 후 즉시 DB에 저장 (chapter4 = 대운흐름)
-          if (statusData.chapter?.content || statusData.chapter?.decade_flow) {
-            const basisWithDecadeFlow = {
-              ...(statusData.chapter.basis || basis3Data || {}),
-              decade_flow: statusData.chapter.decade_flow
-            };
-            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Saju-Authorization': `Bearer-${API_TOKEN}`
-              },
-              body: JSON.stringify({
-                chapter_number: 4,
-                content: statusData.chapter.content,
-                basis: basisWithDecadeFlow
-              })
-            });
-            console.log('[generateChapter3] 챕터4(대운흐름) DB 저장 완료');
-          }
-
-          return statusData.chapter;
-        }
-
-        if (statusData.status === 'failed') {
-          throw new Error(statusData.error || '챕터3 생성에 실패했습니다.');
-        }
+      // 생성 후 즉시 DB에 저장 (chapter4 = 대운흐름)
+      if (data.chapter?.content || data.chapter?.decade_flow) {
+        const basisWithDecadeFlow = {
+          ...(data.chapter.basis || basis3Data || {}),
+          decade_flow: data.chapter.decade_flow
+        };
+        await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Saju-Authorization': `Bearer-${API_TOKEN}`
+          },
+          body: JSON.stringify({
+            chapter_number: 4,
+            content: data.chapter.content,
+            basis: basisWithDecadeFlow
+          })
+        });
+        console.log('[generateChapter3] 챕터4(대운흐름) DB 저장 완료');
       }
 
-      throw new Error('작업 시간이 초과되었습니다. 다시 시도해주세요.');
+      return data.chapter;
     } catch (err) {
       console.error('[generateChapter3] 에러:', err.message);
 
@@ -3228,77 +3185,44 @@ function OrderDetail() {
         setChapter2Loading(false);
       }
 
-      // 챕터3 생성 (대운 흐름 분석) - 비동기 방식
+      // 챕터3 생성 (대운 흐름 분석) - 동기 방식
       setGeneratingChapter(3);
       if (forceRegenerate || !chapter3Data?.content) {
         setChapter3Loading(true);
-        setChapter3Progress({ progress: 0, message: '작업 시작 중...' });
+        setChapter3Progress({ progress: 50, message: '대운 흐름 분석 생성 중...' });
         try {
-          console.log('[generateAllChapters] 챕터3 (대운흐름) 비동기 생성 시작');
+          console.log('[generateAllChapters] 챕터3 (대운흐름) 동기 생성 시작');
 
-          // 1. 비동기 작업 시작
-          const startRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3_async`, {
+          const res3 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
-          const startData = await startRes.json();
+          const data3 = await res3.json();
 
-          if (!startRes.ok || !startData.success) {
-            throw new Error(startData.error || '작업 시작 실패');
-          }
+          if (res3.ok && data3.success) {
+            console.log('[generateAllChapters] 챕터3 완료');
+            setChapter3Data(data3.chapter);
+            newChapter3Data = data3.chapter;
 
-          const jobId = startData.job_id;
-          console.log('[generateAllChapters] 챕터3 Job 시작:', jobId);
-
-          // 2. 폴링으로 상태 확인 (최대 10분)
-          const maxPollingTime = 600000;
-          const pollingInterval = 2000;
-          const startTime = Date.now();
-
-          while (Date.now() - startTime < maxPollingTime) {
-            await new Promise(resolve => setTimeout(resolve, pollingInterval));
-
-            const statusRes = await fetch(
-              `${API_BASE_URL}/api/v1/admin/orders/${id}/chapter3_job_status?job_id=${jobId}`,
-              {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
-              }
-            );
-            const statusData = await statusRes.json();
-
-            if (statusData.progress !== undefined) {
-              setChapter3Progress({ progress: statusData.progress, message: statusData.message || '처리 중...' });
+            // 즉시 DB에 저장 (chapter4 = 대운흐름)
+            if (data3.chapter?.content || data3.chapter?.decade_flow) {
+              const basisWithDecadeFlow = {
+                ...(data3.chapter.basis || {}),
+                decade_flow: data3.chapter.decade_flow
+              };
+              await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+                body: JSON.stringify({
+                  chapter_number: 4,
+                  content: data3.chapter.content,
+                  basis: basisWithDecadeFlow
+                })
+              });
+              console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
             }
-
-            if (statusData.status === 'completed') {
-              console.log('[generateAllChapters] 챕터3 완료');
-              setChapter3Data(statusData.chapter);
-              newChapter3Data = statusData.chapter;
-
-              // 즉시 DB에 저장 (chapter4 = 대운흐름)
-              if (statusData.chapter?.content || statusData.chapter?.decade_flow) {
-                const basisWithDecadeFlow = {
-                  ...(statusData.chapter.basis || {}),
-                  decade_flow: statusData.chapter.decade_flow
-                };
-                await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-                  body: JSON.stringify({
-                    chapter_number: 4,
-                    content: statusData.chapter.content,
-                    basis: basisWithDecadeFlow
-                  })
-                });
-                console.log('[generateAllChapters] 챕터3(대운흐름) DB 저장 완료');
-              }
-              break;
-            }
-
-            if (statusData.status === 'failed') {
-              throw new Error(statusData.error || '챕터3 생성 실패');
-            }
+          } else {
+            console.error('[generateAllChapters] 챕터3 생성 실패:', data3.error);
           }
         } catch (err) {
           console.error('[generateAllChapters] 챕터3 생성 에러:', err);
