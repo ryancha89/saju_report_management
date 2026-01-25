@@ -3108,6 +3108,9 @@ function OrderDetail() {
     // 연도 수 결정 (blueprint_lite는 3년, 나머지는 5년)
     const yearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
 
+    // 결과 추적 배열
+    const generationResults = [];
+
     try {
       // 챕터1 생성
       setGeneratingChapter(1);
@@ -3398,9 +3401,14 @@ function OrderDetail() {
           });
           const saveData5 = await saveRes5.json();
           console.log('[generateAllChapters] 재물운 저장 응답:', saveData5);
+          generationResults.push('재물운 ✓');
+        } else {
+          console.error('[generateAllChapters] 재물운 생성 실패:', fortuneData.error);
+          generationResults.push(`재물운 ✗ (${fortuneData.error || '생성 실패'})`);
         }
       } catch (err) {
         console.error('재물운 생성/저장 실패:', err);
+        generationResults.push(`재물운 ✗ (${err.message})`);
       } finally {
         setFortuneProgress(null);
       }
@@ -3440,9 +3448,14 @@ function OrderDetail() {
           });
           const saveData6 = await saveRes6.json();
           console.log('[generateAllChapters] 직업운 저장 응답:', saveData6);
+          generationResults.push('직업운 ✓');
+        } else {
+          console.error('[generateAllChapters] 직업운 생성 실패:', careerData.error);
+          generationResults.push(`직업운 ✗ (${careerData.error || '생성 실패'})`);
         }
       } catch (err) {
         console.error('직업운 생성/저장 실패:', err);
+        generationResults.push(`직업운 ✗ (${err.message})`);
       } finally {
         setCareerProgress(null);
       }
@@ -3479,9 +3492,14 @@ function OrderDetail() {
           });
           const saveData7 = await saveRes7.json();
           console.log('[generateAllChapters] 연애운 저장 응답:', saveData7);
+          generationResults.push('연애운 ✓');
+        } else {
+          console.error('[generateAllChapters] 연애운 생성 실패:', loveData.error);
+          generationResults.push(`연애운 ✗ (${loveData.error || '생성 실패'})`);
         }
       } catch (err) {
         console.error('연애운 생성/저장 실패:', err);
+        generationResults.push(`연애운 ✗ (${err.message})`);
       } finally {
         setLoveProgress(null);
       }
@@ -3512,13 +3530,21 @@ function OrderDetail() {
           });
           const saveData8 = await saveRes8.json();
           console.log('[generateAllChapters] 코칭 저장 응답:', saveData8);
+          generationResults.push('코칭 ✓');
         } else {
           console.error('[generateAllChapters] 코칭 생성 실패:', coachingData.error);
+          generationResults.push(`코칭 ✗ (${coachingData.error || '생성 실패'})`);
         }
       } catch (err) {
         console.error('코칭 생성/저장 실패:', err);
+        generationResults.push(`코칭 ✗ (${err.message})`);
       } finally {
         setCoachingProgress(null);
+      }
+
+      // 생성 결과 요약 출력
+      if (generationResults.length > 0) {
+        console.log('[generateAllChapters] 생성 결과:', generationResults.join(', '));
       }
 
       // 전체 저장 (새로 생성된 데이터 사용)
@@ -3556,9 +3582,18 @@ function OrderDetail() {
         await updateOrderStatus('pending');
       }
 
+      // 생성 결과 요약 알림
+      if (generationResults.length > 0) {
+        const hasFailure = generationResults.some(r => r.includes('✗'));
+        if (hasFailure) {
+          alert(`레포트 생성 완료 (일부 실패):\n${generationResults.join('\n')}`);
+        }
+      }
+
     } catch (err) {
       console.error('전체 레포트 생성 실패:', err);
-      alert(`레포트 생성 중 오류가 발생했습니다: ${err.message}`);
+      const resultsMsg = generationResults.length > 0 ? `\n\n생성 결과:\n${generationResults.join('\n')}` : '';
+      alert(`레포트 생성 중 오류가 발생했습니다: ${err.message}${resultsMsg}`);
     } finally {
       setSavingReport(false);
       setGeneratingChapter(null);
