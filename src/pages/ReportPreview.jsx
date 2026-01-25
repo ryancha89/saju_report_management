@@ -126,11 +126,9 @@ function ReportPreview({ isAdminPreview = false }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 챕터가 변경될 때 이미지 표시 여부 설정 (챕터 1-9만 이미지 있음, 챕터 10은 바로 콘텐츠)
+  // 챕터 10 이상은 커버 이미지 없음 (직접 콘텐츠 표시)
   useEffect(() => {
-    if (currentChapter >= 1 && currentChapter <= 9) {
-      setShowChapterImage(true);
-    } else {
+    if (currentChapter >= 10) {
       setShowChapterImage(false);
     }
   }, [currentChapter]);
@@ -897,11 +895,13 @@ function ReportPreview({ isAdminPreview = false }) {
                     {yearsData.map(([key, data], idx) => {
                       const y = data.year ?? (parseInt(key) || key);
                       const isCurrent = idx === 0;
+                      const isSelected = idx === yearIdx;
                       return (
                         <th
                           key={idx}
-                          className={`${isCurrent ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
+                          className={`${isCurrent ? 'current' : ''} ${isSelected ? 'selected' : ''} clickable`}
                           onClick={() => goToYear(idx)}
+                          ref={isSelected ? (el) => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }) : null}
                         >
                           {y}년
                           {isCurrent && <span className="current-label">올해</span>}
@@ -1033,9 +1033,18 @@ function ReportPreview({ isAdminPreview = false }) {
     );
   };
 
+  // 결과값을 안전하게 문자열로 변환 (객체인 경우 처리)
+  const safeResultString = (result, fallback = '-') => {
+    if (!result) return fallback;
+    if (typeof result === 'string') return result;
+    if (typeof result === 'object') return fallback;
+    return String(result);
+  };
+
   // 대운 흐름 결과 클래스
   const getDecadeResultClass = (result) => {
     if (!result) return 'none';
+    if (typeof result !== 'string') return 'neutral';
     if (result === '成' || result === '성') return 'success';
     if (result === '敗' || result === '패') return 'failure';
     if (result.includes('成中有敗') || result.includes('성중유패')) return 'mixed-good';
@@ -1071,14 +1080,47 @@ function ReportPreview({ isAdminPreview = false }) {
       if (deg === 'difficult' || deg === '흉') return 'difficult';
     }
 
+    // 0.5. 연애운/5년운세 manager_edit.fortune_level 필드 확인
+    if (decade.manager_edit?.fortune_level) {
+      const level = decade.manager_edit.fortune_level;
+      if (level === 'very_good') return 'excellent';
+      if (level === 'good') return 'good';
+      if (level === 'normal') return 'neutral';
+      if (level === 'caution') return 'caution';
+      if (level === 'difficult') return 'difficult';
+    }
+
+    // 0.6. 재물운 manager_edit.sky/earth.fortune_level 필드 확인
+    if (decade.manager_edit?.sky?.fortune_level || decade.manager_edit?.earth?.fortune_level) {
+      const skyLevel = decade.manager_edit?.sky?.fortune_level;
+      const earthLevel = decade.manager_edit?.earth?.fortune_level;
+
+      // sky와 earth 점수 합산으로 전체 등급 계산
+      const levelToScore = (level) => {
+        if (level === 'very_good') return 2;
+        if (level === 'good') return 1;
+        if (level === 'normal') return 0;
+        if (level === 'caution') return -1;
+        if (level === 'difficult') return -2;
+        return 0;
+      };
+
+      const totalScore = levelToScore(skyLevel) + levelToScore(earthLevel);
+      if (totalScore >= 3) return 'excellent';
+      if (totalScore >= 1) return 'good';
+      if (totalScore >= -1) return 'neutral';
+      if (totalScore >= -3) return 'caution';
+      return 'difficult';
+    }
+
     // 1. result 문자열로 판정
     const isGood = (result) => {
-      if (!result) return false;
+      if (!result || typeof result !== 'string') return false;
       return result === '成' || result === '성' ||
              result.includes('敗中有成') || result.includes('패중유성');
     };
     const isBad = (result) => {
-      if (!result) return false;
+      if (!result || typeof result !== 'string') return false;
       return result === '敗' || result === '패' ||
              result.includes('成中有敗') || result.includes('성중유패');
     };
@@ -1202,7 +1244,7 @@ function ReportPreview({ isAdminPreview = false }) {
     }
 
     // 1. result 문자열로 판정
-    if (result) {
+    if (result && typeof result === 'string') {
       // 길: 成, 敗中有成 (결국 좋아짐)
       if (result === '成' || result === '성') return { class: 'good', text: '길', icon: '○' };
       if (result.includes('敗中有成') || result.includes('패중유성')) return { class: 'good', text: '길', icon: '○' };
@@ -1279,16 +1321,20 @@ function ReportPreview({ isAdminPreview = false }) {
               <thead>
                 <tr>
                   <th>나이</th>
-                  {decadeFlow.map((d, idx) => (
-                    <th
-                      key={idx}
-                      className={`${d.is_current ? 'current' : ''} ${idx === decadeIdx ? 'selected' : ''} clickable`}
-                      onClick={() => goToDecade(idx)}
-                    >
-                      {d.start_age}~{d.end_age}
-                      {d.is_current && <span className="current-label">현재대운</span>}
-                    </th>
-                  ))}
+                  {decadeFlow.map((d, idx) => {
+                    const isSelected = idx === decadeIdx;
+                    return (
+                      <th
+                        key={idx}
+                        className={`${d.is_current ? 'current' : ''} ${isSelected ? 'selected' : ''} clickable`}
+                        onClick={() => goToDecade(idx)}
+                        ref={isSelected ? (el) => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }) : null}
+                      >
+                        {d.start_age}~{d.end_age}
+                        {d.is_current && <span className="current-label">현재대운</span>}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -1310,7 +1356,7 @@ function ReportPreview({ isAdminPreview = false }) {
                   {decadeFlow.map((d, idx) => (
                     <td key={idx} className={`result-cell sky ${getDecadeResultClass(d.sky_result)} ${d.is_current ? 'current' : ''} ${idx === decadeIdx ? 'selected' : ''} clickable`} onClick={() => goToDecade(idx)}>
                       <span className={`cell-char ${getElementClass(d.sky)}`}>{d.sky}</span>
-                      <span className="cell-result">{d.sky_result || '-'}</span>
+                      <span className="cell-result">{safeResultString(d.sky_result)}</span>
                     </td>
                   ))}
                 </tr>
@@ -1319,7 +1365,7 @@ function ReportPreview({ isAdminPreview = false }) {
                   {decadeFlow.map((d, idx) => (
                     <td key={idx} className={`result-cell earth ${getDecadeResultClass(d.earth_result)} ${d.is_current ? 'current' : ''} ${idx === decadeIdx ? 'selected' : ''} clickable`} onClick={() => goToDecade(idx)}>
                       <span className={`cell-char ${getElementClass(d.earth)}`}>{d.earth}</span>
-                      <span className="cell-result">{d.earth_result || '-'}</span>
+                      <span className="cell-result">{safeResultString(d.earth_result)}</span>
                     </td>
                   ))}
                 </tr>
@@ -1471,7 +1517,7 @@ function ReportPreview({ isAdminPreview = false }) {
                         <span className={`analysis-icon ${getElementClass(decade.sky)}`}>{decade.sky}</span>
                         <span className="analysis-title">천간 격국 <small>(정신·의지·계획)</small></span>
                         <span className={`result-badge ${getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).class}`}>
-                          {getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).icon} {decade.sky_result || ''}
+                          {getSingleRating(decade.sky_result, decade.sky_score, decade.sky_degree).icon} {safeResultString(decade.sky_result, '')}
                         </span>
                       </div>
                       <div className="analysis-body">
@@ -1485,7 +1531,7 @@ function ReportPreview({ isAdminPreview = false }) {
                         <span className={`analysis-icon ${getElementClass(decade.earth)}`}>{decade.earth}</span>
                         <span className="analysis-title">지지 격국 <small>(현실·환경·실행)</small></span>
                         <span className={`result-badge ${getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).class}`}>
-                          {getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).icon} {decade.earth_result || ''}
+                          {getSingleRating(decade.earth_result, decade.earth_score, decade.earth_degree).icon} {safeResultString(decade.earth_result, '')}
                         </span>
                       </div>
                       {(decade.keywords?.length > 0 || decade.samhap) && (
@@ -1780,7 +1826,7 @@ function ReportPreview({ isAdminPreview = false }) {
                       {yearlyFortuneFlow.map((yearData, idx) => (
                         <td key={idx} className={`result-cell sky ${getDecadeResultClass(yearData.sky_result)} ${yearData.is_current ? 'current' : ''}`}>
                           <span className={`cell-char ${getElementClass(yearData.sky)}`}>{yearData.sky}</span>
-                          <span className="cell-result">{yearData.sky_result || '-'}</span>
+                          <span className="cell-result">{safeResultString(yearData.sky_result)}</span>
                         </td>
                       ))}
                     </tr>
@@ -1789,7 +1835,7 @@ function ReportPreview({ isAdminPreview = false }) {
                       {yearlyFortuneFlow.map((yearData, idx) => (
                         <td key={idx} className={`result-cell earth ${getDecadeResultClass(yearData.earth_result)} ${yearData.is_current ? 'current' : ''}`}>
                           <span className={`cell-char ${getElementClass(yearData.earth)}`}>{yearData.earth}</span>
-                          <span className="cell-result">{yearData.earth_result || '-'}</span>
+                          <span className="cell-result">{safeResultString(yearData.earth_result)}</span>
                         </td>
                       ))}
                     </tr>
@@ -1885,16 +1931,20 @@ function ReportPreview({ isAdminPreview = false }) {
               <table className="year-summary-table">
                 <thead>
                   <tr>
-                    {yearlyFortune.map((y, idx) => (
-                      <th
-                        key={idx}
-                        className={`${y.is_current ? 'current' : ''} ${idx === yearIdx ? 'selected' : ''} clickable`}
-                        onClick={() => goToYear(idx)}
-                      >
-                        {y.year}년
-                        {y.is_current && <span className="current-label">올해</span>}
-                      </th>
-                    ))}
+                    {yearlyFortune.map((y, idx) => {
+                      const isSelected = idx === yearIdx;
+                      return (
+                        <th
+                          key={idx}
+                          className={`${y.is_current ? 'current' : ''} ${isSelected ? 'selected' : ''} clickable`}
+                          onClick={() => goToYear(idx)}
+                          ref={isSelected ? (el) => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }) : null}
+                        >
+                          {y.year}년
+                          {y.is_current && <span className="current-label">올해</span>}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -2610,6 +2660,118 @@ function ReportPreview({ isAdminPreview = false }) {
     }
   };
 
+  // 현재 챕터의 연도별 페이지 상태 및 setter 가져오기
+  const getChapterPageState = () => {
+    // Chapter 4: 대운흐름 - decade pages
+    if (currentChapter === 4) {
+      const decadeCount = reportData?.chapter4_decade_flow?.length || 1;
+      return [currentDecadePage, setCurrentDecadePage, decadeCount];
+    }
+    // Chapter 5: 5년운세 - yearly fortune pages
+    if (currentChapter === 5) {
+      const fiveYearCount = reportData?.yearly_fortune?.length || yearCount;
+      return [currentFiveYearPage, setCurrentFiveYearPage, fiveYearCount];
+    }
+    // Chapter 6: 재물운 - fortune year pages
+    if (currentChapter === 6) {
+      return [currentFortuneYearPage, setCurrentFortuneYearPage, yearCount];
+    }
+    // Chapter 7: 직업운 - career year pages
+    if (currentChapter === 7) {
+      return [currentCareerYearPage, setCurrentCareerYearPage, yearCount];
+    }
+    // Chapter 8: 연애운 - love year pages
+    if (currentChapter === 8) {
+      return [currentLoveYearPage, setCurrentLoveYearPage, yearCount];
+    }
+    // Other chapters have no pages
+    return [1, null, 1];
+  };
+
+  // 다음 페이지로 이동 (페이지 → 챕터 순)
+  const goToNextPage = () => {
+    // 1. 매니저 인사말 화면이면 → 챕터 커버로
+    if (showManagerGreeting && currentChapter === 1) {
+      setShowManagerGreeting(false);
+      setShowChapterImage(true);
+      return;
+    }
+
+    // 2. 챕터 커버 화면이면 → 챕터 콘텐츠로
+    if (showChapterImage) {
+      setShowChapterImage(false);
+      return;
+    }
+
+    // 3. 페이지가 있는 챕터 (4:대운흐름, 5:5년운세, 6:재물운, 7:직업운, 8:연애운)
+    const [currentPage, setCurrentPage, maxPages] = getChapterPageState();
+    if (setCurrentPage && currentPage < maxPages) {
+      setCurrentPage(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 4. 다음 챕터로
+    if (currentChapter < totalChapters) {
+      const nextChapter = currentChapter + 1;
+      setCurrentChapter(nextChapter);
+      setShowChapterImage(true);
+      // 다음 챕터의 페이지를 1로 리셋
+      if (nextChapter === 4) setCurrentDecadePage(1);
+      else if (nextChapter === 5) setCurrentFiveYearPage(1);
+      else if (nextChapter === 6) setCurrentFortuneYearPage(1);
+      else if (nextChapter === 7) setCurrentCareerYearPage(1);
+      else if (nextChapter === 8) setCurrentLoveYearPage(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // 이전 페이지로 이동 (페이지 → 챕터 순)
+  const goToPrevPage = () => {
+    // 1. 연도별 페이지가 있는 챕터에서 2페이지 이상이면 → 이전 페이지로
+    const [currentPage, setCurrentPage] = getChapterPageState();
+    if (setCurrentPage && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 2. 챕터 콘텐츠 1페이지면 → 현재 챕터 커버로
+    if (!showChapterImage && !showManagerGreeting) {
+      setShowChapterImage(true);
+      return;
+    }
+
+    // 3. 챕터 커버면 → 이전 챕터 마지막 페이지로
+    if (showChapterImage && currentChapter > 1) {
+      const prevChapter = currentChapter - 1;
+      setCurrentChapter(prevChapter);
+      setShowChapterImage(false);
+      // 이전 챕터의 마지막 페이지로 설정
+      if (prevChapter === 4) {
+        const decadeCount = reportData?.chapter4_decade_flow?.length || 1;
+        setCurrentDecadePage(decadeCount);
+      } else if (prevChapter === 5) {
+        const fiveYearCount = reportData?.yearly_fortune?.length || yearCount;
+        setCurrentFiveYearPage(fiveYearCount);
+      } else if (prevChapter === 6) {
+        setCurrentFortuneYearPage(yearCount);
+      } else if (prevChapter === 7) {
+        setCurrentCareerYearPage(yearCount);
+      } else if (prevChapter === 8) {
+        setCurrentLoveYearPage(yearCount);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 4. 첫 챕터 커버에서 매니저 인사말로
+    if (showChapterImage && currentChapter === 1 && reportData?.order?.manager) {
+      setShowChapterImage(false);
+      setShowManagerGreeting(true);
+    }
+  };
+
   // 스와이프 핸들러
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
@@ -2627,11 +2789,11 @@ function ReportPreview({ isAdminPreview = false }) {
 
     if (Math.abs(diffX) > minSwipeDistance) {
       if (diffX > 0) {
-        // 왼쪽으로 스와이프 → 다음 챕터
-        goToNextChapter();
+        // 왼쪽으로 스와이프 → 다음 페이지
+        goToNextPage();
       } else {
-        // 오른쪽으로 스와이프 → 이전 챕터
-        goToPrevChapter();
+        // 오른쪽으로 스와이프 → 이전 페이지
+        goToPrevPage();
       }
     }
 
@@ -2819,17 +2981,23 @@ function ReportPreview({ isAdminPreview = false }) {
             </>
           )}
 
-          {/* 스와이프 힌트 */}
-          {currentChapter > 1 && (
-            <div className="swipe-hint swipe-hint-left" onClick={goToPrevChapter}>
-              <ChevronLeft size={20} />
+          {/* 스와이프 힌트 - 좌우 페이지 네비게이션 */}
+          {!(showManagerGreeting && currentChapter === 1) && (
+            <div className="swipe-hint swipe-hint-left" onClick={goToPrevPage}>
+              <ChevronLeft size={22} />
             </div>
           )}
-          {currentChapter < totalChapters && (
-            <div className="swipe-hint swipe-hint-right" onClick={goToNextChapter}>
-              <ChevronRight size={20} />
-            </div>
-          )}
+          {(() => {
+            // 마지막 챕터의 마지막 페이지가 아니면 오른쪽 힌트 표시
+            const [currentPage, , maxPages] = getChapterPageState();
+            const hasMorePages = currentPage < maxPages;
+            const canGoNext = currentChapter < totalChapters || showChapterImage || showManagerGreeting || hasMorePages;
+            return canGoNext ? (
+              <div className="swipe-hint swipe-hint-right" onClick={goToNextPage}>
+                <ChevronRight size={22} />
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* Chapter Pagination (Bottom) */}

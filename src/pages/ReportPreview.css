@@ -767,7 +767,7 @@ body:has(.report-page) {
   padding: 0 16px 24px;
   background: #000000;
   overflow-x: hidden;
-  touch-action: pan-y pinch-zoom;
+  touch-action: manipulation;
   position: relative;
 }
 
@@ -969,7 +969,7 @@ body:has(.report-page) {
 }
 
 .scroll-indicator {
-  position: absolute;
+  position: fixed;
   bottom: 30px;
   left: 50%;
   transform: translateX(-50%);
@@ -995,43 +995,67 @@ body:has(.report-page) {
   letter-spacing: 0.5px;
 }
 
+.scroll-hint-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.3px;
+  margin-top: 8px;
+}
+
 @keyframes bounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50% { transform: translateX(-50%) translateY(8px); }
 }
 
-/* 스와이프 힌트 */
+/* 좌우 챕터 네비게이션 힌트 - 프리뷰 컨테이너 양쪽에 붙여서 표시 */
 .swipe-hint {
   position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 80px;
+  top: 45%;
+  width: 24px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  z-index: 50;
-  transition: all 0.3s ease;
+  z-index: 100;
+  transition: all 0.2s ease;
 }
 
+.swipe-hint svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+/* PC 화면에서는 프리뷰 컨테이너 양쪽에 붙임 (470px 중앙 정렬 기준) */
 .swipe-hint-left {
-  left: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
-  border-radius: 0 12px 12px 0;
+  left: calc(50% - 235px);
+  background: linear-gradient(90deg, rgba(40, 40, 40, 0.8) 0%, transparent 100%);
+  border-radius: 0 8px 8px 0;
+  padding-right: 4px;
 }
 
 .swipe-hint-right {
-  right: 0;
-  background: linear-gradient(-90deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
-  border-radius: 12px 0 0 12px;
+  right: calc(50% - 235px);
+  background: linear-gradient(-90deg, rgba(40, 40, 40, 0.8) 0%, transparent 100%);
+  border-radius: 8px 0 0 8px;
+  padding-left: 4px;
+}
+
+/* 모바일 화면에서는 화면 끝에 붙임 */
+@media (max-width: 470px) {
+  .swipe-hint-left {
+    left: 0;
+  }
+  .swipe-hint-right {
+    right: 0;
+  }
 }
 
 .swipe-hint:active {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(80, 80, 80, 0.9);
+  color: #fff;
 }
 
 .image-navigation-bar {
@@ -1394,6 +1418,14 @@ body:has(.report-page) {
 
 .decade-summary-table .ganji-cell.current {
   background: rgba(34, 197, 94, 0.1);
+}
+
+/* 선택된 대운 컬럼 강조 */
+.decade-summary-table th.selected,
+.decade-summary-table td.selected {
+  background: rgba(255, 244, 200, 0.2) !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 244, 200, 0.5);
+  animation: cellHighlight 0.6s ease-out;
 }
 
 /* ganji-cell 오행별 색상 */
@@ -2865,8 +2897,22 @@ body:has(.report-page) {
 
 .year-summary-table th.selected,
 .year-summary-table td.selected {
-  background: rgba(255, 244, 200, 0.2);
-  box-shadow: 0 0 0 2px rgba(255, 244, 200, 0.4);
+  background: rgba(255, 244, 200, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 244, 200, 0.5);
+  animation: cellHighlight 0.6s ease-out;
+}
+
+@keyframes cellHighlight {
+  0% {
+    background: rgba(255, 244, 200, 0.6);
+    box-shadow: 0 0 15px rgba(255, 244, 200, 0.8);
+    transform: scale(1.05);
+  }
+  100% {
+    background: rgba(255, 244, 200, 0.25);
+    box-shadow: 0 0 0 2px rgba(255, 244, 200, 0.5);
+    transform: scale(1);
+  }
 }
 
 .year-summary-table th.current {
@@ -4150,10 +4196,12 @@ h3.coaching-item-topic:active {
   background: rgba(255, 244, 200, 0.15);
 }
 
-/* 선택된 대운 컬럼 - 미세한 배경색 */
+/* 선택된 대운 컬럼 - 미세한 배경색 + 애니메이션 */
 .decade-flow-preview table th.selected,
 .decade-flow-preview table td.selected {
-  background: rgba(255, 244, 200, 0.08);
+  background: rgba(255, 244, 200, 0.15);
+  box-shadow: inset 0 0 0 2px rgba(255, 244, 200, 0.4);
+  animation: cellHighlight 0.6s ease-out;
 }
 
 /* 현재 대운 라벨 */

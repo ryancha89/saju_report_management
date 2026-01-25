@@ -2332,17 +2332,20 @@ function OrderDetail() {
     try {
       const results = [];
 
-      // 재물운 - 비동기 생성
+      // 재물운 - 동기 생성
       try {
-        setFortuneProgress({ progress: 0, message: '재물운 생성 시작...' });
-        const fortuneJobId = await startAsyncJob('fortune', { year_count: yearCount });
-        console.log('[handleRegenerateAllChapters] 재물운 Job 시작:', fortuneJobId);
+        setFortuneProgress({ progress: 50, message: '재물운 생성 중...' });
+        console.log('[handleRegenerateAllChapters] 재물운 동기 생성 시작');
 
-        const fortuneResult = await pollJobStatus(fortuneJobId, setFortuneProgress);
+        const fortuneRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
+        });
+        const fortuneData = await fortuneRes.json();
 
-        if (fortuneResult.success && fortuneResult.result) {
-          const rawFortunes = fortuneResult.result.fortunes || {};
-          const yearlyFortunes = Object.entries(rawFortunes).map(([year, fortune]) => ({
+        if (fortuneRes.ok && fortuneData.fortunes) {
+          const yearlyFortunes = Object.entries(fortuneData.fortunes).map(([year, fortune]) => ({
             year: parseInt(year),
             ...fortune
           })).sort((a, b) => a.year - b.year);
@@ -2362,7 +2365,7 @@ function OrderDetail() {
           });
           results.push('재물운 ✓');
         } else {
-          results.push(`재물운 ✗ (${fortuneResult.error})`);
+          results.push(`재물운 ✗ (${fortuneData.error || '생성 실패'})`);
         }
       } catch (err) {
         results.push('재물운 ✗');
@@ -2371,17 +2374,20 @@ function OrderDetail() {
         setFortuneProgress(null);
       }
 
-      // 직업운 - 비동기 생성
+      // 직업운 - 동기 생성
       try {
-        setCareerProgress({ progress: 0, message: '직업운 생성 시작...' });
-        const careerJobId = await startAsyncJob('career', { year_count: yearCount });
-        console.log('[handleRegenerateAllChapters] 직업운 Job 시작:', careerJobId);
+        setCareerProgress({ progress: 50, message: '직업운 생성 중...' });
+        console.log('[handleRegenerateAllChapters] 직업운 동기 생성 시작');
 
-        const careerResult = await pollJobStatus(careerJobId, setCareerProgress);
+        const careerRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
+        });
+        const careerData = await careerRes.json();
 
-        if (careerResult.success && careerResult.result) {
-          const rawCareers = careerResult.result.careers || {};
-          const yearlyCareers = Object.entries(rawCareers).map(([year, career]) => ({
+        if (careerRes.ok && careerData.careers) {
+          const yearlyCareers = Object.entries(careerData.careers).map(([year, career]) => ({
             year: parseInt(year),
             ...career
           })).sort((a, b) => a.year - b.year);
@@ -2401,7 +2407,7 @@ function OrderDetail() {
           });
           results.push('직업운 ✓');
         } else {
-          results.push(`직업운 ✗ (${careerResult.error})`);
+          results.push(`직업운 ✗ (${careerData.error || '생성 실패'})`);
         }
       } catch (err) {
         results.push('직업운 ✗');
@@ -2410,41 +2416,37 @@ function OrderDetail() {
         setCareerProgress(null);
       }
 
-      // 연애운 - 비동기 생성
+      // 연애운 - 동기 생성
       try {
-        setLoveProgress({ progress: 0, message: '연애운 생성 시작...' });
-        const loveJobId = await startAsyncJob('love', { year_count: yearCount });
-        console.log('[handleRegenerateAllChapters] 연애운 Job 시작:', loveJobId);
+        setLoveProgress({ progress: 50, message: '연애운 생성 중...' });
+        console.log('[handleRegenerateAllChapters] 연애운 동기 생성 시작');
 
-        const loveResult = await pollJobStatus(loveJobId, setLoveProgress);
+        const loveRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
+        });
+        const loveData = await loveRes.json();
 
-        if (loveResult.success && loveResult.result) {
-          const loveData = loveResult.result.love_fortune || {};
-          setLoveFortuneData({
+        if (loveRes.ok && loveData.success) {
+          const loveFortuneResult = {
             baseAnalysis: {},
-            yearlyLoveFortunes: [{
+            yearlyLoveFortunes: loveData.yearly_love_fortunes || [{
               year: new Date().getFullYear(),
               generated_content: loveData.content || ''
             }]
-          });
+          };
+          setLoveFortuneData(loveFortuneResult);
 
           // 연애운 저장
           await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({
-              love_fortune_data: {
-                baseAnalysis: {},
-                yearlyLoveFortunes: [{
-                  year: new Date().getFullYear(),
-                  generated_content: loveData.content || ''
-                }]
-              }
-            })
+            body: JSON.stringify({ love_fortune_data: loveFortuneResult })
           });
           results.push('연애운 ✓');
         } else {
-          results.push(`연애운 ✗ (${loveResult.error})`);
+          results.push(`연애운 ✗ (${loveData.error || '생성 실패'})`);
         }
       } catch (err) {
         results.push('연애운 ✗');
@@ -2453,20 +2455,20 @@ function OrderDetail() {
         setLoveProgress(null);
       }
 
-      // 코칭 - 비동기 생성
+      // 코칭 - 동기 생성
       try {
-        setCoachingProgress({ progress: 0, message: '코칭 생성 시작...' });
-        const coachingJobId = await startAsyncJob('coaching', {});
-        console.log('[handleRegenerateAllChapters] 코칭 Job 시작:', coachingJobId);
+        setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
+        console.log('[handleRegenerateAllChapters] 코칭 동기 생성 시작');
 
-        const coachingResult = await pollJobStatus(coachingJobId, setCoachingProgress);
+        const coachingRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({})
+        });
+        const coachingData = await coachingRes.json();
 
-        if (coachingResult.success && coachingResult.result) {
-          const coaching = coachingResult.result.coaching || {};
-          const coachingItems = [{
-            title: '상담사 코칭',
-            content: coaching.content || ''
-          }];
+        if (coachingRes.ok && coachingData.success) {
+          const coachingItems = coachingData.coaching_items || [];
           setCoachingData(coachingItems);
 
           // 코칭 저장
@@ -2477,7 +2479,7 @@ function OrderDetail() {
           });
           results.push('코칭 ✓');
         } else {
-          results.push(`코칭 ✗ (${coachingResult.error})`);
+          results.push(`코칭 ✗ (${coachingData.error || '생성 실패'})`);
         }
       } catch (err) {
         results.push('코칭 ✗');
@@ -2486,12 +2488,308 @@ function OrderDetail() {
         setCoachingProgress(null);
       }
 
+      // 생성 완료 후 데이터 새로고침
+      await fetchSavedReport();
       alert(`전체 생성 완료!\n${results.join('\n')}`);
     } catch (err) {
       console.error('전체 생성 실패:', err);
       alert(`전체 생성 실패: ${err.message}`);
     } finally {
       setRegeneratingAllChapters(false);
+    }
+  };
+
+  // 생성안된 챕터만 다시생성
+  const handleRegenerateMissingChapters = async () => {
+    if (!validationResult) {
+      alert('먼저 사주 검증을 실행해주세요.');
+      return;
+    }
+
+    const yearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
+    const missingChapters = [];
+
+    // 누락된 챕터 확인 (실제 콘텐츠가 있는지 체크)
+    if (!chapter1Data?.content) missingChapters.push('chapter1');
+    if (!chapter2Data?.content) missingChapters.push('chapter2');
+    if (!chapter3Data?.content && !chapter3Data?.decade_flow) missingChapters.push('chapter3');
+    if (!fiveYearFortuneData?.content && (!fiveYearFortuneData?.years || fiveYearFortuneData.years.length === 0)) missingChapters.push('chapter4');
+
+    // 재물운 - 실제 generated_content가 있는지 확인
+    const hasFortuneContent = fortuneEditorData && fortuneEditorData.length > 0 &&
+      fortuneEditorData.some(item => item.generated_content && item.generated_content.trim().length > 0);
+    if (!hasFortuneContent) missingChapters.push('fortune');
+
+    // 직업운 - 실제 generated_content가 있는지 확인
+    const hasCareerContent = careerEditorData && careerEditorData.length > 0 &&
+      careerEditorData.some(item => item.generated_content && item.generated_content.trim().length > 0);
+    if (!hasCareerContent) missingChapters.push('career');
+
+    // 연애운 - 실제 generated_content가 있는지 확인
+    const hasLoveContent = loveFortuneData?.yearlyLoveFortunes && loveFortuneData.yearlyLoveFortunes.length > 0 &&
+      loveFortuneData.yearlyLoveFortunes.some(item => item.generated_content && item.generated_content.trim().length > 0);
+    if (!hasLoveContent) missingChapters.push('love');
+
+    // 코칭 - 실제 content가 있는지 확인
+    const hasCoachingContent = coachingData && coachingData.length > 0 &&
+      coachingData.some(item => item.content && item.content.trim().length > 0);
+    if (!hasCoachingContent) missingChapters.push('coaching');
+
+    console.log('[handleRegenerateMissingChapters] 누락 체크:', {
+      chapter1: !chapter1Data?.content,
+      chapter2: !chapter2Data?.content,
+      chapter3: !chapter3Data?.content && !chapter3Data?.decade_flow,
+      chapter4: !fiveYearFortuneData?.content && (!fiveYearFortuneData?.years || fiveYearFortuneData.years.length === 0),
+      fortune: !hasFortuneContent,
+      career: !hasCareerContent,
+      love: !hasLoveContent,
+      coaching: !hasCoachingContent,
+      coachingData: coachingData
+    });
+
+    if (missingChapters.length === 0) {
+      alert('모든 챕터가 이미 생성되어 있습니다.');
+      return;
+    }
+
+    if (!confirm(`다음 챕터를 생성합니다:\n${missingChapters.join(', ')}\n\n진행하시겠습니까?`)) {
+      return;
+    }
+
+    setRegeneratingAllChapters(true);
+    const results = [];
+
+    try {
+      // 챕터1 (아이덴티티) 생성
+      if (missingChapters.includes('chapter1')) {
+        setGeneratingChapter(1);
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter1`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setChapter1Data(data.chapter);
+            results.push('아이덴티티 ✓');
+          } else {
+            results.push(`아이덴티티 ✗`);
+          }
+        } catch (err) {
+          results.push('아이덴티티 ✗');
+          console.error('챕터1 생성 실패:', err);
+        }
+      }
+
+      // 챕터2 (잠재력) 생성
+      if (missingChapters.includes('chapter2')) {
+        setGeneratingChapter(2);
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setChapter2Data(data.chapter);
+            results.push('잠재력 ✓');
+          } else {
+            results.push(`잠재력 ✗`);
+          }
+        } catch (err) {
+          results.push('잠재력 ✗');
+          console.error('챕터2 생성 실패:', err);
+        }
+      }
+
+      // 챕터3 (대운흐름) 생성
+      if (missingChapters.includes('chapter3')) {
+        setGeneratingChapter(3);
+        setChapter3Progress({ progress: 50, message: '대운흐름 생성 중...' });
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter3`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setChapter3Data(data.chapter);
+            results.push('대운흐름 ✓');
+          } else {
+            results.push(`대운흐름 ✗`);
+          }
+        } catch (err) {
+          results.push('대운흐름 ✗');
+          console.error('챕터3 생성 실패:', err);
+        } finally {
+          setChapter3Progress(null);
+        }
+      }
+
+      // 챕터4 (5년운세) 생성
+      if (missingChapters.includes('chapter4')) {
+        setGeneratingChapter(4);
+        try {
+          const dataRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/five_year_fortune_data?year_count=${yearCount}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const baseData = await dataRes.json();
+          if (dataRes.ok && baseData.data?.years) {
+            setFiveYearFortuneData(baseData.data);
+            results.push(`${yearCount}년운세 ✓`);
+          } else {
+            results.push(`${yearCount}년운세 ✗`);
+          }
+        } catch (err) {
+          results.push(`${yearCount}년운세 ✗`);
+          console.error('챕터4 생성 실패:', err);
+        }
+      }
+
+      // 재물운 생성
+      if (missingChapters.includes('fortune')) {
+        setGeneratingChapter(5);
+        setFortuneProgress({ progress: 50, message: '재물운 생성 중...' });
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({ year_count: yearCount })
+          });
+          const data = await res.json();
+          if (res.ok && data.fortunes) {
+            const yearlyFortunes = Object.entries(data.fortunes).map(([year, fortune]) => ({
+              year: parseInt(year),
+              ...fortune
+            })).sort((a, b) => a.year - b.year);
+            setFortuneEditorData(yearlyFortunes);
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_fortune`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+              body: JSON.stringify({ fortune_data: { baseFortune: {}, yearlyFortunes } })
+            });
+            results.push('재물운 ✓');
+          } else {
+            results.push('재물운 ✗');
+          }
+        } catch (err) {
+          results.push('재물운 ✗');
+          console.error('재물운 생성 실패:', err);
+        } finally {
+          setFortuneProgress(null);
+        }
+      }
+
+      // 직업운 생성
+      if (missingChapters.includes('career')) {
+        setGeneratingChapter(6);
+        setCareerProgress({ progress: 50, message: '직업운 생성 중...' });
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({ year_count: yearCount })
+          });
+          const data = await res.json();
+          if (res.ok && data.careers) {
+            const yearlyCareers = Object.entries(data.careers).map(([year, career]) => ({
+              year: parseInt(year),
+              ...career
+            })).sort((a, b) => a.year - b.year);
+            setCareerEditorData(yearlyCareers);
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+              body: JSON.stringify({ career_data: { baseCareer: {}, yearlyCareers } })
+            });
+            results.push('직업운 ✓');
+          } else {
+            results.push('직업운 ✗');
+          }
+        } catch (err) {
+          results.push('직업운 ✗');
+          console.error('직업운 생성 실패:', err);
+        } finally {
+          setCareerProgress(null);
+        }
+      }
+
+      // 연애운 생성
+      if (missingChapters.includes('love')) {
+        setGeneratingChapter(7);
+        setLoveProgress({ progress: 50, message: '연애운 생성 중...' });
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({ year_count: yearCount })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            const loveResult = {
+              baseAnalysis: {},
+              yearlyLoveFortunes: data.yearly_love_fortunes || [{ year: new Date().getFullYear(), generated_content: data.content || '' }]
+            };
+            setLoveFortuneData(loveResult);
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+              body: JSON.stringify({ love_fortune_data: loveResult })
+            });
+            results.push('연애운 ✓');
+          } else {
+            results.push('연애운 ✗');
+          }
+        } catch (err) {
+          results.push('연애운 ✗');
+          console.error('연애운 생성 실패:', err);
+        } finally {
+          setLoveProgress(null);
+        }
+      }
+
+      // 코칭 생성
+      if (missingChapters.includes('coaching')) {
+        setGeneratingChapter(8);
+        setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({})
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            const coachingItems = data.coaching_items || [];
+            setCoachingData(coachingItems);
+            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_coaching`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+              body: JSON.stringify({ coaching_items: coachingItems })
+            });
+            results.push('코칭 ✓');
+          } else {
+            results.push('코칭 ✗');
+          }
+        } catch (err) {
+          results.push('코칭 ✗');
+          console.error('코칭 생성 실패:', err);
+        } finally {
+          setCoachingProgress(null);
+        }
+      }
+
+      // 생성 완료 후 데이터 새로고침
+      await fetchSavedReport();
+
+      alert(`누락 챕터 생성 완료!\n${results.join('\n')}`);
+    } catch (err) {
+      console.error('누락 챕터 생성 실패:', err);
+      alert(`생성 실패: ${err.message}`);
+    } finally {
+      setRegeneratingAllChapters(false);
+      setGeneratingChapter(null);
     }
   };
 
@@ -3141,19 +3439,21 @@ function OrderDetail() {
         setChapter4Loading(false);
       }
 
-      // 챕터5 (재물운) - 비동기 생성
+      // 챕터5 (재물운) - 동기 생성
       setGeneratingChapter(5);
-      setFortuneProgress({ progress: 0, message: '재물운 생성 시작...' });
+      setFortuneProgress({ progress: 50, message: '재물운 생성 중...' });
       try {
-        console.log(`[generateAllChapters] 재물운 비동기 생성 시작 (${yearCount}년)`);
-        const fortuneJobId = await startAsyncJob('fortune', { year_count: yearCount });
-        console.log('[generateAllChapters] 재물운 Job 시작:', fortuneJobId);
+        console.log(`[generateAllChapters] 재물운 동기 생성 시작 (${yearCount}년)`);
+        const fortuneRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
+        });
+        const fortuneData = await fortuneRes.json();
+        console.log('[generateAllChapters] 재물운 생성 응답:', fortuneData);
 
-        const fortuneResult = await pollJobStatus(fortuneJobId, setFortuneProgress);
-
-        if (fortuneResult.success && fortuneResult.result) {
-          const rawFortunes = fortuneResult.result.fortunes || {};
-          const yearlyFortunes = Object.entries(rawFortunes).map(([year, fortune]) => ({
+        if (fortuneRes.ok && fortuneData.fortunes) {
+          const yearlyFortunes = Object.entries(fortuneData.fortunes).map(([year, fortune]) => ({
             year: parseInt(year),
             ...fortune
           })).sort((a, b) => a.year - b.year);
@@ -3181,19 +3481,21 @@ function OrderDetail() {
         setFortuneProgress(null);
       }
 
-      // 챕터6 (직업운) - 비동기 생성
+      // 챕터6 (직업운) - 동기 생성
       setGeneratingChapter(6);
-      setCareerProgress({ progress: 0, message: '직업운 생성 시작...' });
+      setCareerProgress({ progress: 50, message: '직업운 생성 중...' });
       try {
-        console.log(`[generateAllChapters] 직업운 비동기 생성 시작 (${yearCount}년)`);
-        const careerJobId = await startAsyncJob('career', { year_count: yearCount });
-        console.log('[generateAllChapters] 직업운 Job 시작:', careerJobId);
+        console.log(`[generateAllChapters] 직업운 동기 생성 시작 (${yearCount}년)`);
+        const careerRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
+        });
+        const careerData = await careerRes.json();
+        console.log('[generateAllChapters] 직업운 생성 응답:', careerData);
 
-        const careerResult = await pollJobStatus(careerJobId, setCareerProgress);
-
-        if (careerResult.success && careerResult.result) {
-          const rawCareers = careerResult.result.careers || {};
-          const yearlyCareers = Object.entries(rawCareers).map(([year, career]) => ({
+        if (careerRes.ok && careerData.careers) {
+          const yearlyCareers = Object.entries(careerData.careers).map(([year, career]) => ({
             year: parseInt(year),
             ...career
           })).sort((a, b) => a.year - b.year);
@@ -3221,33 +3523,35 @@ function OrderDetail() {
         setCareerProgress(null);
       }
 
-      // 챕터7 (연애운) - 비동기 생성
+      // 챕터7 (연애운) - 동기 생성
       setGeneratingChapter(7);
-      setLoveProgress({ progress: 0, message: '연애운 생성 시작...' });
+      setLoveProgress({ progress: 50, message: '연애운 생성 중...' });
       try {
-        console.log(`[generateAllChapters] 연애운 비동기 생성 시작 (${yearCount}년)`);
-        const loveJobId = await startAsyncJob('love', { year_count: yearCount });
-        console.log('[generateAllChapters] 연애운 Job 시작:', loveJobId);
+        console.log(`[generateAllChapters] 연애운 동기 생성 시작 (${yearCount}년)`);
+        const loveRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({ year_count: yearCount })
+        });
+        const loveData = await loveRes.json();
+        console.log('[generateAllChapters] 연애운 생성 응답:', loveData);
 
-        const loveResult = await pollJobStatus(loveJobId, setLoveProgress);
-
-        if (loveResult.success && loveResult.result) {
-          const loveData = loveResult.result.love_fortune || {};
-          const loveFortuneData = {
+        if (loveRes.ok && loveData.success) {
+          const loveFortuneResult = {
             baseAnalysis: {},
-            yearlyLoveFortunes: [{
+            yearlyLoveFortunes: loveData.yearly_love_fortunes || [{
               year: new Date().getFullYear(),
               generated_content: loveData.content || ''
             }]
           };
-          setLoveFortuneData(loveFortuneData);
-          newChapter6Data = loveFortuneData;
+          setLoveFortuneData(loveFortuneResult);
+          newChapter6Data = loveFortuneResult;
 
           console.log('[generateAllChapters] 연애운 저장 시작');
           const saveRes7 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ love_fortune_data: loveFortuneData })
+            body: JSON.stringify({ love_fortune_data: loveFortuneResult })
           });
           const saveData7 = await saveRes7.json();
           console.log('[generateAllChapters] 연애운 저장 응답:', saveData7);
@@ -3258,22 +3562,21 @@ function OrderDetail() {
         setLoveProgress(null);
       }
 
-      // 챕터8 (코칭) - 비동기 생성
+      // 챕터8 (코칭) - 동기 생성
       setGeneratingChapter(8);
-      setCoachingProgress({ progress: 0, message: '코칭 생성 시작...' });
+      setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
       try {
-        console.log('[generateAllChapters] 코칭 비동기 생성 시작');
-        const coachingJobId = await startAsyncJob('coaching', {});
-        console.log('[generateAllChapters] 코칭 Job 시작:', coachingJobId);
+        console.log('[generateAllChapters] 코칭 동기 생성 시작');
+        const coachingRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+          body: JSON.stringify({})
+        });
+        const coachingData = await coachingRes.json();
+        console.log('[generateAllChapters] 코칭 생성 응답:', coachingData);
 
-        const coachingResult = await pollJobStatus(coachingJobId, setCoachingProgress);
-
-        if (coachingResult.success && coachingResult.result) {
-          const coaching = coachingResult.result.coaching || {};
-          const coachingItems = [{
-            title: '상담사 코칭',
-            content: coaching.content || ''
-          }];
+        if (coachingRes.ok && coachingData.success) {
+          const coachingItems = coachingData.coaching_items || [];
           setCoachingData(coachingItems);
 
           // 코칭 저장
@@ -3285,6 +3588,8 @@ function OrderDetail() {
           });
           const saveData8 = await saveRes8.json();
           console.log('[generateAllChapters] 코칭 저장 응답:', saveData8);
+        } else {
+          console.error('[generateAllChapters] 코칭 생성 실패:', coachingData.error);
         }
       } catch (err) {
         console.error('코칭 생성/저장 실패:', err);
@@ -3944,10 +4249,19 @@ function OrderDetail() {
                   <button
                     className="btn btn-report-regenerate"
                     onClick={() => generateAllChapters(true)}
-                    disabled={savingReport}
+                    disabled={savingReport || regeneratingAllChapters}
                   >
                     {savingReport ? <Loader size={16} className="spinning" /> : <Sparkles size={16} />}
                     다시 생성
+                  </button>
+                  <button
+                    className="btn btn-report-regenerate"
+                    onClick={handleRegenerateMissingChapters}
+                    disabled={savingReport || regeneratingAllChapters}
+                    style={{ backgroundColor: '#e67e22' }}
+                  >
+                    {regeneratingAllChapters ? <Loader size={16} className="spinning" /> : <Sparkles size={16} />}
+                    누락 챕터 생성
                   </button>
                   <button
                     className="btn btn-copy-link"
@@ -4194,10 +4508,19 @@ function OrderDetail() {
                       <button
                         className="btn btn-regenerate-report"
                         onClick={() => generateAllChapters(true)}
-                        disabled={savingReport}
+                        disabled={savingReport || regeneratingAllChapters}
                       >
                         {savingReport ? <Loader size={14} className="spinning" /> : <Sparkles size={14} />}
                         다시생성
+                      </button>
+                      <button
+                        className="btn btn-regenerate-report"
+                        onClick={handleRegenerateMissingChapters}
+                        disabled={savingReport || regeneratingAllChapters}
+                        style={{ backgroundColor: '#e67e22' }}
+                      >
+                        {regeneratingAllChapters ? <Loader size={14} className="spinning" /> : <Sparkles size={14} />}
+                        누락생성
                       </button>
                     </>
                   ) : (
