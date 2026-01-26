@@ -3030,19 +3030,40 @@ function ReportPreview({ isAdminPreview = false }) {
         {/* 질문 섹션 */}
         {!isAdminPreview && (
           <div className="appendix-question-section">
-            {qaStatus?.has_question ? (
-              <div className="appendix-question-submitted">
-                <h3>질문이 제출되었습니다</h3>
-                {qaStatus.status === 'answered' ? (
-                  <p>답변이 완료되었습니다. <button className="link-btn" onClick={() => setCurrentChapter(10)}>질문과 답변 보기</button></p>
-                ) : (
-                  <p>상담사가 답변을 준비 중입니다. 답변이 완료되면 이메일로 알려드립니다.</p>
-                )}
+            {/* 제출된 질문들 표시 */}
+            {qaStatus?.questions?.length > 0 && (
+              <div className="appendix-questions-list">
+                <h3>제출된 질문 ({qaStatus.question_count}/{qaStatus.max_questions})</h3>
+                {qaStatus.questions.map((q, idx) => (
+                  <div key={idx} className="appendix-question-item">
+                    <div className="question-item-header">
+                      <span className="question-number">질문 {idx + 1}</span>
+                      <span className={`question-status ${q.status}`}>
+                        {q.status === 'answered' ? '답변 완료' : '답변 대기'}
+                      </span>
+                    </div>
+                    <div className="question-item-content">{q.content}</div>
+                    {q.status === 'answered' && q.answer && (
+                      <div className="question-item-answer">
+                        <strong>답변:</strong> {q.answer.content?.substring(0, 100)}...
+                        <button className="link-btn" onClick={() => setCurrentChapter(10)}>전체 답변 보기</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {/* 추가 질문 가능한 경우 폼 표시 */}
+            {qaStatus?.can_ask_more !== false ? (
               <div className="appendix-question-form">
                 <h3>상담사에게 질문하기</h3>
-                <p className="question-limit-notice">리포트에 대해 궁금한 점이 있으시면 1회 질문하실 수 있습니다.</p>
+                <p className="question-limit-notice">
+                  리포트에 대해 궁금한 점이 있으시면 질문하실 수 있습니다.
+                  {qaStatus?.max_questions && (
+                    <span className="remaining-count"> (남은 질문 횟수: {qaStatus.remaining_questions || qaStatus.max_questions}회)</span>
+                  )}
+                </p>
 
                 <textarea
                   className="question-textarea"
@@ -3084,6 +3105,10 @@ function ReportPreview({ isAdminPreview = false }) {
                     </>
                   )}
                 </button>
+              </div>
+            ) : qaStatus?.has_question && (
+              <div className="appendix-question-limit-reached">
+                <p>질문 횟수를 모두 사용하셨습니다. ({qaStatus.question_count}/{qaStatus.max_questions})</p>
               </div>
             )}
           </div>

@@ -220,7 +220,7 @@ function Profile() {
           </p>
           <div className="referral-links">
             <div className="referral-link-item">
-              <span className="link-label">Blueprint (풀버전)</span>
+              <span className="link-label">Blueprint Pro (5년)</span>
               <div className="link-box">
                 <input
                   type="text"
@@ -277,12 +277,12 @@ function Profile() {
               <span>실수령</span>
             </div>
 
-            {/* Blueprint Full */}
+            {/* Blueprint Pro */}
             {(() => {
               const rev = calculateRevenue(99000);
               return (
                 <div className="revenue-row">
-                  <span className="product-name">Blueprint Full</span>
+                  <span className="product-name">Blueprint Pro</span>
                   <span>99,000원</span>
                   <span>{rev.grossRevenue.toLocaleString()}원</span>
                   <span className="tax">-{rev.withholdingTax.toLocaleString()}원</span>

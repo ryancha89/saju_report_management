@@ -1250,6 +1250,7 @@ function OrderDetail() {
   const [chapter10Loading, setChapter10Loading] = useState(false);
   const [chapter10Answer, setChapter10Answer] = useState('');
   const [chapter10Submitting, setChapter10Submitting] = useState(false);
+  const [chapter10Editing, setChapter10Editing] = useState(false); // 답변 수정 모드
 
   // 챕터4, 5, 6, 7, 8 편집기 refs (전체 생성용)
   const fiveYearFortuneEditorRef = useRef(null);
@@ -4869,9 +4870,21 @@ function OrderDetail() {
                   </div>
                 </div>
 
-                {chapter10Question.status === 'answered' && chapter10Question.answer ? (
+                {chapter10Question.status === 'answered' && chapter10Question.answer && !chapter10Editing ? (
                   <div className="chapter10-answer-section answered">
-                    <div className="chapter10-answer-label">답변</div>
+                    <div className="chapter10-answer-label">
+                      답변
+                      <button
+                        className="btn btn-edit-answer"
+                        onClick={() => {
+                          setChapter10Answer(chapter10Question.answer.content);
+                          setChapter10Editing(true);
+                        }}
+                      >
+                        <Edit3 size={14} />
+                        수정
+                      </button>
+                    </div>
                     <div className="chapter10-answer-content">{chapter10Question.answer.content}</div>
                     <div className="chapter10-answer-meta">
                       <span>답변자: {chapter10Question.answer.answered_by || 'Admin'}</span>
@@ -4882,7 +4895,20 @@ function OrderDetail() {
                   </div>
                 ) : (
                   <div className="chapter10-answer-section">
-                    <div className="chapter10-answer-label">답변 작성</div>
+                    <div className="chapter10-answer-label">
+                      {chapter10Editing ? '답변 수정' : '답변 작성'}
+                      {chapter10Editing && (
+                        <button
+                          className="btn btn-cancel-edit"
+                          onClick={() => {
+                            setChapter10Editing(false);
+                            setChapter10Answer(chapter10Question.answer?.content || '');
+                          }}
+                        >
+                          취소
+                        </button>
+                      )}
+                    </div>
                     <textarea
                       className="chapter10-answer-input"
                       value={chapter10Answer}
@@ -4893,13 +4919,21 @@ function OrderDetail() {
                     <div className="chapter10-answer-actions">
                       <button
                         className="btn btn-chapter10-submit"
-                        onClick={submitChapter10Answer}
+                        onClick={async () => {
+                          await submitChapter10Answer();
+                          setChapter10Editing(false);
+                        }}
                         disabled={chapter10Submitting || !chapter10Answer.trim()}
                       >
                         {chapter10Submitting ? (
                           <>
                             <Loader size={16} className="spinning" />
                             제출 중...
+                          </>
+                        ) : chapter10Editing ? (
+                          <>
+                            <Send size={16} />
+                            수정된 답변 저장 (고객에게 이메일 발송)
                           </>
                         ) : (
                           <>

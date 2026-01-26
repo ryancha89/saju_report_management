@@ -4530,3 +4530,125 @@ h3.coaching-item-topic:active {
   height: auto;
   display: block;
 }
+
+/* ===== Multiple Questions Feature Styles ===== */
+.appendix-questions-list {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.appendix-questions-list h3 {
+  font-size: 1rem;
+  color: #f0d78c;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.appendix-question-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.appendix-question-item:last-child {
+  margin-bottom: 0;
+}
+
+.question-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.question-number {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #818cf8;
+  background: rgba(129, 140, 248, 0.15);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.question-status {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.question-status.answered {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.question-status.pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.question-item-content {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.question-item-answer {
+  margin-top: 12px;
+  padding: 14px;
+  background: rgba(129, 140, 248, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #818cf8;
+}
+
+.question-item-answer strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #818cf8;
+  margin-bottom: 8px;
+}
+
+.question-item-answer p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.appendix-remaining-questions {
+  text-align: center;
+  padding: 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.appendix-remaining-questions span {
+  font-size: 0.9rem;
+  color: #a5b4fc;
+}
+
+.appendix-no-more-questions {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.appendix-no-more-questions p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+}
