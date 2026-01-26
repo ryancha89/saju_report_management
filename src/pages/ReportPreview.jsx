@@ -2657,6 +2657,18 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
         </div>
 
+        <div className="profile-video-container">
+          <video
+            className="green-monkey-video"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source src="/img/green_monkey.mp4" type="video/mp4" />
+          </video>
+        </div>
+
         {/* 사주팔자 상단 핵심포인트 */}
         {renderKeyPointsSection('chapter1_saju_chart')}
         <div className="saju-chart-wrapper">
