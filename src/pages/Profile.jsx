@@ -7,6 +7,23 @@ import './Profile.css';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const REFERRAL_BASE_URL = import.meta.env.VITE_REFERRAL_BASE_URL || 'https://fortunetorch.com';
 
+const PRODUCTS_CONFIG = {
+  blueprint: {
+    name: 'Blueprint Pro',
+    display_name: 'Blueprint Pro (5년)',
+    price: 77000,
+    description: '평생 대운 + 5년 운세 분석',
+    max_questions: 2
+  },
+  blueprint_lite: {
+    name: 'Blueprint Lite',
+    display_name: 'Blueprint Lite (3년)',
+    price: 44000,
+    description: '현재/다음 대운 + 3년 운세 분석',
+    max_questions: 1
+  }
+};
+
 function Profile() {
   const navigate = useNavigate();
   const { getToken, manager, refreshManager } = useAuth();
@@ -27,7 +44,7 @@ function Profile() {
   const [referralCode, setReferralCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [commissionRate, setCommissionRate] = useState(50);
-  const [products, setProducts] = useState(null);
+  const products = PRODUCTS_CONFIG;
   const isProfileCompleted = manager?.profile_completed;
   const isAdmin = manager?.role === 'admin';
 
@@ -66,9 +83,6 @@ function Profile() {
           });
           setReferralCode(data.profile.referral_code || '');
           setCommissionRate(data.profile.commission_rate || 50);
-          if (data.products) {
-            setProducts(data.products);
-          }
         }
       }
     } catch (err) {
