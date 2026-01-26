@@ -181,6 +181,13 @@ function ReportPreview({ isAdminPreview = false }) {
     }
   };
 
+  // reportData 로드 후 questionEmail 기본값 설정
+  useEffect(() => {
+    if (reportData?.order?.email && !questionEmail) {
+      setQuestionEmail(reportData.order.email);
+    }
+  }, [reportData?.order?.email]);
+
   // Q&A 상태 조회
   const fetchQaStatus = async () => {
     try {
@@ -200,6 +207,13 @@ function ReportPreview({ isAdminPreview = false }) {
   const submitQuestion = async () => {
     if (!questionText.trim()) {
       setQuestionError('질문을 입력해주세요.');
+      return;
+    }
+
+    // 이메일 필수 검증
+    const email = questionEmail || reportData?.order?.email;
+    if (!email || !email.trim()) {
+      setQuestionError('답변 받을 이메일 주소를 입력해주세요.');
       return;
     }
 
@@ -3042,10 +3056,11 @@ function ReportPreview({ isAdminPreview = false }) {
                 <input
                   type="email"
                   className="question-email-input"
-                  placeholder="답변 받을 이메일 주소 (선택)"
+                  placeholder="답변 받을 이메일 주소 (필수)"
                   value={questionEmail}
                   onChange={(e) => setQuestionEmail(e.target.value)}
                   disabled={questionSubmitting}
+                  required
                 />
 
                 {questionError && (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3, MessageCircle, Wand2, Save } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3, MessageCircle, Wand2, Save, RefreshCw } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import FortuneEditor from '../components/FortuneEditor';
 import CareerEditor from '../components/CareerEditor';
@@ -1285,6 +1285,8 @@ function OrderDetail() {
   const [savingReport, setSavingReport] = useState(false);
   const [generatingChapter, setGeneratingChapter] = useState(null); // 현재 생성 중인 챕터 번호
   const [sendingReport, setSendingReport] = useState(false); // 레포트 발송 중
+  const [resendingReport, setResendingReport] = useState(false); // 레포트 재전송 중
+  const [sendingRevision, setSendingRevision] = useState(false); // 수정본 발송 중
 
   // 종합 판정 계산 (Degree 우선, 없으면 result, 그 다음 score로 판단)
   const getOverallRating = (decade) => {
@@ -4356,6 +4358,79 @@ function OrderDetail() {
     }
   };
 
+  // 레포트 재전송 (이미 완료된 주문에 이메일/카카오톡 재발송)
+  const resendReport = async () => {
+    if (!savedReport) {
+      alert('레포트가 없습니다.');
+      return;
+    }
+
+    if (!confirm(`고객에게 레포트를 재전송합니다.\n\n수신자: ${order.name}\n이메일: ${order.email || '없음'}\n전화번호: ${order.phone_number || '없음'}\n\n계속하시겠습니까?`)) {
+      return;
+    }
+
+    setResendingReport(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/resend_report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message);
+      } else {
+        throw new Error(data.error || '레포트 재전송에 실패했습니다.');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setResendingReport(false);
+    }
+  };
+
+  // 수정본 발송 (수정된 리포트임을 알리는 메시지와 함께 재발송)
+  const sendRevision = async () => {
+    if (!savedReport) {
+      alert('레포트가 없습니다.');
+      return;
+    }
+
+    if (!confirm(`고객에게 수정본을 발송합니다.\n\n수신자: ${order.name}\n이메일: ${order.email || '없음'}\n전화번호: ${order.phone_number || '없음'}\n\n※ 이메일에 "수정본" 안내 문구가 포함됩니다.\n\n계속하시겠습니까?`)) {
+      return;
+    }
+
+    setSendingRevision(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/resend_report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({ send_type: 'revision' })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message);
+      } else {
+        throw new Error(data.error || '수정본 발송에 실패했습니다.');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSendingRevision(false);
+    }
+  };
+
   // 모바일 프리뷰를 새 탭에서 열기
   const openMobilePreview = (chapterNumber) => {
     window.open(`/preview/${id}?chapter=${chapterNumber}`, '_blank');
@@ -4964,6 +5039,44 @@ function OrderDetail() {
                       </>
                     )}
                   </button>
+                  {order.status === 'completed' && (
+                    <>
+                      <button
+                        className="btn btn-resend-report"
+                        onClick={resendReport}
+                        disabled={resendingReport}
+                      >
+                        {resendingReport ? (
+                          <>
+                            <Loader size={16} className="spinning" />
+                            재전송 중...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw size={16} />
+                            고객에게 재전송
+                          </>
+                        )}
+                      </button>
+                      <button
+                        className="btn btn-send-revision"
+                        onClick={sendRevision}
+                        disabled={sendingRevision}
+                      >
+                        {sendingRevision ? (
+                          <>
+                            <Loader size={16} className="spinning" />
+                            발송 중...
+                          </>
+                        ) : (
+                          <>
+                            <Edit3 size={16} />
+                            수정본 발송
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="preview-link">
                   <span className="link-label">미리보기 URL:</span>
