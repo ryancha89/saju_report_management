@@ -2063,6 +2063,24 @@ function OrderDetail() {
       setChapter3Loading(false);
       setChapter3Progress(null);
 
+      // 1.5. 먼저 기본 구조를 DB에 저장 (regenerate_single_decade가 chapter를 찾을 수 있도록)
+      const basisForInitialSave = {
+        ...(ch3Data.basis || {}),
+        decade_flow: ch3Data.decade_flow,
+        sky_type: ch3Data.basis?.sky_type,
+        earth_type: ch3Data.basis?.earth_type
+      };
+      await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+        body: JSON.stringify({
+          chapter_number: 4,
+          content: ch3Data.content || '',
+          basis: basisForInitialSave
+        })
+      });
+      console.log('[generateChapter3WithAutoSave] 챕터3(대운흐름) 기본 구조 DB 저장 완료 - regenerate_single_decade 준비');
+
       // 2. 대운별 순차 AI 생성 시작 - 모달 표시
       const decades = ch3Data.decade_flow;
       setRegeneratingAllDecades(true);
@@ -2950,6 +2968,24 @@ function OrderDetail() {
           setChapter3Data(ch3Data);
           setChapter3Progress(null);
 
+          // 1.5. 먼저 기본 구조를 DB에 저장 (regenerate_single_decade가 chapter를 찾을 수 있도록)
+          const basisForInitialSave = {
+            ...(ch3Data.basis || {}),
+            decade_flow: ch3Data.decade_flow,
+            sky_type: ch3Data.basis?.sky_type,
+            earth_type: ch3Data.basis?.earth_type
+          };
+          await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({
+              chapter_number: 4,
+              content: ch3Data.content || '',
+              basis: basisForInitialSave
+            })
+          });
+          console.log('[handleRegenerateMissingChapters] 챕터3(대운흐름) 기본 구조 DB 저장 완료 - regenerate_single_decade 준비');
+
           // 2. 대운별 순차 AI 생성 - 모달 표시
           const decades = ch3Data.decade_flow;
           setRegeneratingAllDecades(true);
@@ -3661,6 +3697,24 @@ function OrderDetail() {
           setChapter3Data(ch3Data);
           setChapter3Loading(false);
           setChapter3Progress(null);
+
+          // 1.5. 먼저 기본 구조를 DB에 저장 (regenerate_single_decade가 chapter를 찾을 수 있도록)
+          const basisForInitialSave = {
+            ...(ch3Data.basis || {}),
+            decade_flow: ch3Data.decade_flow,
+            sky_type: ch3Data.basis?.sky_type,
+            earth_type: ch3Data.basis?.earth_type
+          };
+          await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({
+              chapter_number: 4,
+              content: ch3Data.content || '',
+              basis: basisForInitialSave
+            })
+          });
+          console.log('[generateAllChapters] 챕터3(대운흐름) 기본 구조 DB 저장 완료 - regenerate_single_decade 준비');
 
           // 2. 대운별 순차 AI 생성 - 모달 표시
           const decades = ch3Data.decade_flow;

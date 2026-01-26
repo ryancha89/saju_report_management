@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Eye, Send, ChevronLeft, ChevronRight, Loader, RefreshCw } from 'lucide-react';
+import { Search, Filter, Eye, Send, ChevronLeft, ChevronRight, Loader, RefreshCw, Ban, RotateCcw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './OrderManagement.css';
 
@@ -82,6 +82,37 @@ function OrderManagement() {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       fetchOrders(newPage);
+    }
+  };
+
+  // 구매 무효화/복원 토글
+  const handleInvalidateToggle = async (e, order) => {
+    e.stopPropagation();
+    const action = order.invalidated ? '복원' : '무효화';
+    if (!window.confirm(`#${order.id} ${order.name}님의 주문을 ${action}하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${order.id}/invalidate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('처리에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      // 목록 업데이트
+      setOrders(prev => prev.map(o =>
+        o.id === order.id ? { ...o, invalidated: data.invalidated } : o
+      ));
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -194,6 +225,7 @@ function OrderManagement() {
             <option value="processing">처리중</option>
             <option value="completed">완료</option>
             <option value="cancelled">취소됨</option>
+            <option value="invalidated">무효화됨</option>
           </select>
         </div>
         <button className="refresh-btn" onClick={() => fetchOrders(pagination.currentPage)} disabled={loading}>
@@ -240,8 +272,12 @@ function OrderManagement() {
                       <tr
                         key={order.id}
                         onClick={() => navigate(`/orders/${order.id}`)}
+                        className={order.invalidated ? 'invalidated-row' : ''}
                       >
-                        <td>#{order.id}</td>
+                        <td>
+                          #{order.id}
+                          {order.invalidated && <span className="invalidated-badge">무효</span>}
+                        </td>
                         <td>{order.name}</td>
                         <td>{order.phone_number}</td>
                         <td className="email-cell">{order.email}</td>
@@ -287,6 +323,13 @@ function OrderManagement() {
                               }}
                             >
                               <Send size={16} />
+                            </button>
+                            <button
+                              className={`action-btn ${order.invalidated ? 'restore-btn' : 'invalidate-btn'}`}
+                              title={order.invalidated ? '구매 복원' : '구매 무효화'}
+                              onClick={(e) => handleInvalidateToggle(e, order)}
+                            >
+                              {order.invalidated ? <RotateCcw size={16} /> : <Ban size={16} />}
                             </button>
                           </div>
                         </td>
