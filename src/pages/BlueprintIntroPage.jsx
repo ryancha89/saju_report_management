@@ -50,66 +50,50 @@ function BlueprintIntroPage() {
   // 플랜 정보
   const plans = {
     full: {
-      name: 'FULL',
+      name: 'PRO',
       title: '인생 청사진',
       subtitle: '평생 대운 + 5개년 전략',
       originalPrice: 150000,
-      currentPrice: 99000,
-      discount: 34
+      currentPrice: 77000,
+      discount: 40
     },
     lite: {
       name: 'LITE',
       title: '3년 플랜',
       subtitle: '현재/다음 대운 + 3개년 운세',
       originalPrice: 99000,
-      currentPrice: 59000,
-      discount: 40
+      currentPrice: 44900,
+      discount: 50
     }
   };
 
   const currentPlan = plans[selectedPlan];
 
-  // 플랜별 features
+  // 플랜별 features (챕터 목록)
   const featuresData = {
     full: [
-      {
-        title: '나의 아이덴티티 잠재력 분석',
-        desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
-      },
-      {
-        title: '평생 대운 분석, 평생 소장',
-        desc: '10년 단위의 대운 흐름으로 인생의 큰 전환점과 기회를 예측합니다.'
-      },
-      {
-        title: '5개년 전략 로드맵',
-        desc: '향후 5년간의 연도별 운세와 구체적인 행동 전략을 제시합니다.'
-      },
-      {
-        title: '커리어/재물/연애운',
-        desc: '직업, 재정, 연애 각 영역별 맞춤 분석과 조언을 드립니다.'
-      },
-      {
-        title: '맞춤 개운법 가이드',
-        desc: '나에게 맞는 색상, 방향, 숫자 등 실생활 개운 팁을 알려드립니다.'
-      }
+      { title: '사주정보', desc: '당신의 사주 원국과 기본 정보를 정리합니다.' },
+      { title: '나의 아이덴티티', desc: '타고난 성격과 본질적인 특성을 분석합니다.' },
+      { title: '나의 잠재력과 사회적 역할', desc: '숨겨진 잠재력과 사회에서의 역할을 파악합니다.' },
+      { title: '전체 대운 흐름 분석', desc: '평생의 대운 흐름으로 인생의 전환점을 예측합니다.' },
+      { title: '향후 5년간의 운세', desc: '5년간의 연도별 운세와 행동 전략을 제시합니다.' },
+      { title: '5년간의 재물운', desc: '재정 흐름과 재물 획득의 기회를 분석합니다.' },
+      { title: '5년간의 직업운/사회운', desc: '커리어와 사회적 성공의 흐름을 분석합니다.' },
+      { title: '5년간의 연애운/배우자운', desc: '연애와 결혼운의 흐름을 분석합니다.' },
+      { title: '상담사의 코칭', desc: '전문 상담사의 맞춤 조언과 개운법을 제공합니다.' },
+      { title: '질문과 답변 (2회)', desc: '궁금한 점에 대해 상담사가 직접 답변해 드립니다.' }
     ],
     lite: [
-      {
-        title: '나의 아이덴티티 잠재력 분석',
-        desc: '타고난 성격, 강점, 약점을 파악하고 숨겨진 잠재력을 발견합니다.'
-      },
-      {
-        title: '현재 & 다음 대운 분석',
-        desc: '현재 대운과 다음 대운의 흐름을 중점적으로 분석합니다.'
-      },
-      {
-        title: '3개년 전략 로드맵',
-        desc: '올해부터 3년간의 연도별 운세와 구체적인 행동 전략을 제시합니다.'
-      },
-      {
-        title: '맞춤 개운법 가이드',
-        desc: '나에게 맞는 색상, 방향, 숫자 등 실생활 개운 팁을 알려드립니다.'
-      }
+      { title: '사주정보', desc: '당신의 사주 원국과 기본 정보를 정리합니다.' },
+      { title: '나의 아이덴티티', desc: '타고난 성격과 본질적인 특성을 분석합니다.' },
+      { title: '나의 잠재력과 사회적 역할', desc: '숨겨진 잠재력과 사회에서의 역할을 파악합니다.' },
+      { title: '현재/다음 대운 분석', desc: '현재 대운과 다음 대운의 흐름을 분석합니다.' },
+      { title: '향후 3년간의 운세', desc: '3년간의 연도별 운세와 행동 전략을 제시합니다.' },
+      { title: '3년간의 재물운', desc: '재정 흐름과 재물 획득의 기회를 분석합니다.' },
+      { title: '3년간의 직업운/사회운', desc: '커리어와 사회적 성공의 흐름을 분석합니다.' },
+      { title: '3년간의 연애운/배우자운', desc: '연애와 결혼운의 흐름을 분석합니다.' },
+      { title: '상담사의 코칭', desc: '전문 상담사의 맞춤 조언과 개운법을 제공합니다.' },
+      { title: '질문과 답변 (1회)', desc: '궁금한 점에 대해 상담사가 직접 답변해 드립니다.' }
     ]
   };
 
@@ -139,7 +123,9 @@ function BlueprintIntroPage() {
   const faqs = [
     {
       question: '리포트 내용은 얼마나 상세한가요?',
-      answer: '총 9개 챕터로 구성되어 있으며, 아이덴티티 분석부터, 잠재력 분석, 대운 분석, 5개년 운세 분석, 재물은, 사회/직업운, 연애운, 상담사의 코칭, 질문에 대한 답변까지 약 30~40페이지 분량의 상세한 분석을 제공합니다.'
+      answer: selectedPlan === 'full'
+        ? '총 10개 챕터로 구성되어 있으며, 아이덴티티 분석부터, 잠재력 분석, 평생 대운 분석, 5개년 운세 분석, 재물운, 사회/직업운, 연애운, 상담사의 코칭, 2회 질문에 대한 답변까지 약 30~40페이지 분량의 상세한 분석을 제공합니다.'
+        : '총 10개 챕터로 구성되어 있으며, 아이덴티티 분석부터, 잠재력 분석, 현재/다음 대운 분석, 3개년 운세 분석, 재물운, 사회/직업운, 연애운, 상담사의 코칭, 1회 질문에 대한 답변까지 약 20~30페이지 분량의 상세한 분석을 제공합니다.'
     },
     {
       question: '리포트는 어떻게 받나요?',
@@ -237,10 +223,75 @@ function BlueprintIntroPage() {
             </div>
           </div>
 
+          {/* Consultation Appeal Section */}
+          <div className="consultation-appeal-section">
+            <h3 className="appeal-title">리포트로 끝나지 않습니다</h3>
+            <p className="appeal-subtitle">진정한 상담의 시작</p>
+            <div className="appeal-content">
+              <div className="appeal-step">
+                <div className="appeal-step-number">01</div>
+                <div className="appeal-step-text">
+                  <strong>전문가가 직접 제작하는 맞춤 리포트</strong>
+                  <p>자동 생성이 아닌, 상담사가 당신의 사주를 직접 분석하고 작성합니다.</p>
+                </div>
+              </div>
+              <div className="appeal-step">
+                <div className="appeal-step-number">02</div>
+                <div className="appeal-step-text">
+                  <strong>리포트 완성 후 1:1 추가 질문</strong>
+                  <p>궁금한 점은 직접 물어보세요. 상담사가 성심껏 답변해 드립니다.</p>
+                </div>
+              </div>
+            </div>
+            <p className="appeal-message">
+              단순한 리포트 전달이 아닌,<br />
+              <strong>진정성 있는 상담</strong>을 경험하세요.
+            </p>
+          </div>
+
+          {/* Precision Section */}
+          <div className="precision-section">
+            <h3 className="precision-title">
+              압도적 정밀함,<br />
+              <span className="highlight">'격(格)'이 다른</span> 사주 분석을 경험하세요.
+            </h3>
+            <p className="precision-desc">
+              수많은 연구와 실전 임상을 통해 완성된 독보적인 적중 로직을 공개합니다.<br />
+              정통 '자평진전'의 격국론에 근거하여, 당신의 운명을 결정짓는 대운의 흐름을 낱낱이 분석해 드립니다.
+            </p>
+            <div className="precision-features">
+              <div className="precision-item">
+                <span className="precision-icon">📐</span>
+                <div className="precision-text">
+                  <strong>철저한 이론 검증</strong>
+                  <p>수년간의 R&D를 통해 정립된 논리적 해석</p>
+                </div>
+              </div>
+              <div className="precision-item">
+                <span className="precision-icon">🎯</span>
+                <div className="precision-text">
+                  <strong>명확한 대운 판별</strong>
+                  <p>운의 흐름에 따른 명쾌한 솔루션 제공</p>
+                </div>
+              </div>
+              <div className="precision-item">
+                <span className="precision-icon">⚖️</span>
+                <div className="precision-text">
+                  <strong>격국 중심의 분석</strong>
+                  <p>당신의 그릇과 성패의 원인을 정확히 타격</p>
+                </div>
+              </div>
+            </div>
+            <p className="precision-cta">
+              이제 당신의 인생을 운에 맡기지 말고,<br />
+              <strong>검증된 논리로 설계하십시오.</strong>
+            </p>
+          </div>
+
           {/* Features */}
           <div className="features-header">
             <h3 className="section-title">리포트 구성</h3>
-            <p className="features-subtitle">총 9개 챕터 중 주요 내용</p>
+            <p className="features-subtitle">총 10개 챕터 구성</p>
           </div>
           <div className="features-list">
             {features.map((feature, index) => (
@@ -263,10 +314,10 @@ function BlueprintIntroPage() {
                 className={`plan-toggle-btn ${selectedPlan === 'full' ? 'active' : ''}`}
                 onClick={() => setSelectedPlan('full')}
               >
-                <span className="plan-badge">FULL</span>
+                <span className="plan-badge">PRO</span>
                 <span className="plan-title">인생 청사진</span>
                 <span className="plan-subtitle">평생 대운 + 5개년 전략</span>
-                <span className="plan-price">99,000원</span>
+                <span className="plan-price">{plans.full.currentPrice.toLocaleString()}원</span>
               </button>
               <button
                 className={`plan-toggle-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
@@ -275,7 +326,7 @@ function BlueprintIntroPage() {
                 <span className="plan-badge lite">LITE</span>
                 <span className="plan-title">3년 플랜</span>
                 <span className="plan-subtitle">현재/다음 대운 + 3개년 운세</span>
-                <span className="plan-price">59,000원</span>
+                <span className="plan-price">{plans.lite.currentPrice.toLocaleString()}원</span>
               </button>
             </div>
             <p className="price-message">
@@ -294,12 +345,6 @@ function BlueprintIntroPage() {
               )}
             </p>
           </div>
-
-          {/* CTA Button */}
-          <button className="cta-button" onClick={handleStartClick}>
-            <span>시작하기</span>
-            <ArrowRight size={20} />
-          </button>
 
           {/* Process Section */}
           <div className="process-section">
@@ -332,7 +377,9 @@ function BlueprintIntroPage() {
                 <div className="process-content">
                   <h4>추가 질문</h4>
                   <p>리포트를 받으신 후 궁금한 점이 있다면 추가 질문을 남겨주세요. 상담사가 직접 답변해 드립니다.</p>
-                  <span className="process-badge highlight">1회 무료 질문 제공</span>
+                  <span className="process-badge highlight">
+                    {selectedPlan === 'full' ? '2회 무료 질문 제공' : '1회 무료 질문 제공'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -388,13 +435,34 @@ function BlueprintIntroPage() {
             </div>
           </div>
 
-          {/* Bottom CTA */}
-          <button className="cta-button" onClick={handleStartClick}>
-            <span>지금 시작하기</span>
-            <ArrowRight size={20} />
-          </button>
         </div>
       </section>
+
+      {/* Floating CTA Button */}
+      <div className="floating-cta-container">
+        <div className="floating-plan-selector">
+          <button
+            className={`floating-plan-btn ${selectedPlan === 'full' ? 'active' : ''}`}
+            onClick={() => setSelectedPlan('full')}
+          >
+            <span className="floating-plan-name">PRO</span>
+            <span className="floating-plan-desc">평생 대운 + 5년</span>
+          </button>
+          <button
+            className={`floating-plan-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
+            onClick={() => setSelectedPlan('lite')}
+          >
+            <span className="floating-plan-name">LITE</span>
+            <span className="floating-plan-desc">현재 대운 + 3년</span>
+          </button>
+        </div>
+        <button className="floating-cta-button" onClick={handleStartClick}>
+          <span>{currentPlan.currentPrice.toLocaleString()}원</span>
+          <span className="floating-divider">|</span>
+          <span>시작하기</span>
+          <ArrowRight size={18} />
+        </button>
+      </div>
       </div>
     </div>
   );

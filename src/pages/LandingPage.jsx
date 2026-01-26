@@ -49,13 +49,13 @@ function LandingPage() {
   // 플랜별 데이터
   const blueprintPlans = {
     full: {
-      price: '99,000',
+      price: '77,000',
       originalPrice: '150,000',
       subtitle: '평생 대운 + 5개년 전략',
       features: ['나의 아이덴티티 잠재력 분석', '평생 대운 흐름 분석', '5개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     },
     lite: {
-      price: '59,000',
+      price: '44,900',
       originalPrice: '90,000',
       subtitle: '현재/다음 대운 + 3개년 운세',
       features: ['나의 아이덴티티 잠재력 분석', '현재 & 다음 대운 분석', '3개년 전략 로드맵', '맞춤 개운법 가이드']
@@ -149,7 +149,7 @@ function LandingPage() {
                         <span className="plan-btn-badge">FULL</span>
                         <span className="plan-btn-name">인생 청사진</span>
                         <span className="plan-btn-desc">평생 대운 + 5개년</span>
-                        <span className="plan-btn-price">99,000원</span>
+                        <span className="plan-btn-price">{blueprintPlans.full.price}원</span>
                       </button>
                       <button
                         className={`plan-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
@@ -158,7 +158,7 @@ function LandingPage() {
                         <span className="plan-btn-badge lite">LITE</span>
                         <span className="plan-btn-name">3년 플랜</span>
                         <span className="plan-btn-desc">현재/다음 대운 + 3개년</span>
-                        <span className="plan-btn-price">59,000원</span>
+                        <span className="plan-btn-price">{blueprintPlans.lite.price}원</span>
                       </button>
                     </div>
                   )}
