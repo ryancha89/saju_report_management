@@ -1252,6 +1252,12 @@ function OrderDetail() {
   const [chapter10Submitting, setChapter10Submitting] = useState(false);
   const [chapter10Editing, setChapter10Editing] = useState(false); // 답변 수정 모드
 
+  // 이메일 발송 모달 상태
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
   // 챕터4, 5, 6, 7, 8 편집기 refs (전체 생성용)
   const fiveYearFortuneEditorRef = useRef(null);
   const fortuneEditorRef = useRef(null);
@@ -4432,6 +4438,46 @@ function OrderDetail() {
     }
   };
 
+  // 자유 형식 이메일 발송
+  const sendCustomEmail = async () => {
+    if (!emailSubject.trim() || !emailBody.trim()) {
+      alert('제목과 내용을 입력해주세요.');
+      return;
+    }
+
+    setSendingEmail(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/send_custom_email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`
+        },
+        body: JSON.stringify({
+          subject: emailSubject,
+          body: emailBody,
+          to_email: order.email
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message);
+        setEmailModalOpen(false);
+        setEmailSubject('');
+        setEmailBody('');
+      } else {
+        throw new Error(data.error || '이메일 발송에 실패했습니다.');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   // 모바일 프리뷰를 새 탭에서 열기
   const openMobilePreview = (chapterNumber) => {
     window.open(`/preview/${id}?chapter=${chapterNumber}`, '_blank');
@@ -4730,6 +4776,17 @@ function OrderDetail() {
                 <label><Mail size={14} /> 이메일</label>
                 <span>{order.email}</span>
               </div>
+              {order.email && (
+                <div className="info-row">
+                  <button
+                    className="btn btn-send-email"
+                    onClick={() => setEmailModalOpen(true)}
+                  >
+                    <Mail size={14} />
+                    이메일 보내기
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -7366,6 +7423,69 @@ function OrderDetail() {
                 ? `${yearsProgress.currentYear}년 ${yearsProgress.type === 'fortune' ? '재물운' : yearsProgress.type === 'career' ? '직장사회운' : '연애운'}을 AI가 작성하고 있습니다...`
                 : '처리 중...'}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* 이메일 발송 모달 */}
+      {emailModalOpen && (
+        <div className="modal-overlay" onClick={() => setEmailModalOpen(false)}>
+          <div className="email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="email-modal-header">
+              <h3><Mail size={20} /> 이메일 보내기</h3>
+              <button className="modal-close-btn" onClick={() => setEmailModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="email-modal-content">
+              <div className="email-field">
+                <label>수신자</label>
+                <input type="text" value={order.email} disabled />
+              </div>
+              <div className="email-field">
+                <label>제목</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="이메일 제목을 입력하세요"
+                />
+              </div>
+              <div className="email-field">
+                <label>내용</label>
+                <textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="이메일 내용을 입력하세요"
+                  rows={10}
+                />
+              </div>
+            </div>
+            <div className="email-modal-footer">
+              <button
+                className="btn btn-cancel"
+                onClick={() => setEmailModalOpen(false)}
+              >
+                취소
+              </button>
+              <button
+                className="btn btn-send"
+                onClick={sendCustomEmail}
+                disabled={sendingEmail}
+              >
+                {sendingEmail ? (
+                  <>
+                    <Loader size={16} className="spinning" />
+                    발송 중...
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} />
+                    발송
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

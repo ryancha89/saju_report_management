@@ -27,6 +27,7 @@ function Profile() {
   const [referralCode, setReferralCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [commissionRate, setCommissionRate] = useState(50);
+  const [products, setProducts] = useState(null);
   const isProfileCompleted = manager?.profile_completed;
   const isAdmin = manager?.role === 'admin';
 
@@ -65,6 +66,9 @@ function Profile() {
           });
           setReferralCode(data.profile.referral_code || '');
           setCommissionRate(data.profile.commission_rate || 50);
+          if (data.products) {
+            setProducts(data.products);
+          }
         }
       }
     } catch (err) {
@@ -209,7 +213,7 @@ function Profile() {
       )}
 
       {/* 판매 링크 섹션 - 매니저만 표시 (프로필 완료 후) */}
-      {!isAdmin && isProfileCompleted && referralCode && (
+      {!isAdmin && isProfileCompleted && referralCode && products && (
         <div className="referral-section">
           <h2>
             <Link size={18} />
@@ -220,7 +224,7 @@ function Profile() {
           </p>
           <div className="referral-links">
             <div className="referral-link-item">
-              <span className="link-label">Blueprint Pro (5년)</span>
+              <span className="link-label">{products.blueprint?.display_name || 'Blueprint Pro'}</span>
               <div className="link-box">
                 <input
                   type="text"
@@ -237,7 +241,7 @@ function Profile() {
               </div>
             </div>
             <div className="referral-link-item">
-              <span className="link-label">Blueprint Lite (3년)</span>
+              <span className="link-label">{products.blueprint_lite?.display_name || 'Blueprint Lite'}</span>
               <div className="link-box">
                 <input
                   type="text"
@@ -258,7 +262,7 @@ function Profile() {
       )}
 
       {/* 수익 정보 섹션 - 매니저만 표시 (프로필 완료 후) */}
-      {!isAdmin && isProfileCompleted && (
+      {!isAdmin && isProfileCompleted && products && (
         <div className="revenue-section">
           <h2>
             <DollarSign size={18} />
@@ -278,12 +282,13 @@ function Profile() {
             </div>
 
             {/* Blueprint Pro */}
-            {(() => {
-              const rev = calculateRevenue(99000);
+            {products.blueprint && (() => {
+              const price = products.blueprint.price;
+              const rev = calculateRevenue(price);
               return (
                 <div className="revenue-row">
-                  <span className="product-name">Blueprint Pro</span>
-                  <span>99,000원</span>
+                  <span className="product-name">{products.blueprint.name}</span>
+                  <span>{price.toLocaleString()}원</span>
                   <span>{rev.grossRevenue.toLocaleString()}원</span>
                   <span className="tax">-{rev.withholdingTax.toLocaleString()}원</span>
                   <span className="net-revenue">{rev.netRevenue.toLocaleString()}원</span>
@@ -292,12 +297,13 @@ function Profile() {
             })()}
 
             {/* Blueprint Lite */}
-            {(() => {
-              const rev = calculateRevenue(59000);
+            {products.blueprint_lite && (() => {
+              const price = products.blueprint_lite.price;
+              const rev = calculateRevenue(price);
               return (
                 <div className="revenue-row">
-                  <span className="product-name">Blueprint Lite</span>
-                  <span>59,000원</span>
+                  <span className="product-name">{products.blueprint_lite.name}</span>
+                  <span>{price.toLocaleString()}원</span>
                   <span>{rev.grossRevenue.toLocaleString()}원</span>
                   <span className="tax">-{rev.withholdingTax.toLocaleString()}원</span>
                   <span className="net-revenue">{rev.netRevenue.toLocaleString()}원</span>

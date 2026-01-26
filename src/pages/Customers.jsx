@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight, Loader, RefreshCw, X, Phone, Mail, ShoppingBag, Calendar, Eye } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Loader, RefreshCw, X, Phone, Mail, ShoppingBag, Calendar, Eye, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './Customers.css';
 
@@ -26,6 +26,13 @@ function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerDetail, setCustomerDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Email modal state
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const fetchCustomers = useCallback(async (page = 1) => {
     setLoading(true);
@@ -87,6 +94,60 @@ function Customers() {
       alert(err.message);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const openEmailModal = (email) => {
+    setEmailRecipient(email);
+    setEmailSubject('');
+    setEmailBody('');
+    setEmailModalOpen(true);
+  };
+
+  const closeEmailModal = () => {
+    setEmailModalOpen(false);
+    setEmailSubject('');
+    setEmailBody('');
+    setEmailRecipient('');
+  };
+
+  const sendCustomEmail = async () => {
+    if (!emailSubject.trim() || !emailBody.trim()) {
+      alert('제목과 내용을 모두 입력해주세요.');
+      return;
+    }
+
+    if (!emailRecipient) {
+      alert('이메일 주소가 없습니다.');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/send_custom_email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          to_email: emailRecipient,
+          subject: emailSubject,
+          body: emailBody
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '이메일 발송에 실패했습니다.');
+      }
+
+      alert('이메일이 발송되었습니다.');
+      closeEmailModal();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -333,6 +394,15 @@ function Customers() {
                       <Mail size={16} />
                       <span className="info-label">이메일</span>
                       <span className="info-value">{customerDetail.customer.email || '-'}</span>
+                      {customerDetail.customer.email && (
+                        <button
+                          className="btn-send-email"
+                          onClick={() => openEmailModal(customerDetail.customer.email)}
+                          title="이메일 보내기"
+                        >
+                          <Send size={14} />
+                        </button>
+                      )}
                     </div>
                     <div className="info-item">
                       <ShoppingBag size={16} />
@@ -396,6 +466,75 @@ function Customers() {
                 </div>
               </>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {emailModalOpen && (
+        <div className="modal-overlay" onClick={closeEmailModal}>
+          <div className="modal-content email-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>이메일 보내기</h2>
+              <button className="close-btn" onClick={closeEmailModal}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="email-modal-body">
+              <div className="email-field">
+                <label>받는 사람</label>
+                <input
+                  type="text"
+                  value={emailRecipient}
+                  disabled
+                  className="email-recipient"
+                />
+              </div>
+              <div className="email-field">
+                <label>제목</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="이메일 제목을 입력하세요"
+                />
+              </div>
+              <div className="email-field">
+                <label>내용</label>
+                <textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="이메일 내용을 입력하세요"
+                  rows={10}
+                />
+              </div>
+              <div className="email-actions">
+                <button
+                  className="btn-cancel"
+                  onClick={closeEmailModal}
+                  disabled={sendingEmail}
+                >
+                  취소
+                </button>
+                <button
+                  className="btn-send"
+                  onClick={sendCustomEmail}
+                  disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim()}
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader size={16} className="spinning" />
+                      발송 중...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      발송
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
