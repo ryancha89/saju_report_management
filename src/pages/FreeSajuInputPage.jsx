@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Sparkles, Loader } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
+import { initTracking, getTrackingData } from '../lib/tracking';
 import './FreeSajuInputPage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -26,6 +27,7 @@ const STEPS = [
 
 function FreeSajuInputPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [highestStep, setHighestStep] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -46,6 +48,14 @@ function FreeSajuInputPage() {
     gender: '',
     calendarType: 'solar',
   });
+
+  // Tracking initialization
+  useEffect(() => {
+    const trackingData = initTracking();
+    if (Object.keys(trackingData).length > 0) {
+      console.log('📊 Free Saju Tracking:', trackingData);
+    }
+  }, []);
 
   // Background color
   useEffect(() => {
@@ -94,8 +104,11 @@ function FreeSajuInputPage() {
     }
   };
 
+  const autoNextRef = useRef(false);
+
   const autoNext = (skipBirthPlace = false) => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep < STEPS.length - 1 && !autoNextRef.current) {
+      autoNextRef.current = true;
       setTimeout(() => {
         setCurrentStep(prev => {
           let nextStep;
@@ -108,6 +121,7 @@ function FreeSajuInputPage() {
           setIsEditing(false);
           return nextStep;
         });
+        autoNextRef.current = false;
       }, 300);
     }
   };
@@ -169,6 +183,9 @@ function FreeSajuInputPage() {
     const genderToUse = selectedGender || formData.gender;
     if (!genderToUse) return;
 
+    const startTime = Date.now();
+    const MIN_LOADING_TIME = 2000; // 최소 2초 로딩
+
     try {
       const [year, month, day] = formData.birthDate.split('-').map(Number);
       let hour = null;
@@ -219,6 +236,12 @@ function FreeSajuInputPage() {
         console.log('twelveGods 상세:', JSON.stringify(twelveGods, null, 2));
 
         if (saju) {
+          // 최소 로딩 시간 보장
+          const elapsed = Date.now() - startTime;
+          if (elapsed < MIN_LOADING_TIME) {
+            await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed));
+          }
+
           // Navigate to result page with saju data
           navigate('/free-saju/result', {
             state: {
@@ -260,7 +283,8 @@ function FreeSajuInputPage() {
                 birthTime: formData.birthTimeUnknown ? null : formData.birthTime,
                 gender: formData.gender,
                 calendarType: formData.calendarType,
-              }
+              },
+              trackingData: getTrackingData(),
             }
           });
         }
@@ -297,7 +321,7 @@ function FreeSajuInputPage() {
                   if (numbers.length === 8) {
                     apiFormat = `${numbers.slice(0, 4)}-${numbers.slice(4, 6)}-${numbers.slice(6, 8)}`;
                     if (!isEditing) {
-                      setTimeout(() => autoNext(), 300);
+                      autoNext();
                     }
                   }
 

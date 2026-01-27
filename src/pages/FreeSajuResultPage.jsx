@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Sparkles, ArrowRight, Star, ChevronDown, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Sparkles, ArrowRight, Star, ChevronDown, RefreshCw, Download } from 'lucide-react';
 import './FreeSajuResultPage.css';
 
 // Import 일주론 data
@@ -45,11 +45,15 @@ function FreeSajuResultPage() {
   // Get data from navigation state
   const sajuData = location.state?.sajuData;
   const birthInfo = location.state?.birthInfo;
+  const trackingData = location.state?.trackingData;
+
+  // Get ref code for blueprint navigation
+  const refCode = trackingData?.ref || null;
 
   // 디버깅용
   console.log('sajuData:', sajuData);
-  console.log('sipyi_sinsal:', sajuData?.sipyi_sinsal);
-  console.log('sipyi_unseong:', sajuData?.sipyi_unseong);
+  console.log('trackingData:', trackingData);
+  console.log('refCode:', refCode);
 
   // Redirect if no data
   useEffect(() => {
@@ -285,6 +289,7 @@ function FreeSajuResultPage() {
           </div>
           <h3>The Blueprint</h3>
           <p className="cta-subtitle">인생의 청사진을 그려보세요</p>
+          <p className="cta-desc">맞춤형 사주리포트</p>
           <ul className="cta-features">
             <li>평생 대운 분석</li>
             <li>5개년 운세 전략</li>
@@ -293,11 +298,46 @@ function FreeSajuResultPage() {
           </ul>
           <button
             className="cta-button"
-            onClick={() => navigate('/blueprint')}
+            onClick={() => navigate(refCode ? `/blueprint?ref=${refCode}` : '/blueprint')}
           >
             <span>자세히 알아보기</span>
             <ArrowRight size={18} />
           </button>
+        </div>
+
+        {/* App Promotion Section */}
+        <div className="app-promo-section">
+          <div className="app-promo-header">
+            <img src="/img/logo.png" alt="만세력 설명서" className="app-logo" />
+            <div className="app-info">
+              <h4>만세력 설명서</h4>
+              <p className="app-downloads">
+                <Download size={14} />
+                <span>누적 다운로드 70만+</span>
+              </p>
+            </div>
+          </div>
+          <p className="app-description">
+            더 깊은 사주 분석과 매일 운세를 앱에서 확인하세요
+          </p>
+          <div className="app-store-buttons">
+            <a
+              href="https://play.google.com/store/apps/details?id=com.ryancha.easy_saju_calendar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="store-btn google-play"
+            >
+              <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" />
+            </a>
+            <a
+              href="https://apps.apple.com/kr/app/%EB%A7%8C%EC%84%B8%EB%A0%A5-%EC%84%A4%EB%AA%85%EC%84%9C-%EB%A7%8C%EC%84%B8%EB%A0%A5-%EC%82%AC%EC%A3%BC-%EC%9A%B4%EC%84%B8-ai%EC%83%81%EB%8B%B4/id1551797792"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="store-btn app-store"
+            >
+              <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" />
+            </a>
+          </div>
         </div>
 
         {/* Back button */}

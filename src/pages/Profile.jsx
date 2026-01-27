@@ -133,7 +133,12 @@ function Profile() {
   };
 
   const handleCopyLink = async (product) => {
-    const link = `${REFERRAL_BASE_URL}/user-info?product=${product}&ref=${referralCode}`;
+    let link;
+    if (product === 'free-saju') {
+      link = `${REFERRAL_BASE_URL}/free-saju?ref=${referralCode}`;
+    } else {
+      link = `${REFERRAL_BASE_URL}/user-info?product=${product}&ref=${referralCode}`;
+    }
     try {
       await navigator.clipboard.writeText(link);
       setCopied(product);
@@ -237,6 +242,23 @@ function Profile() {
             아래 링크를 통해 고객이 구매하면 해당 주문이 자동으로 배정됩니다.
           </p>
           <div className="referral-links">
+            <div className="referral-link-item">
+              <span className="link-label">무료 사주진단</span>
+              <div className="link-box">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${REFERRAL_BASE_URL}/free-saju?ref=${referralCode}`}
+                />
+                <button
+                  type="button"
+                  className="copy-btn"
+                  onClick={() => handleCopyLink('free-saju')}
+                >
+                  {copied === 'free-saju' ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
             <div className="referral-link-item">
               <span className="link-label">{products.blueprint?.display_name || 'Blueprint Pro'}</span>
               <div className="link-box">

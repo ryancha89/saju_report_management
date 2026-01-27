@@ -437,6 +437,9 @@
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.5);
   margin: 0;
+  text-align: left;
+  text-indent: 0;
+  white-space: normal;
 }
 
 .content-html {
@@ -525,7 +528,13 @@
 .cta-subtitle {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
-  margin: 0 0 24px 0;
+  margin: 0 0 8px 0;
+}
+
+.cta-desc {
+  font-size: 13px;
+  color: #a78bfa;
+  margin: 0 0 20px 0;
 }
 
 .cta-features {
@@ -569,6 +578,80 @@
 .cta-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(139, 92, 246, 0.5);
+}
+
+/* App Promotion Section */
+.app-promo-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.app-promo-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.app-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.app-info {
+  text-align: left;
+}
+
+.app-info h4 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.app-downloads {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #a78bfa;
+  margin: 0;
+}
+
+.app-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.app-store-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.store-btn {
+  display: block;
+  height: 40px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.store-btn img {
+  height: 100%;
+  width: auto;
+}
+
+.store-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
 }
 
 /* Back home button */
