@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronDown, Map, ArrowRight, Sparkles } from 'lucide-react';
+import { ChevronDown, Map, ArrowRight, Sparkles, Download } from 'lucide-react';
 import { initTracking } from '../lib/tracking';
 import './LandingPage.css';
 
@@ -205,6 +205,38 @@ function LandingPage() {
             <div className="free-saju-cta">
               <span>시작</span>
               <ArrowRight size={16} />
+            </div>
+          </div>
+        </section>
+
+        {/* App Promo Section */}
+        <section className="app-promo-landing">
+          <div className="app-promo-card">
+            <div className="app-promo-left">
+              <img src="/img/logo.png" alt="만세력 설명서" className="app-logo" />
+              <div className="app-promo-info">
+                <h4>만세력 설명서</h4>
+                <p className="app-downloads-landing">
+                  <Download size={12} />
+                  <span>누적 70만+ 다운로드</span>
+                </p>
+              </div>
+            </div>
+            <div className="app-store-links">
+              <a
+                href="https://play.google.com/store/apps/details?id=com.ryancha.easy_saju_calendar"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" />
+              </a>
+              <a
+                href="https://apps.apple.com/kr/app/%EB%A7%8C%EC%84%B8%EB%A0%A5-%EC%84%A4%EB%AA%85%EC%84%9C-%EB%A7%8C%EC%84%B8%EB%A0%A5-%EC%82%AC%EC%A3%BC-%EC%9A%B4%EC%84%B8-ai%EC%83%81%EB%8B%B4/id1551797792"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" />
+              </a>
             </div>
           </div>
         </section>

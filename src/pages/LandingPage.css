@@ -459,7 +459,7 @@ body:has(.landing-page) {
 
 /* Free Saju Section */
 .free-saju-section {
-  padding: 16px 20px;
+  padding: 16px 20px 12px;
 }
 
 .free-saju-card {
@@ -568,12 +568,76 @@ body:has(.landing-page) {
   transform: translateX(2px);
 }
 
+/* App Promo Section */
+.app-promo-landing {
+  padding: 0 20px 8px;
+}
+
+.app-promo-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+}
+
+.app-promo-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-promo-card .app-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.app-promo-info h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.app-downloads-landing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #a78bfa;
+  margin: 0;
+}
+
+.app-store-links {
+  display: flex;
+  gap: 8px;
+}
+
+.app-store-links a {
+  height: 28px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.app-store-links a img {
+  height: 100%;
+  width: auto;
+}
+
+.app-store-links a:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
 /* Features Section */
 .features-section {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  padding: 30px 20px;
+  padding: 12px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   margin: 20px 0;
