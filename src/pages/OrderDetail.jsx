@@ -4924,6 +4924,37 @@ function OrderDetail() {
             </div>
           )}
 
+          {/* 고객 리뷰 */}
+          {order.review && (
+            <div className="detail-card review-card">
+              <div className="card-header">
+                <span style={{ fontSize: '20px' }}>
+                  {order.review.rating === 'helpful' ? '👍' :
+                   order.review.rating === 'fun' ? '😊' :
+                   order.review.rating === 'educational' ? '📚' :
+                   order.review.rating === 'encouraging' ? '💪' : '👍'}
+                </span>
+                <h3>고객 리뷰</h3>
+                <span className={`review-status-badge ${order.review.status}`}>
+                  {order.review.status === 'approved' ? '승인됨' :
+                   order.review.status === 'rejected' ? '거절됨' : '대기중'}
+                </span>
+              </div>
+              <div className="card-content">
+                <div className="info-row">
+                  <label>평점</label>
+                  <span>{order.review.rating_label}</span>
+                </div>
+                <div className="review-content-box">
+                  {order.review.content || '내용 없음'}
+                </div>
+                <div className="review-meta">
+                  작성일: {new Date(order.review.created_at).toLocaleString('ko-KR')}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 리포트 질문 (Chapter 10 Q&A) */}
           {chapter10Question && (
             <div className="detail-card chapter10-qa-card">

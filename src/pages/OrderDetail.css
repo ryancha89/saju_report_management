@@ -8164,6 +8164,64 @@
   font-style: italic;
 }
 
+/* 고객 리뷰 카드 */
+.review-card {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.review-card .card-header {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.review-card .card-header h3 {
+  color: #16a34a;
+  flex: 1;
+}
+
+.review-status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.review-status-badge.approved {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.review-status-badge.pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: #d97706;
+}
+
+.review-status-badge.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.review-content-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  font-size: 0.95rem;
+  color: #334155;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.review-meta {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: right;
+}
+
 /* Chapter 10 리포트 Q&A 카드 */
 .chapter10-qa-card {
   border-color: rgba(251, 146, 60, 0.3);
@@ -8183,6 +8241,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.chapter10-qa-card .card-content {
+  padding-bottom: 8px;
 }
 
 .qa-status-badge {
