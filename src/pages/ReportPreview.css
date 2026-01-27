@@ -4641,9 +4641,9 @@ h3.coaching-item-topic:active {
 
 /* Green Monkey Video */
 .chapter-display.chapter-1-bg .profile-video-container {
-  width: 100%;
-  max-width: 200px;
-  margin: 24px auto;
+  width: 100% !important;
+  max-width: 200px !important;
+  margin: 24px auto !important;
   border: 2px solid #444444;
   border-radius: 8px;
   overflow: hidden;
@@ -4651,8 +4651,9 @@ h3.coaching-item-topic:active {
 }
 
 .chapter-display.chapter-1-bg .green-monkey-video {
-  width: 100%;
-  height: auto;
+  width: 100% !important;
+  max-width: 200px !important;
+  height: auto !important;
   display: block;
 }
 
