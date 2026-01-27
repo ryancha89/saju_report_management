@@ -107,7 +107,7 @@ export function AuthProvider({ children }) {
   };
 
   const isAdmin = () => {
-    return manager?.role === 'admin';
+    return manager?.role?.toLowerCase() === 'admin';
   };
 
   const isProfileCompleted = () => {

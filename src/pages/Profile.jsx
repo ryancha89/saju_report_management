@@ -47,7 +47,7 @@ function Profile() {
   const [commissionRate, setCommissionRate] = useState(50);
   const products = PRODUCTS_CONFIG;
   const isProfileCompleted = manager?.profile_completed;
-  const isAdmin = manager?.role === 'admin';
+  const isAdmin = manager?.role?.toLowerCase() === 'admin';
 
   // 수익 계산 함수
   const calculateRevenue = (price) => {
@@ -232,8 +232,8 @@ function Profile() {
         </div>
       )}
 
-      {/* 판매 링크 섹션 - 매니저만 표시 (프로필 완료 후) */}
-      {!isAdmin && isProfileCompleted && referralCode && products && (
+      {/* 판매 링크 섹션 */}
+      {referralCode && products && (
         <div className="referral-section">
           <h2>
             <Link size={18} />
@@ -298,8 +298,8 @@ function Profile() {
         </div>
       )}
 
-      {/* 수익 정보 섹션 - 매니저만 표시 (프로필 완료 후) */}
-      {!isAdmin && isProfileCompleted && products && (
+      {/* 수익 정보 섹션 */}
+      {products && (
         <div className="revenue-section">
           <h2>
             <DollarSign size={18} />
