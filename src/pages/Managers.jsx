@@ -288,7 +288,7 @@ function Managers() {
                   </div>
                   <div className="detail-item">
                     <span className="label">역할</span>
-                    <span className="value">{viewingManager.role === 'admin' ? '관리자' : '매니저'}</span>
+                    <span className="value">{viewingManager.role?.toLowerCase() === 'admin' ? '관리자' : '매니저'}</span>
                   </div>
                   <div className="detail-item">
                     <span className="label">프로필 상태</span>

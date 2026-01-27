@@ -3795,6 +3795,77 @@ h3.coaching-item-topic:active {
   color: #94a3b8 !important;
 }
 
+/* Q&A Security Notice (for Chapter 10) */
+.qa-security-notice {
+  text-align: center;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: 16px;
+}
+
+.qa-security-notice .qa-security-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.qa-security-notice h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.qa-security-notice p {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0 0 8px 0;
+  line-height: 1.6;
+}
+
+.qa-security-notice .qa-email-hint {
+  font-size: 0.9rem;
+  color: #818cf8;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.qa-security-notice .qa-status-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(129, 140, 248, 0.15);
+}
+
+.qa-security-notice .qa-count {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #475569;
+  background: rgba(129, 140, 248, 0.1);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.qa-security-notice .qa-status-badge {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.qa-security-notice .qa-status-badge.answered {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.qa-security-notice .qa-status-badge.pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: #d97706;
+}
+
 /* ========== 부록 (Appendix) ========== */
 .appendix-content {
   padding: 20px 0;
@@ -3821,7 +3892,8 @@ h3.coaching-item-topic:active {
 }
 
 .appendix-question-section {
-  background: #f8fafc;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(124, 58, 237, 0.12) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 16px;
   padding: 24px;
 }
@@ -3833,39 +3905,45 @@ h3.coaching-item-topic:active {
 
 .appendix-question-submitted h3 {
   font-size: 1.1rem;
-  color: #334155;
+  color: #e2e8f0;
   margin: 0 0 12px 0;
 }
 
 .appendix-question-submitted p {
-  color: #64748b;
+  color: #a1a1aa;
   margin: 0;
 }
 
 .link-btn {
   background: none;
   border: none;
-  color: #8b5cf6;
+  color: #a78bfa;
   text-decoration: underline;
   cursor: pointer;
   font-size: inherit;
   padding: 0;
+  transition: color 0.2s;
 }
 
 .link-btn:hover {
-  color: #7c3aed;
+  color: #c4b5fd;
 }
 
 .appendix-question-form h3 {
   font-size: 1.1rem;
-  color: #334155;
+  color: #e2e8f0;
   margin: 0 0 8px 0;
 }
 
 .appendix-question-form .question-limit-notice {
-  color: #64748b;
+  color: #a1a1aa;
   font-size: 0.9rem;
   margin: 0 0 16px 0;
+}
+
+.appendix-question-form .question-limit-notice .remaining-count {
+  color: #a78bfa;
+  font-weight: 500;
 }
 
 .appendix-question-form .question-input-group {
@@ -3876,47 +3954,79 @@ h3.coaching-item-topic:active {
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #374151;
+  color: #c4b5fd;
   margin-bottom: 8px;
 }
 
 .appendix-question-form .question-textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 8px;
   font-size: 0.95rem;
   resize: vertical;
   min-height: 100px;
   margin-bottom: 12px;
   font-family: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.appendix-question-form .question-textarea::placeholder {
+  color: #71717a;
 }
 
 .appendix-question-form .question-textarea:focus {
   outline: none;
   border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .appendix-question-form .question-email-input {
   width: 100%;
   padding: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 8px;
   font-size: 0.95rem;
   margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.appendix-question-form .question-email-input::placeholder {
+  color: #71717a;
 }
 
 .appendix-question-form .question-email-input:focus {
   outline: none;
   border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .appendix-question-form .question-error {
-  color: #ef4444;
+  color: #f87171;
   font-size: 0.85rem;
   margin-bottom: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.appendix-question-limit-reached {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.appendix-question-limit-reached p {
+  color: #a1a1aa;
+  margin: 0;
+  font-size: 0.95rem;
 }
 
 .appendix-question-form .btn-submit-question {
@@ -3925,25 +4035,28 @@ h3.coaching-item-topic:active {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px;
+  padding: 14px 20px;
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 .appendix-question-form .btn-submit-question:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
 }
 
 .appendix-question-form .btn-submit-question:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 리뷰 섹션 */
@@ -4559,6 +4672,23 @@ h3.coaching-item-topic:active {
   margin: 0 0 16px 0;
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qa-security-notice-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(129, 140, 248, 0.1);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.qa-security-notice-compact .qa-lock-icon {
+  font-size: 1rem;
 }
 
 .appendix-question-item {

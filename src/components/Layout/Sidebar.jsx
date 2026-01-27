@@ -50,7 +50,7 @@ function Sidebar() {
           <span className="user-name">{manager?.display_name || manager?.name || '사용자'}</span>
           <span className={`user-role ${manager?.role}`}>
             {isAdmin() && <Crown size={12} />}
-            {manager?.role === 'admin' ? '관리자' : '매니저'}
+            {manager?.role?.toLowerCase() === 'admin' ? '관리자' : '매니저'}
           </span>
         </div>
       </div>

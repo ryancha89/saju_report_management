@@ -47,7 +47,7 @@ function Profile() {
   const [commissionRate, setCommissionRate] = useState(50);
   const products = PRODUCTS_CONFIG;
   const isProfileCompleted = manager?.profile_completed;
-  const isAdmin = manager?.role === 'admin';
+  const isAdmin = manager?.role?.toLowerCase() === 'admin';
 
   // 수익 계산 함수
   const calculateRevenue = (price) => {
@@ -232,74 +232,82 @@ function Profile() {
         </div>
       )}
 
-      {/* 판매 링크 섹션 - 매니저만 표시 (프로필 완료 후) */}
-      {!isAdmin && isProfileCompleted && referralCode && products && (
+      {/* 판매 링크 섹션 */}
+      {products && (
         <div className="referral-section">
           <h2>
             <Link size={18} />
             내 판매 링크
           </h2>
-          <p className="referral-description">
-            아래 링크를 통해 고객이 구매하면 해당 주문이 자동으로 배정됩니다.
-          </p>
-          <div className="referral-links">
-            <div className="referral-link-item">
-              <span className="link-label">무료 사주진단</span>
-              <div className="link-box">
-                <input
-                  type="text"
-                  readOnly
-                  value={`${REFERRAL_BASE_URL}/free-saju?ref=${referralCode}`}
-                />
-                <button
-                  type="button"
-                  className="copy-btn"
-                  onClick={() => handleCopyLink('free-saju')}
-                >
-                  {copied === 'free-saju' ? <Check size={16} /> : <Copy size={16} />}
-                </button>
+          {referralCode ? (
+            <>
+              <p className="referral-description">
+                아래 링크를 통해 고객이 구매하면 해당 주문이 자동으로 배정됩니다.
+              </p>
+              <div className="referral-links">
+                <div className="referral-link-item">
+                  <span className="link-label">무료 사주진단</span>
+                  <div className="link-box">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${REFERRAL_BASE_URL}/free-saju?ref=${referralCode}`}
+                    />
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => handleCopyLink('free-saju')}
+                    >
+                      {copied === 'free-saju' ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="referral-link-item">
+                  <span className="link-label">{products.blueprint?.display_name || 'Blueprint Pro'}</span>
+                  <div className="link-box">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${REFERRAL_BASE_URL}/user-info?product=blueprint&ref=${referralCode}`}
+                    />
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => handleCopyLink('blueprint')}
+                    >
+                      {copied === 'blueprint' ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="referral-link-item">
+                  <span className="link-label">{products.blueprint_lite?.display_name || 'Blueprint Lite'}</span>
+                  <div className="link-box">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${REFERRAL_BASE_URL}/user-info?product=blueprint_lite&ref=${referralCode}`}
+                    />
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => handleCopyLink('blueprint_lite')}
+                    >
+                      {copied === 'blueprint_lite' ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="referral-link-item">
-              <span className="link-label">{products.blueprint?.display_name || 'Blueprint Pro'}</span>
-              <div className="link-box">
-                <input
-                  type="text"
-                  readOnly
-                  value={`${REFERRAL_BASE_URL}/user-info?product=blueprint&ref=${referralCode}`}
-                />
-                <button
-                  type="button"
-                  className="copy-btn"
-                  onClick={() => handleCopyLink('blueprint')}
-                >
-                  {copied === 'blueprint' ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-            </div>
-            <div className="referral-link-item">
-              <span className="link-label">{products.blueprint_lite?.display_name || 'Blueprint Lite'}</span>
-              <div className="link-box">
-                <input
-                  type="text"
-                  readOnly
-                  value={`${REFERRAL_BASE_URL}/user-info?product=blueprint_lite&ref=${referralCode}`}
-                />
-                <button
-                  type="button"
-                  className="copy-btn"
-                  onClick={() => handleCopyLink('blueprint_lite')}
-                >
-                  {copied === 'blueprint_lite' ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <p className="referral-description" style={{ color: '#999' }}>
+              추천 코드가 아직 생성되지 않았습니다. 관리자에게 문의해주세요.
+            </p>
+          )}
         </div>
       )}
 
-      {/* 수익 정보 섹션 - 매니저만 표시 (프로필 완료 후) */}
-      {!isAdmin && isProfileCompleted && products && (
+      {/* 수익 정보 섹션 */}
+      {products && (
         <div className="revenue-section">
           <h2>
             <DollarSign size={18} />

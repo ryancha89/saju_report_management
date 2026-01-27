@@ -2986,46 +2986,21 @@ function ReportPreview({ isAdminPreview = false }) {
       );
     }
 
+    // 보안을 위해 질문/답변 내용을 숨기고 이메일 확인 안내
     return (
       <div className="qa-chapter-content">
-        <div className="qa-chapter-question">
-          <div className="qa-chapter-label">질문</div>
-          <div className="qa-chapter-text">{qaStatus.question?.content}</div>
-          <div className="qa-chapter-meta">
-            {qaStatus.question?.submitted_at && (
-              <span>
-                제출일: {new Date(qaStatus.question.submitted_at).toLocaleDateString('ko-KR')}
-              </span>
-            )}
+        <div className="qa-security-notice">
+          <div className="qa-security-icon">🔒</div>
+          <h3>질문과 답변은 이메일로 확인하세요</h3>
+          <p>보안을 위해 질문과 답변 내용은 이메일로만 확인하실 수 있습니다.</p>
+          <p className="qa-email-hint">등록하신 이메일을 확인해주세요.</p>
+          <div className="qa-status-info">
+            <span className="qa-count">질문 {qaStatus.question_count || 1}개</span>
+            <span className={`qa-status-badge ${qaStatus.status}`}>
+              {qaStatus.status === 'answered' ? '✓ 답변 완료' : '⏳ 답변 대기중'}
+            </span>
           </div>
         </div>
-
-        {qaStatus.status === 'answered' && qaStatus.answer ? (
-          <div className="qa-chapter-answer">
-            <div className="qa-chapter-label">상담사 답변</div>
-            <div className="qa-chapter-text">
-              {qaStatus.answer.content?.split('\n').map((paragraph, idx) => (
-                paragraph.trim() && <p key={idx}>{paragraph}</p>
-              ))}
-            </div>
-            <div className="qa-chapter-meta">
-              {qaStatus.answer.answered_by && (
-                <span>답변: {qaStatus.answer.answered_by}</span>
-              )}
-              {qaStatus.answer.answered_at && (
-                <span>
-                  답변일: {new Date(qaStatus.answer.answered_at).toLocaleDateString('ko-KR')}
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="qa-chapter-pending">
-            <div className="qa-pending-icon">⏳</div>
-            <p>상담사가 답변을 준비 중입니다.</p>
-            <p className="qa-pending-note">답변이 완료되면 이메일로 알려드립니다.</p>
-          </div>
-        )}
       </div>
     );
   };
@@ -3110,10 +3085,14 @@ function ReportPreview({ isAdminPreview = false }) {
         {/* 질문 섹션 */}
         <div className="appendix-question-section">
 
-            {/* 제출된 질문들 표시 */}
+            {/* 제출된 질문들 표시 - 보안을 위해 내용 숨김 */}
             {qaStatus?.questions?.length > 0 && (
               <div className="appendix-questions-list">
                 <h3>제출된 질문 ({qaStatus.question_count}/{qaStatus.max_questions})</h3>
+                <div className="qa-security-notice-compact">
+                  <span className="qa-lock-icon">🔒</span>
+                  <span>질문과 답변 내용은 이메일로 확인하세요</span>
+                </div>
                 {qaStatus.questions.map((q, idx) => (
                   <div key={idx} className="appendix-question-item">
                     <div className="question-item-header">
@@ -3122,13 +3101,6 @@ function ReportPreview({ isAdminPreview = false }) {
                         {q.status === 'answered' ? '답변 완료' : '답변 대기'}
                       </span>
                     </div>
-                    <div className="question-item-content">{q.content}</div>
-                    {q.status === 'answered' && q.answer && (
-                      <div className="question-item-answer">
-                        <strong>답변:</strong> {q.answer.content?.substring(0, 100)}...
-                        <button className="link-btn" onClick={() => setCurrentChapter(10)}>전체 답변 보기</button>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
