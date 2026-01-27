@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Check, Sparkles, ChevronDown, Star } from 'lucide-react';
+import { PRICING } from '../lib/pricing';
 import './BlueprintIntroPage.css';
 
 function BlueprintIntroPage() {
@@ -53,17 +54,17 @@ function BlueprintIntroPage() {
       name: 'PRO',
       title: '인생 청사진',
       subtitle: '평생 대운 + 5개년 전략',
-      originalPrice: 150000,
-      currentPrice: 77000,
-      discount: 40
+      originalPrice: PRICING.BLUEPRINT_PRO.originalPrice,
+      currentPrice: PRICING.BLUEPRINT_PRO.currentPrice,
+      discount: Math.round((1 - PRICING.BLUEPRINT_PRO.currentPrice / PRICING.BLUEPRINT_PRO.originalPrice) * 100)
     },
     lite: {
       name: 'LITE',
       title: '3년 플랜',
       subtitle: '현재/다음 대운 + 3개년 운세',
-      originalPrice: 99000,
-      currentPrice: 44900,
-      discount: 50
+      originalPrice: PRICING.BLUEPRINT_LITE.originalPrice,
+      currentPrice: PRICING.BLUEPRINT_LITE.currentPrice,
+      discount: Math.round((1 - PRICING.BLUEPRINT_LITE.currentPrice / PRICING.BLUEPRINT_LITE.originalPrice) * 100)
     }
   };
 

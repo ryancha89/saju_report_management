@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download, Copy, Check } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking } from '../lib/tracking';
+import { PRICING } from '../lib/pricing';
 import Payment from '../components/Payment';
 import './UserInfoPage.css';
 
@@ -15,14 +16,14 @@ const PRODUCT_INFO = {
     id: 'blueprint',
     name: 'The Blueprint: 당신만을 위한 인생 최적화 가이드',
     description: '평생 대운과 5개년도의 전략 리포트',
-    price: 99000,
+    price: PRICING.BLUEPRINT_PRO.currentPrice,
     yearCount: 5
   },
   blueprint_lite: {
     id: 'blueprint_lite',
     name: 'The Blueprint Lite: 3년 플랜',
     description: '현재/다음 대운과 3개년 운세 리포트',
-    price: 59000,
+    price: PRICING.BLUEPRINT_LITE.currentPrice,
     yearCount: 3
   },
   new_year: { id: 'new_year', name: '2026 신년운세 리포트', price: 29000 },

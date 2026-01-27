@@ -814,6 +814,71 @@ body:has(.landing-page) {
   .feature-box {
     padding: 12px 4px;
   }
+
+  /* Free Saju Card Mobile */
+  .free-saju-card {
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .free-saju-left {
+    gap: 10px;
+  }
+
+  .free-saju-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .free-saju-label h3 {
+    font-size: 0.9rem;
+  }
+
+  .free-saju-text p {
+    font-size: 0.75rem;
+  }
+
+  .free-saju-cta {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+
+  /* App Promo Card Mobile */
+  .app-promo-card {
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .app-promo-left {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .app-promo-info {
+    text-align: center;
+  }
+
+  .app-promo-info h4 {
+    font-size: 0.95rem;
+  }
+
+  .app-downloads-landing {
+    justify-content: center;
+  }
+
+  .app-store-links {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .app-store-links a {
+    height: 32px;
+  }
 }
 
 /* Scrollbar */
