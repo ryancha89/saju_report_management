@@ -174,6 +174,10 @@ function ReportPreview({ isAdminPreview = false }) {
       if (data.report.counselor_key_points) {
         setKeyPoints(data.report.counselor_key_points);
       }
+      // 이메일 기본값 설정
+      if (data.report.order?.email) {
+        setQuestionEmail(data.report.order.email);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -200,6 +204,11 @@ function ReportPreview({ isAdminPreview = false }) {
       console.log('[fetchQaStatus] Response data:', data);
       if (data.success) {
         setQaStatus(data);
+        // 질문1 이메일 > ORDER 이메일 순으로 기본값 설정
+        const prevEmail = data.question?.user_email || data.questions?.[0]?.user_email;
+        if (prevEmail) {
+          setQuestionEmail(prevEmail);
+        }
       } else {
         console.error('[fetchQaStatus] API returned error:', data.error);
       }
@@ -3111,10 +3120,10 @@ function ReportPreview({ isAdminPreview = false }) {
                 {/* 질문 입력 필드들 - remaining_questions 수만큼 표시 */}
                 {Array.from({ length: Math.min(qaStatus?.remaining_questions || qaStatus?.max_questions || 1, 2) }).map((_, idx) => (
                   <div key={idx} className="question-input-group">
-                    <label className="question-input-label">질문 {idx + 1}</label>
+                    <label className="question-input-label">질문 {(qaStatus?.question_count || 0) + idx + 1}</label>
                     <textarea
                       className="question-textarea"
-                      placeholder={`질문 ${idx + 1}을 입력해주세요...`}
+                      placeholder={`질문 ${(qaStatus?.question_count || 0) + idx + 1}을 입력해주세요...`}
                       value={questionTexts[idx] || ''}
                       onChange={(e) => updateQuestionText(idx, e.target.value)}
                       rows={3}
