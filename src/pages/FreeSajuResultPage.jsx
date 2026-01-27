@@ -186,7 +186,7 @@ function FreeSajuResultPage() {
             {/* 천간 십성 row */}
             <div className="pillars-row sipsung-row cheongan-sipsung-row">
               <div className="row-label">천간십성</div>
-              <div className="pillar-cell">{sajuData.sipsung_cheongan?.time || '-'}</div>
+              <div className="pillar-cell">{birthInfo.birthTimeUnknown ? '?' : (sajuData.sipsung_cheongan?.time || '-')}</div>
               <div className="pillar-cell highlight">일간</div>
               <div className="pillar-cell">{sajuData.sipsung_cheongan?.month || '-'}</div>
               <div className="pillar-cell">{sajuData.sipsung_cheongan?.year || '-'}</div>
@@ -194,7 +194,7 @@ function FreeSajuResultPage() {
             {/* 천간 row */}
             <div className="pillars-row cheongan-row">
               <div className="row-label">천간</div>
-              <div className="pillar-cell">{sajuData.ganji_time?.[0] || '?'}</div>
+              <div className="pillar-cell">{birthInfo.birthTimeUnknown ? '?' : (sajuData.ganji_time?.[0] || '?')}</div>
               <div className="pillar-cell highlight">{sajuData.ganji_day?.[0] || '?'}</div>
               <div className="pillar-cell">{sajuData.ganji_month?.[0] || '?'}</div>
               <div className="pillar-cell">{sajuData.ganji_year?.[0] || '?'}</div>
@@ -202,7 +202,7 @@ function FreeSajuResultPage() {
             {/* 지지 row */}
             <div className="pillars-row jiji-row">
               <div className="row-label">지지</div>
-              <div className="pillar-cell">{sajuData.ganji_time?.[1] || '?'}</div>
+              <div className="pillar-cell">{birthInfo.birthTimeUnknown ? '?' : (sajuData.ganji_time?.[1] || '?')}</div>
               <div className="pillar-cell highlight">{sajuData.ganji_day?.[1] || '?'}</div>
               <div className="pillar-cell">{sajuData.ganji_month?.[1] || '?'}</div>
               <div className="pillar-cell">{sajuData.ganji_year?.[1] || '?'}</div>
@@ -210,7 +210,7 @@ function FreeSajuResultPage() {
             {/* 지지 십성 row */}
             <div className="pillars-row sipsung-row jiji-sipsung-row">
               <div className="row-label">지지십성</div>
-              <div className="pillar-cell">{sajuData.sipsung_jiji?.time || '-'}</div>
+              <div className="pillar-cell">{birthInfo.birthTimeUnknown ? '?' : (sajuData.sipsung_jiji?.time || '-')}</div>
               <div className="pillar-cell">{sajuData.sipsung_jiji?.day || '-'}</div>
               <div className="pillar-cell">{sajuData.sipsung_jiji?.month || '-'}</div>
               <div className="pillar-cell">{sajuData.sipsung_jiji?.year || '-'}</div>
@@ -218,7 +218,7 @@ function FreeSajuResultPage() {
             {/* 십이운성 row */}
             <div className="pillars-row unseong-row">
               <div className="row-label">12운성</div>
-              <div className="pillar-cell">{sajuData.sipyi_unseong?.time || '-'}</div>
+              <div className="pillar-cell">{birthInfo.birthTimeUnknown ? '?' : (sajuData.sipyi_unseong?.time || '-')}</div>
               <div className="pillar-cell">{sajuData.sipyi_unseong?.day || '-'}</div>
               <div className="pillar-cell">{sajuData.sipyi_unseong?.month || '-'}</div>
               <div className="pillar-cell">{sajuData.sipyi_unseong?.year || '-'}</div>
@@ -226,7 +226,7 @@ function FreeSajuResultPage() {
             {/* 십이신살 row */}
             <div className="pillars-row sinsal-row">
               <div className="row-label">12신살</div>
-              <div className="pillar-cell">{sajuData.sipyi_sinsal?.time || '-'}</div>
+              <div className="pillar-cell">{birthInfo.birthTimeUnknown ? '?' : (sajuData.sipyi_sinsal?.time || '-')}</div>
               <div className="pillar-cell">{sajuData.sipyi_sinsal?.day || '-'}</div>
               <div className="pillar-cell">{sajuData.sipyi_sinsal?.month || '-'}</div>
               <div className="pillar-cell">{sajuData.sipyi_sinsal?.year || '-'}</div>

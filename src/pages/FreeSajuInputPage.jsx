@@ -281,6 +281,7 @@ function FreeSajuInputPage() {
               birthInfo: {
                 birthDate: formData.birthDate,
                 birthTime: formData.birthTimeUnknown ? null : formData.birthTime,
+                birthTimeUnknown: formData.birthTimeUnknown,
                 gender: formData.gender,
                 calendarType: formData.calendarType,
               },
