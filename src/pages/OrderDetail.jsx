@@ -2895,9 +2895,17 @@ function OrderDetail() {
     if (!chapter3Data?.content && !chapter3Data?.decade_flow) missingChapters.push('chapter3');
     if (!fiveYearFortuneData?.content && (!fiveYearFortuneData?.years || fiveYearFortuneData.years.length === 0)) missingChapters.push('chapter4');
 
-    // 재물운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
+    // 재물운 - 실제 generated_content 또는 content_sections가 있는지 확인
     const hasFortuneContent = fortuneEditorData && fortuneEditorData.length > 0 &&
-      fortuneEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
+      fortuneEditorData.some(item => {
+        // generated_content 문자열 체크
+        if (typeof item.generated_content === 'string' && item.generated_content.trim().length > 0) return true;
+        // generated_content 객체 체크
+        if (typeof item.generated_content === 'object' && (item.generated_content?.sky || item.generated_content?.earth)) return true;
+        // content_sections 객체 체크
+        if (item.content_sections && (item.content_sections.sky || item.content_sections.earth || item.content_sections.johu || item.content_sections.summary)) return true;
+        return false;
+      });
     if (!hasFortuneContent) missingChapters.push('fortune');
 
     // 직업운 - 실제 generated_content가 있는지 확인 (문자열 또는 객체 타입 체크)
@@ -2915,9 +2923,15 @@ function OrderDetail() {
       });
     if (!hasCareerContent) missingChapters.push('career');
 
-    // 연애운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
+    // 연애운 - 실제 generated_content 또는 content_sections가 있는지 확인
     const hasLoveContent = loveFortuneData?.yearlyLoveFortunes && loveFortuneData.yearlyLoveFortunes.length > 0 &&
-      loveFortuneData.yearlyLoveFortunes.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
+      loveFortuneData.yearlyLoveFortunes.some(item => {
+        // generated_content 문자열 체크
+        if (typeof item.generated_content === 'string' && item.generated_content.trim().length > 0) return true;
+        // content_sections 객체 체크
+        if (item.content_sections && (item.content_sections.sky || item.content_sections.earth || item.content_sections.johu || item.content_sections.summary)) return true;
+        return false;
+      });
     if (!hasLoveContent) missingChapters.push('love');
 
     // 코칭 - 실제 content가 있는지 확인 (문자열 타입 체크 포함)
@@ -3201,38 +3215,59 @@ function OrderDetail() {
         }
       }
 
-      // 연애운 생성
+      // 연애운 생성 - 연도별 순차 호출
       if (missingChapters.includes('love')) {
         setGeneratingChapter(7);
-        setLoveProgress({ progress: 50, message: '연애운 생성 중...' });
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-            body: JSON.stringify({ year_count: yearCount })
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            const loveResult = {
-              baseAnalysis: {},
-              yearlyLoveFortunes: data.yearly_love_fortunes || [{ year: new Date().getFullYear(), generated_content: data.content || '' }]
-            };
-            setLoveFortuneData(loveResult);
-            await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+        const currentYear = new Date().getFullYear();
+        const yearsToGenerate = Array.from({ length: yearCount }, (_, i) => currentYear + i);
+        const loveResults = [];
+        let loveFailed = false;
+
+        for (let i = 0; i < yearsToGenerate.length; i++) {
+          const year = yearsToGenerate[i];
+          setLoveProgress({ progress: Math.round(((i + 1) / yearsToGenerate.length) * 100), message: `연애운 ${year}년 생성 중... (${i + 1}/${yearsToGenerate.length})` });
+
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_love_fortune`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
-              body: JSON.stringify({ love_fortune_data: loveResult })
+              body: JSON.stringify({ year })
             });
-            results.push('연애운 ✓');
-          } else {
-            results.push('연애운 ✗');
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+              loveResults.push({
+                year,
+                generated_content: data.generated_content || data.content || '',
+                content_sections: data.content_sections
+              });
+            } else {
+              console.error(`연애운 ${year}년 생성 실패:`, data.error);
+              loveFailed = true;
+            }
+          } catch (err) {
+            console.error(`연애운 ${year}년 생성 실패:`, err);
+            loveFailed = true;
           }
-        } catch (err) {
-          results.push('연애운 ✗');
-          console.error('연애운 생성 실패:', err);
-        } finally {
-          setLoveProgress(null);
         }
+
+        // 결과 저장
+        if (loveResults.length > 0) {
+          const loveResult = {
+            baseAnalysis: {},
+            yearlyLoveFortunes: loveResults
+          };
+          setLoveFortuneData(loveResult);
+          await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_love_fortune`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
+            body: JSON.stringify({ love_fortune_data: loveResult })
+          });
+          results.push(loveFailed ? '연애운 △' : '연애운 ✓');
+        } else {
+          results.push('연애운 ✗');
+        }
+        setLoveProgress(null);
       }
 
       // 코칭 생성

@@ -720,8 +720,8 @@ function YearFortuneEditor({
               </div>
             </div>
           ) : yearData.content_sections && (yearData.content_sections.sky || yearData.content_sections.earth || yearData.content_sections.johu || yearData.content_sections.summary) ? (
-            <div className="generated-content-section sectioned">
-              <div className="content-title">생성된 재물운</div>
+            <div className="generated-content-section" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', background: '#f0fdf4' }}>
+              <div className="content-title" style={{ fontSize: '13px', fontWeight: '700', color: '#166534', marginBottom: '10px' }}>생성된 재물운</div>
 
               {/* 섹션별 콘텐츠 */}
               {['sky', 'earth', 'johu', 'summary'].map(sectionKey => {
@@ -730,11 +730,11 @@ function YearFortuneEditor({
                 if (!content && !editingSections[sectionKey]) return null;
 
                 return (
-                  <div key={sectionKey} className={`content-section section-${sectionKey}`}>
-                    <div className="section-header">
+                  <div key={sectionKey} style={{ padding: '14px', background: 'rgba(209, 250, 229, 0.5)', borderLeft: '3px solid #10b981', borderRadius: '8px' }}>
+                    <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       <span className="section-icon">{section.icon}</span>
-                      <span className="section-label">{section.label}</span>
-                      <span className="section-desc">({section.description})</span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#059669' }}>{section.label}</span>
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>({section.description})</span>
                       <button
                         className={`btn-section-edit ${editingSections[sectionKey] ? 'editing' : ''}`}
                         onClick={() => toggleSectionEdit(sectionKey)}
@@ -768,8 +768,8 @@ function YearFortuneEditor({
                         </div>
                       </div>
                     ) : (
-                      <div className="section-content">
-                        {content || <span className="empty-content">내용 없음</span>}
+                      <div style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>
+                        {content || <span style={{ color: '#9ca3af' }}>내용 없음</span>}
                       </div>
                     )}
                   </div>
@@ -779,20 +779,20 @@ function YearFortuneEditor({
           ) : yearData.generated_content ? (
             // generated_content가 객체인 경우 (새 형식)
             typeof yearData.generated_content === 'object' ? (
-              <div className="generated-content-section sectioned">
-                <div className="content-title">생성된 재물운</div>
+              <div className="generated-content-section" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', background: '#f0fdf4' }}>
+                <div className="content-title" style={{ fontSize: '13px', fontWeight: '700', color: '#166534', marginBottom: '10px' }}>생성된 재물운</div>
                 {['sky', 'earth', 'johu', 'summary'].map(sectionKey => {
                   const section = SECTION_LABELS[sectionKey];
                   const content = yearData.generated_content?.[sectionKey] || '';
                   if (!content) return null;
                   return (
-                    <div key={sectionKey} className={`content-section section-${sectionKey}`}>
-                      <div className="section-header">
+                    <div key={sectionKey} style={{ padding: '14px', background: 'rgba(209, 250, 229, 0.5)', borderLeft: '3px solid #10b981', borderRadius: '8px' }}>
+                      <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                         <span className="section-icon">{section.icon}</span>
-                        <span className="section-label">{section.label}</span>
-                        <span className="section-desc">({section.description})</span>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#059669' }}>{section.label}</span>
+                        <span style={{ fontSize: '11px', color: '#6b7280' }}>({section.description})</span>
                       </div>
-                      <div className="section-content">{content}</div>
+                      <div style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>{content}</div>
                     </div>
                   );
                 })}

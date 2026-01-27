@@ -352,8 +352,8 @@ function YearLoveFortuneEditor({
               </div>
             </div>
           ) : yearData.content_sections && (yearData.content_sections.sky || yearData.content_sections.earth || yearData.content_sections.johu || yearData.content_sections.summary) ? (
-            <div className="generated-content-section love-content sectioned">
-              <div className="content-title">생성된 연애운</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', background: '#fdf2f8' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#be185d', marginBottom: '10px' }}>생성된 연애운</div>
 
               {/* 섹션별 콘텐츠 */}
               {['sky', 'earth', 'johu', 'summary'].map(sectionKey => {
@@ -362,11 +362,11 @@ function YearLoveFortuneEditor({
                 if (!content && !editingSections[sectionKey]) return null;
 
                 return (
-                  <div key={sectionKey} className={`content-section love-section section-${sectionKey}`}>
-                    <div className="section-header">
-                      <span className="section-icon">{section.icon}</span>
-                      <span className="section-label">{section.label}</span>
-                      <span className="section-desc">({section.description})</span>
+                  <div key={sectionKey} style={{ padding: '14px', background: 'rgba(251, 207, 232, 0.3)', borderLeft: '3px solid #ec4899', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <span>{section.icon}</span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#be185d' }}>{section.label}</span>
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>({section.description})</span>
                       <button
                         className={`btn-section-edit ${editingSections[sectionKey] ? 'editing' : ''}`}
                         onClick={() => toggleSectionEdit(sectionKey)}
@@ -400,8 +400,8 @@ function YearLoveFortuneEditor({
                         </div>
                       </div>
                     ) : (
-                      <div className="section-content">
-                        {content || <span className="empty-content">내용 없음</span>}
+                      <div style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>
+                        {content || <span style={{ color: '#9ca3af' }}>내용 없음</span>}
                       </div>
                     )}
                   </div>
@@ -410,10 +410,10 @@ function YearLoveFortuneEditor({
             </div>
           ) : yearData.generated_content ? (
             // 기존 단일 콘텐츠 형식 (레거시 지원)
-            <div className="generated-content-section love-content">
-              <div className="content-title">생성된 연애운</div>
+            <div style={{ padding: '16px', background: '#fdf2f8' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#be185d', marginBottom: '10px' }}>생성된 연애운</div>
               <div
-                className="generated-content"
+                style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}
                 dangerouslySetInnerHTML={{ __html: yearData.generated_content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') }}
               />
             </div>
