@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Check, Sparkles, ChevronDown, Star } from 'lucide-react';
 import { PRICING } from '../lib/pricing';
+import { getTrackingData } from '../lib/tracking';
 import './BlueprintIntroPage.css';
 
 function BlueprintIntroPage() {
@@ -14,9 +15,10 @@ function BlueprintIntroPage() {
   const initialPlan = params.get('plan') === 'lite' ? 'lite' : 'full';
   const [selectedPlan, setSelectedPlan] = useState(initialPlan);
 
-  // ref 파라미터: URL에서 먼저 확인, 없으면 sessionStorage에서 가져옴
+  // ref 파라미터: URL > sessionStorage > localStorage(tracking) 순서로 확인
   const urlRef = params.get('ref');
-  const referralCode = urlRef || sessionStorage.getItem('blueprint_ref');
+  const storedTracking = getTrackingData();
+  const referralCode = urlRef || sessionStorage.getItem('blueprint_ref') || storedTracking?.ref;
 
   // ref가 URL에 있으면 sessionStorage에 저장 (새로고침 시에도 유지)
   useEffect(() => {

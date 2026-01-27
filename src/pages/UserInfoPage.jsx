@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download, Copy, Check } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
-import { getTrackingForAPI, initTracking } from '../lib/tracking';
+import { getTrackingForAPI, initTracking, getTrackingData } from '../lib/tracking';
 import { PRICING } from '../lib/pricing';
 import Payment from '../components/Payment';
 import './UserInfoPage.css';
@@ -70,9 +70,10 @@ function UserInfoPage() {
   const couponCode = searchParams.get('coupon');
   const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.blueprint;
 
-  // ref 파라미터: URL에서 먼저 확인, 없으면 sessionStorage에서 가져옴
+  // ref 파라미터: URL에서 먼저 확인, 없으면 sessionStorage, 없으면 tracking data에서 가져옴
   const urlRef = searchParams.get('ref');
-  const referralCode = urlRef || sessionStorage.getItem('blueprint_ref');
+  const storedTracking = getTrackingData();
+  const referralCode = urlRef || sessionStorage.getItem('blueprint_ref') || storedTracking?.ref;
 
   // ref가 URL에 있으면 sessionStorage에 저장 (새로고침 시에도 유지)
   useEffect(() => {

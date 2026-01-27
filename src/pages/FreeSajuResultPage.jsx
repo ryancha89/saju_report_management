@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Sparkles, ArrowRight, Star, ChevronDown, RefreshCw, Download } from 'lucide-react';
+import { getTrackingData } from '../lib/tracking';
 import './FreeSajuResultPage.css';
 
 // Import 일주론 data
@@ -47,12 +48,12 @@ function FreeSajuResultPage() {
   const birthInfo = location.state?.birthInfo;
   const trackingData = location.state?.trackingData;
 
-  // Get ref code for blueprint navigation
-  const refCode = trackingData?.ref || null;
+  // Get ref code for blueprint navigation (state 또는 localStorage에서)
+  const storedTracking = getTrackingData();
+  const refCode = trackingData?.ref || storedTracking?.ref || null;
 
   // 디버깅용
   console.log('sajuData:', sajuData);
-  console.log('trackingData:', trackingData);
   console.log('refCode:', refCode);
 
   // Redirect if no data
