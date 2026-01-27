@@ -2746,7 +2746,7 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
         </div>
 
-        <div className="profile-video-container" style={{ maxWidth: '200px', width: '100%', margin: '24px auto' }}>
+        <div className="profile-video-container" style={{ maxWidth: '200px', width: '100%', margin: 'auto' }}>
           <video
             className="green-monkey-video"
             autoPlay
