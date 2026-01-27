@@ -174,7 +174,7 @@ function ReportPreview({ isAdminPreview = false }) {
       if (data.report.counselor_key_points) {
         setKeyPoints(data.report.counselor_key_points);
       }
-      // 이메일 기본값 설정
+      // 이메일 기본값 설정 (ORDER 이메일)
       if (data.report.order?.email) {
         setQuestionEmail(data.report.order.email);
       }
@@ -195,17 +195,14 @@ function ReportPreview({ isAdminPreview = false }) {
   // Q&A 상태 조회
   const fetchQaStatus = async () => {
     try {
-      console.log('[fetchQaStatus] Fetching Q&A status for token:', token);
       const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/question_status`, {
         headers: { 'Content-Type': 'application/json' }
       });
-      console.log('[fetchQaStatus] Response status:', response.status);
       const data = await response.json();
-      console.log('[fetchQaStatus] Response data:', data);
       if (data.success) {
         setQaStatus(data);
         // 질문1 이메일 > ORDER 이메일 순으로 기본값 설정
-        const prevEmail = data.question?.user_email || data.questions?.[0]?.user_email;
+        const prevEmail = data.question?.user_email || data.questions?.[0]?.user_email || data.order_email;
         if (prevEmail) {
           setQuestionEmail(prevEmail);
         }
@@ -3079,8 +3076,6 @@ function ReportPreview({ isAdminPreview = false }) {
 
         {/* 질문 섹션 */}
         <div className="appendix-question-section">
-            {/* 디버깅: qaStatus 상태 확인 */}
-            {console.log('[renderAppendix] qaStatus:', qaStatus)}
 
             {/* 제출된 질문들 표시 */}
             {qaStatus?.questions?.length > 0 && (
@@ -3149,7 +3144,11 @@ function ReportPreview({ isAdminPreview = false }) {
                 <button
                   className="btn-submit-question"
                   onClick={submitQuestion}
-                  disabled={questionSubmitting || !questionTexts.some(q => q.trim())}
+                  disabled={questionSubmitting || (() => {
+                    const requiredCount = Math.min(qaStatus?.remaining_questions || qaStatus?.max_questions || 1, 2);
+                    const filledCount = questionTexts.slice(0, requiredCount).filter(q => q.trim()).length;
+                    return filledCount < requiredCount;
+                  })()}
                 >
                   {questionSubmitting ? (
                     <>

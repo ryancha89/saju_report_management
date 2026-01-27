@@ -1246,11 +1246,11 @@ function OrderDetail() {
   const [savingQa, setSavingQa] = useState(false);
 
   // Chapter 10 Q&A 상태 (웹 프리뷰에서 받은 질문)
-  const [chapter10Question, setChapter10Question] = useState(null); // { question, answer, status }
+  const [chapter10Question, setChapter10Question] = useState(null); // { question, questions[], answer, status }
   const [chapter10Loading, setChapter10Loading] = useState(false);
-  const [chapter10Answer, setChapter10Answer] = useState('');
-  const [chapter10Submitting, setChapter10Submitting] = useState(false);
-  const [chapter10Editing, setChapter10Editing] = useState(false); // 답변 수정 모드
+  const [chapter10Answers, setChapter10Answers] = useState({}); // { 0: '답변1', 1: '답변2' }
+  const [chapter10Submitting, setChapter10Submitting] = useState({}); // { 0: true/false, 1: true/false }
+  const [chapter10Editing, setChapter10Editing] = useState({}); // { 0: true/false, 1: true/false }
 
   // 이메일 발송 모달 상태
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -1632,10 +1632,20 @@ function OrderDetail() {
         if (data.success && data.has_question) {
           setChapter10Question({
             question: data.question,
+            questions: data.questions || [],
             answer: data.answer,
             status: data.status
           });
-          setChapter10Answer(data.answer?.content || '');
+          // 각 질문의 기존 답변으로 answers 초기화
+          const answers = {};
+          (data.questions || []).forEach((q, idx) => {
+            answers[idx] = q.answer?.content || '';
+          });
+          // 기존 형식 호환 (questions 배열이 없는 경우)
+          if (!data.questions?.length && data.question) {
+            answers[0] = data.answer?.content || '';
+          }
+          setChapter10Answers(answers);
         } else {
           setChapter10Question(null);
         }
@@ -1647,14 +1657,15 @@ function OrderDetail() {
     }
   };
 
-  // Chapter 10 Q&A: 답변 제출
-  const submitChapter10Answer = async () => {
-    if (!chapter10Answer.trim()) {
+  // Chapter 10 Q&A: 답변 제출 (질문 인덱스 지정)
+  const submitChapter10Answer = async (questionIndex = 0) => {
+    const answerContent = chapter10Answers[questionIndex]?.trim();
+    if (!answerContent) {
       alert('답변을 입력해주세요.');
       return;
     }
 
-    setChapter10Submitting(true);
+    setChapter10Submitting(prev => ({ ...prev, [questionIndex]: true }));
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/answer_question`, {
         method: 'PUT',
@@ -1662,7 +1673,7 @@ function OrderDetail() {
           'Content-Type': 'application/json',
           'Saju-Authorization': `Bearer-${API_TOKEN}`
         },
-        body: JSON.stringify({ answer: chapter10Answer })
+        body: JSON.stringify({ answer: answerContent, question_index: questionIndex })
       });
 
       if (!response.ok) {
@@ -1673,18 +1684,32 @@ function OrderDetail() {
       const data = await response.json();
       if (data.success) {
         alert('답변이 성공적으로 저장되었습니다. 고객에게 이메일이 발송됩니다.');
-        // 상태 업데이트
-        setChapter10Question(prev => ({
-          ...prev,
-          answer: data.answer,
-          status: 'answered'
-        }));
+        // 상태 업데이트 - 해당 질문의 답변 상태만 업데이트
+        setChapter10Question(prev => {
+          const updatedQuestions = [...(prev.questions || [])];
+          if (updatedQuestions[questionIndex]) {
+            updatedQuestions[questionIndex] = {
+              ...updatedQuestions[questionIndex],
+              answer: data.answer,
+              status: 'answered'
+            };
+          }
+          // 전체 상태 확인 (모든 질문에 답변되었는지)
+          const allAnswered = updatedQuestions.every(q => q.status === 'answered');
+          return {
+            ...prev,
+            questions: updatedQuestions,
+            answer: questionIndex === 0 ? data.answer : prev.answer,
+            status: allAnswered ? 'answered' : 'pending'
+          };
+        });
+        setChapter10Editing(prev => ({ ...prev, [questionIndex]: false }));
       }
     } catch (error) {
       console.error('Chapter 10 답변 제출 오류:', error);
       alert('답변 제출 중 오류가 발생했습니다: ' + error.message);
     } finally {
-      setChapter10Submitting(false);
+      setChapter10Submitting(prev => ({ ...prev, [questionIndex]: false }));
     }
   };
 
@@ -4905,103 +4930,120 @@ function OrderDetail() {
               <div className="card-header">
                 <MessageCircle size={20} />
                 <h3>
-                  리포트 질문
+                  리포트 질문 ({(chapter10Question.questions?.length || (chapter10Question.question ? 1 : 0))}개)
                   <span className={`qa-status-badge ${chapter10Question.status === 'answered' ? 'answered' : 'pending'}`}>
-                    {chapter10Question.status === 'answered' ? '답변 완료' : '답변 대기'}
+                    {chapter10Question.status === 'answered' ? '전체 답변 완료' : '답변 대기'}
                   </span>
                 </h3>
               </div>
               <div className="card-content">
-                <div className="chapter10-question-section">
-                  <div className="chapter10-question-label">질문</div>
-                  <div className="chapter10-question-content">{chapter10Question.question?.content}</div>
-                  <div className="chapter10-question-meta">
-                    {chapter10Question.question?.user_email && (
-                      <span>이메일: {chapter10Question.question.user_email}</span>
-                    )}
-                    {chapter10Question.question?.submitted_at && (
-                      <span>
-                        제출: {new Date(chapter10Question.question.submitted_at).toLocaleString('ko-KR')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {chapter10Question.status === 'answered' && chapter10Question.answer && !chapter10Editing ? (
-                  <div className="chapter10-answer-section answered">
-                    <div className="chapter10-answer-label">
-                      답변
-                      <button
-                        className="btn btn-edit-answer"
-                        onClick={() => {
-                          setChapter10Answer(chapter10Question.answer.content);
-                          setChapter10Editing(true);
-                        }}
-                      >
-                        <Edit3 size={14} />
-                        수정
-                      </button>
-                    </div>
-                    <div className="chapter10-answer-content">{chapter10Question.answer.content}</div>
-                    <div className="chapter10-answer-meta">
-                      <span>답변자: {chapter10Question.answer.answered_by || 'Admin'}</span>
-                      <span>
-                        답변일: {new Date(chapter10Question.answer.answered_at).toLocaleString('ko-KR')}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="chapter10-answer-section">
-                    <div className="chapter10-answer-label">
-                      {chapter10Editing ? '답변 수정' : '답변 작성'}
-                      {chapter10Editing && (
-                        <button
-                          className="btn btn-cancel-edit"
-                          onClick={() => {
-                            setChapter10Editing(false);
-                            setChapter10Answer(chapter10Question.answer?.content || '');
-                          }}
-                        >
-                          취소
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      className="chapter10-answer-input"
-                      value={chapter10Answer}
-                      onChange={(e) => setChapter10Answer(e.target.value)}
-                      placeholder="고객 질문에 대한 답변을 작성해주세요..."
-                      rows={5}
-                    />
-                    <div className="chapter10-answer-actions">
-                      <button
-                        className="btn btn-chapter10-submit"
-                        onClick={async () => {
-                          await submitChapter10Answer();
-                          setChapter10Editing(false);
-                        }}
-                        disabled={chapter10Submitting || !chapter10Answer.trim()}
-                      >
-                        {chapter10Submitting ? (
-                          <>
-                            <Loader size={16} className="spinning" />
-                            제출 중...
-                          </>
-                        ) : chapter10Editing ? (
-                          <>
-                            <Send size={16} />
-                            수정된 답변 저장 (고객에게 이메일 발송)
-                          </>
-                        ) : (
-                          <>
-                            <Send size={16} />
-                            답변 제출 (고객에게 이메일 발송)
-                          </>
+                {/* 새 형식: questions 배열 사용 */}
+                {(chapter10Question.questions?.length > 0 ? chapter10Question.questions :
+                  chapter10Question.question ? [{
+                    content: chapter10Question.question.content,
+                    submitted_at: chapter10Question.question.submitted_at,
+                    user_email: chapter10Question.question.user_email,
+                    answer: chapter10Question.answer,
+                    status: chapter10Question.status
+                  }] : []
+                ).map((q, idx) => (
+                  <div key={idx} className="chapter10-qa-item" style={{ marginBottom: idx < (chapter10Question.questions?.length || 1) - 1 ? '24px' : 0, paddingBottom: idx < (chapter10Question.questions?.length || 1) - 1 ? '24px' : 0, borderBottom: idx < (chapter10Question.questions?.length || 1) - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                    <div className="chapter10-question-section">
+                      <div className="chapter10-question-label">
+                        질문 {idx + 1}
+                        <span className={`qa-status-badge small ${q.status === 'answered' ? 'answered' : 'pending'}`} style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px' }}>
+                          {q.status === 'answered' ? '답변 완료' : '답변 대기'}
+                        </span>
+                      </div>
+                      <div className="chapter10-question-content">{q.content}</div>
+                      <div className="chapter10-question-meta">
+                        {q.user_email && (
+                          <span>이메일: {q.user_email}</span>
                         )}
-                      </button>
+                        {q.submitted_at && (
+                          <span>
+                            제출: {new Date(q.submitted_at).toLocaleString('ko-KR')}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {q.status === 'answered' && q.answer && !chapter10Editing[idx] ? (
+                      <div className="chapter10-answer-section answered">
+                        <div className="chapter10-answer-label">
+                          답변 {idx + 1}
+                          <button
+                            className="btn btn-edit-answer"
+                            onClick={() => {
+                              setChapter10Answers(prev => ({ ...prev, [idx]: q.answer.content }));
+                              setChapter10Editing(prev => ({ ...prev, [idx]: true }));
+                            }}
+                          >
+                            <Edit3 size={14} />
+                            수정
+                          </button>
+                        </div>
+                        <div className="chapter10-answer-content">{q.answer.content}</div>
+                        <div className="chapter10-answer-meta">
+                          <span>답변자: {q.answer.answered_by || 'Admin'}</span>
+                          <span>
+                            답변일: {new Date(q.answer.answered_at).toLocaleString('ko-KR')}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="chapter10-answer-section">
+                        <div className="chapter10-answer-label">
+                          {chapter10Editing[idx] ? `답변 ${idx + 1} 수정` : `답변 ${idx + 1} 작성`}
+                          {chapter10Editing[idx] && (
+                            <button
+                              className="btn btn-cancel-edit"
+                              onClick={() => {
+                                setChapter10Editing(prev => ({ ...prev, [idx]: false }));
+                                setChapter10Answers(prev => ({ ...prev, [idx]: q.answer?.content || '' }));
+                              }}
+                            >
+                              취소
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          className="chapter10-answer-input"
+                          value={chapter10Answers[idx] || ''}
+                          onChange={(e) => setChapter10Answers(prev => ({ ...prev, [idx]: e.target.value }))}
+                          placeholder="고객 질문에 대한 답변을 작성해주세요..."
+                          rows={5}
+                        />
+                        <div className="chapter10-answer-actions">
+                          <button
+                            className="btn btn-chapter10-submit"
+                            onClick={async () => {
+                              await submitChapter10Answer(idx);
+                            }}
+                            disabled={chapter10Submitting[idx] || !(chapter10Answers[idx]?.trim())}
+                          >
+                            {chapter10Submitting[idx] ? (
+                              <>
+                                <Loader size={16} className="spinning" />
+                                제출 중...
+                              </>
+                            ) : chapter10Editing[idx] ? (
+                              <>
+                                <Send size={16} />
+                                수정된 답변 저장 (이메일 발송)
+                              </>
+                            ) : (
+                              <>
+                                <Send size={16} />
+                                답변 제출 (이메일 발송)
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
             </div>
           )}
@@ -7173,70 +7215,112 @@ function OrderDetail() {
                         </div>
                       ) : reportChapters[selectedChapter].id === 'chapter_qa' ? (
                         <div className="chapter-qa-content">
-                          {chapter10Question && chapter10Question.question ? (
+                          {chapter10Question && (chapter10Question.questions?.length > 0 || chapter10Question.question) ? (
                             <div className="qa-editor">
                               <p className="qa-intro">
                                 고객이 웹 리포트에서 남긴 질문입니다. 답변을 작성해 주세요.
+                                ({(chapter10Question.questions?.length || 1)}개 질문)
                               </p>
-                              <div className="qa-item">
-                                <div className="qa-question">
-                                  <span className="qa-number">Q</span>
-                                  <span className="qa-question-text">{chapter10Question.question.content}</span>
-                                </div>
-                                <div className="qa-question-meta">
-                                  {chapter10Question.question.user_email && (
-                                    <span>이메일: {chapter10Question.question.user_email}</span>
-                                  )}
-                                  {chapter10Question.question.submitted_at && (
-                                    <span style={{marginLeft: '16px'}}>
-                                      제출: {new Date(chapter10Question.question.submitted_at).toLocaleString('ko-KR')}
+                              {/* 질문 목록 */}
+                              {(chapter10Question.questions?.length > 0 ? chapter10Question.questions :
+                                chapter10Question.question ? [{
+                                  content: chapter10Question.question.content,
+                                  submitted_at: chapter10Question.question.submitted_at,
+                                  user_email: chapter10Question.question.user_email,
+                                  answer: chapter10Question.answer,
+                                  status: chapter10Question.status
+                                }] : []
+                              ).map((q, idx) => (
+                                <div key={idx} className="qa-item" style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: idx < (chapter10Question.questions?.length || 1) - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                                  <div className="qa-question">
+                                    <span className="qa-number">Q{idx + 1}</span>
+                                    <span className="qa-question-text">{q.content}</span>
+                                    <span className={`qa-status-badge small ${q.status === 'answered' ? 'answered' : 'pending'}`} style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px' }}>
+                                      {q.status === 'answered' ? '답변 완료' : '답변 대기'}
                                     </span>
+                                  </div>
+                                  <div className="qa-question-meta">
+                                    {q.user_email && (
+                                      <span>이메일: {q.user_email}</span>
+                                    )}
+                                    {q.submitted_at && (
+                                      <span style={{marginLeft: '16px'}}>
+                                        제출: {new Date(q.submitted_at).toLocaleString('ko-KR')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {q.status === 'answered' && q.answer && !chapter10Editing[idx] ? (
+                                    <div className="qa-answer-display">
+                                      <div className="qa-answer-label">
+                                        ✅ 답변 {idx + 1} 완료
+                                        <button
+                                          className="btn btn-edit-answer"
+                                          style={{ marginLeft: '12px' }}
+                                          onClick={() => {
+                                            setChapter10Answers(prev => ({ ...prev, [idx]: q.answer.content }));
+                                            setChapter10Editing(prev => ({ ...prev, [idx]: true }));
+                                          }}
+                                        >
+                                          <Edit3 size={14} />
+                                          수정
+                                        </button>
+                                      </div>
+                                      <div className="qa-answer-content">{q.answer.content}</div>
+                                      <div className="qa-answer-meta">
+                                        <span>답변자: {q.answer.answered_by || 'Admin'}</span>
+                                        {q.answer.answered_at && (
+                                          <span style={{marginLeft: '16px'}}>
+                                            답변일: {new Date(q.answer.answered_at).toLocaleString('ko-KR')}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="qa-answer">
+                                      <div className="qa-answer-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <span style={{ fontWeight: 500 }}>{chapter10Editing[idx] ? `답변 ${idx + 1} 수정` : `답변 ${idx + 1} 작성`}</span>
+                                        {chapter10Editing[idx] && (
+                                          <button
+                                            className="btn btn-cancel-edit"
+                                            onClick={() => {
+                                              setChapter10Editing(prev => ({ ...prev, [idx]: false }));
+                                              setChapter10Answers(prev => ({ ...prev, [idx]: q.answer?.content || '' }));
+                                            }}
+                                          >
+                                            취소
+                                          </button>
+                                        )}
+                                      </div>
+                                      <textarea
+                                        className="qa-answer-input"
+                                        value={chapter10Answers[idx] || ''}
+                                        onChange={(e) => setChapter10Answers(prev => ({ ...prev, [idx]: e.target.value }))}
+                                        placeholder="답변을 입력하세요..."
+                                        rows={6}
+                                      />
+                                      <div className="qa-save-actions">
+                                        <button
+                                          className="btn btn-save-qa"
+                                          onClick={() => submitChapter10Answer(idx)}
+                                          disabled={chapter10Submitting[idx] || !(chapter10Answers[idx]?.trim())}
+                                        >
+                                          {chapter10Submitting[idx] ? (
+                                            <>
+                                              <Loader size={16} className="spinning" />
+                                              저장 중...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Save size={16} />
+                                              답변 {idx + 1} 저장 및 발송
+                                            </>
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
-                                {chapter10Question.status === 'answered' && chapter10Question.answer ? (
-                                  <div className="qa-answer-display">
-                                    <div className="qa-answer-label">✅ 답변 완료</div>
-                                    <div className="qa-answer-content">{chapter10Question.answer.content}</div>
-                                    <div className="qa-answer-meta">
-                                      <span>답변자: {chapter10Question.answer.answered_by || 'Admin'}</span>
-                                      {chapter10Question.answer.answered_at && (
-                                        <span style={{marginLeft: '16px'}}>
-                                          답변일: {new Date(chapter10Question.answer.answered_at).toLocaleString('ko-KR')}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="qa-answer">
-                                    <textarea
-                                      className="qa-answer-input"
-                                      value={chapter10Answer}
-                                      onChange={(e) => setChapter10Answer(e.target.value)}
-                                      placeholder="답변을 입력하세요..."
-                                      rows={6}
-                                    />
-                                    <div className="qa-save-actions">
-                                      <button
-                                        className="btn btn-save-qa"
-                                        onClick={submitChapter10Answer}
-                                        disabled={chapter10Submitting || !chapter10Answer.trim()}
-                                      >
-                                        {chapter10Submitting ? (
-                                          <>
-                                            <Loader size={16} className="spinning" />
-                                            저장 중...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Save size={16} />
-                                            답변 저장 및 발송
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                              ))}
                             </div>
                           ) : (
                             <div className="qa-empty">
