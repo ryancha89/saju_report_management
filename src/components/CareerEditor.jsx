@@ -559,6 +559,7 @@ function YearCareerEditor({
           </div>
 
           {/* 생성된 콘텐츠 */}
+          {console.log(`[CareerEditor] ${yearData.year}년 상태:`, { isRegenerating, hasContent: !!yearData.generated_content, contentType: typeof yearData.generated_content })}
           {isRegenerating ? (
             <div className="generated-content-section" style={{ background: '#f0fdf4' }}>
               <div className="section-loading">
@@ -569,31 +570,34 @@ function YearCareerEditor({
           ) : yearData.generated_content ? (
             <div className="generated-content-section">
               <div className="content-title">생성된 직업운</div>
+              {console.log(`[CareerEditor 렌더링] ${yearData.year}년 generated_content:`, yearData.generated_content)}
+              {console.log(`[CareerEditor 렌더링] ${yearData.year}년 타입:`, typeof yearData.generated_content)}
+              {console.log(`[CareerEditor 렌더링] ${yearData.year}년 sky:`, yearData.generated_content?.sky?.substring?.(0, 100) || yearData.generated_content?.sky)}
               {/* 객체인 경우 섹션별로 표시, 문자열인 경우 그대로 표시 */}
               {typeof yearData.generated_content === 'object' ? (
-                <div className="generated-content sectioned">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {yearData.generated_content.sky && (
-                    <div className="content-section">
-                      <div className="section-label">천간운 (외부 기회)</div>
-                      <p>{yearData.generated_content.sky}</p>
+                    <div style={{ padding: '14px', background: 'rgba(209, 250, 229, 0.5)', borderLeft: '3px solid #10b981', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#059669', marginBottom: '8px' }}>천간운 (외부 기회)</div>
+                      <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>{yearData.generated_content.sky}</p>
                     </div>
                   )}
                   {yearData.generated_content.earth && (
-                    <div className="content-section">
-                      <div className="section-label">지지운 (내면 역량)</div>
-                      <p>{yearData.generated_content.earth}</p>
+                    <div style={{ padding: '14px', background: 'rgba(209, 250, 229, 0.5)', borderLeft: '3px solid #10b981', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#059669', marginBottom: '8px' }}>지지운 (내면 역량)</div>
+                      <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>{yearData.generated_content.earth}</p>
                     </div>
                   )}
                   {yearData.generated_content.month && (
-                    <div className="content-section">
-                      <div className="section-label">월지운 (직장 환경)</div>
-                      <p>{yearData.generated_content.month}</p>
+                    <div style={{ padding: '14px', background: 'rgba(209, 250, 229, 0.5)', borderLeft: '3px solid #10b981', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#059669', marginBottom: '8px' }}>월지운 (직장 환경)</div>
+                      <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>{yearData.generated_content.month}</p>
                     </div>
                   )}
                   {yearData.generated_content.summary && (
-                    <div className="content-section">
-                      <div className="section-label">종합 조언</div>
-                      <p>{yearData.generated_content.summary}</p>
+                    <div style={{ padding: '14px', background: 'rgba(209, 250, 229, 0.5)', borderLeft: '3px solid #10b981', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#059669', marginBottom: '8px' }}>종합 조언</div>
+                      <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.8', color: '#1f2937' }}>{yearData.generated_content.summary}</p>
                     </div>
                   )}
                 </div>
@@ -1073,6 +1077,10 @@ const CareerEditor = forwardRef(function CareerEditor({
       });
 
       const data = await response.json();
+      console.log('[CareerEditor regenerateYear] API 응답:', data);
+      console.log('[CareerEditor regenerateYear] data.career:', data.career);
+      console.log('[CareerEditor regenerateYear] generated_content:', data.career?.generated_content);
+      console.log('[CareerEditor regenerateYear] generated_content 타입:', typeof data.career?.generated_content);
       if (!response.ok) {
         throw new Error(data.error || '재생성에 실패했습니다.');
       }

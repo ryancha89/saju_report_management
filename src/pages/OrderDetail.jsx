@@ -2900,9 +2900,19 @@ function OrderDetail() {
       fortuneEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
     if (!hasFortuneContent) missingChapters.push('fortune');
 
-    // 직업운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
+    // 직업운 - 실제 generated_content가 있는지 확인 (문자열 또는 객체 타입 체크)
     const hasCareerContent = careerEditorData && careerEditorData.length > 0 &&
-      careerEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
+      careerEditorData.some(item => {
+        if (!item.generated_content) return false;
+        if (typeof item.generated_content === 'string') {
+          return item.generated_content.trim().length > 0;
+        }
+        if (typeof item.generated_content === 'object') {
+          // 객체인 경우 sky, earth, combined 중 하나라도 있으면 생성된 것으로 판단
+          return !!(item.generated_content.sky || item.generated_content.earth || item.generated_content.combined);
+        }
+        return false;
+      });
     if (!hasCareerContent) missingChapters.push('career');
 
     // 연애운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
@@ -3168,11 +3178,16 @@ function OrderDetail() {
             body: JSON.stringify({ year_count: yearCount })
           });
           const data = await res.json();
+          console.log('[직업운 생성] API 응답:', data);
+          console.log('[직업운 생성] data.careers:', data.careers);
           if (res.ok && data.careers) {
             const yearlyCareers = Object.entries(data.careers).map(([year, career]) => ({
               year: parseInt(year),
               ...career
             })).sort((a, b) => a.year - b.year);
+            console.log('[직업운 생성] yearlyCareers 변환 결과:', yearlyCareers);
+            console.log('[직업운 생성] 첫번째 연도 generated_content:', yearlyCareers[0]?.generated_content);
+            console.log('[직업운 생성] generated_content 타입:', typeof yearlyCareers[0]?.generated_content);
             setCareerEditorData(yearlyCareers);
             await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
               method: 'POST',
@@ -3181,6 +3196,7 @@ function OrderDetail() {
             });
             results.push('직업운 ✓');
           } else {
+            console.log('[직업운 생성] 실패 - res.ok:', res.ok, 'data:', data);
             results.push('직업운 ✗');
           }
         } catch (err) {
