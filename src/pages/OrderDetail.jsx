@@ -2900,9 +2900,19 @@ function OrderDetail() {
       fortuneEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
     if (!hasFortuneContent) missingChapters.push('fortune');
 
-    // 직업운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
+    // 직업운 - 실제 generated_content가 있는지 확인 (문자열 또는 객체 타입 체크)
     const hasCareerContent = careerEditorData && careerEditorData.length > 0 &&
-      careerEditorData.some(item => typeof item.generated_content === 'string' && item.generated_content.trim().length > 0);
+      careerEditorData.some(item => {
+        if (!item.generated_content) return false;
+        if (typeof item.generated_content === 'string') {
+          return item.generated_content.trim().length > 0;
+        }
+        if (typeof item.generated_content === 'object') {
+          // 객체인 경우 sky, earth, combined 중 하나라도 있으면 생성된 것으로 판단
+          return !!(item.generated_content.sky || item.generated_content.earth || item.generated_content.combined);
+        }
+        return false;
+      });
     if (!hasCareerContent) missingChapters.push('career');
 
     // 연애운 - 실제 generated_content가 있는지 확인 (문자열 타입 체크 포함)
