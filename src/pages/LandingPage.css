@@ -457,6 +457,117 @@ body:has(.landing-page) {
   100% { left: 100%; }
 }
 
+/* Free Saju Section */
+.free-saju-section {
+  padding: 16px 20px;
+}
+
+.free-saju-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.free-saju-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.free-saju-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.35);
+}
+
+.free-saju-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.free-saju-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #fbbf24;
+}
+
+.free-saju-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.free-saju-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.free-saju-label .free-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.2);
+  padding: 3px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+.free-saju-label h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.free-saju-text p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.free-saju-cta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.free-saju-card:hover .free-saju-cta {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.free-saju-cta svg {
+  transition: transform 0.2s ease;
+}
+
+.free-saju-card:hover .free-saju-cta svg {
+  transform: translateX(2px);
+}
+
 /* Features Section */
 .features-section {
   display: grid;

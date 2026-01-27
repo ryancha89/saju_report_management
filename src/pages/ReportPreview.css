@@ -3868,6 +3868,18 @@ h3.coaching-item-topic:active {
   margin: 0 0 16px 0;
 }
 
+.appendix-question-form .question-input-group {
+  margin-bottom: 16px;
+}
+
+.appendix-question-form .question-input-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
 .appendix-question-form .question-textarea {
   width: 100%;
   padding: 12px;

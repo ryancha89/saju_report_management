@@ -24,6 +24,9 @@ import ResultPage from './pages/ResultPage';
 import PaymentCompletePage from './pages/PaymentCompletePage';
 import Events from './pages/events/Events';
 import Managers from './pages/Managers';
+import ReportReviews from './pages/ReportReviews';
+import FreeSajuInputPage from './pages/FreeSajuInputPage';
+import FreeSajuResultPage from './pages/FreeSajuResultPage';
 import './App.css';
 
 // 동적 파라미터 리다이렉트 컴포넌트
@@ -43,6 +46,10 @@ function App() {
 
           {/* Blueprint 소개 페이지 */}
           <Route path="/blueprint" element={<BlueprintIntroPage />} />
+
+          {/* 무료 사주진단 페이지 */}
+          <Route path="/free-saju" element={<FreeSajuInputPage />} />
+          <Route path="/free-saju/result" element={<FreeSajuResultPage />} />
 
           {/* 이벤트 페이지 */}
           <Route path="/events" element={<Events />} />
@@ -107,6 +114,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<Profile />} />
             <Route path="managers" element={<Managers />} />
+            <Route path="reviews" element={<ReportReviews />} />
           </Route>
         </Routes>
       </BrowserRouter>

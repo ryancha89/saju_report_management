@@ -1,0 +1,689 @@
+.free-saju-result-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  display: flex;
+  justify-content: center;
+}
+
+.result-wrapper {
+  max-width: 480px;
+  width: 100%;
+}
+
+/* Header */
+.result-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  box-sizing: border-box;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+}
+
+.result-header .back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.result-header .back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Video Section */
+.video-section {
+  position: relative;
+  min-height: auto;
+  padding: 80px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+.video-section.ended {
+  padding: 80px 20px 30px;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 9/14;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.video-section.ended .video-container {
+  max-width: 200px;
+  border-radius: 14px;
+}
+
+.result-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Video Overlay */
+.video-overlay {
+  width: 100%;
+  padding: 24px 20px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.saju-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(99, 102, 241, 0.3));
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 20px;
+  color: #c4b5fd;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.zodiac-day-title {
+  font-size: 48px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.zodiac-korean {
+  font-size: 28px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 8px;
+}
+
+.zodiac-day-subtitle {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Skip button */
+.skip-video-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.skip-video-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Saju Pillars Card */
+.saju-pillars-card {
+  width: calc(100% - 40px);
+  max-width: 360px;
+  margin: 24px auto 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+
+.saju-pillars-card.minimized {
+  max-width: 100%;
+}
+
+.saju-pillars-card.minimized .pillars-row {
+  grid-template-columns: 70px repeat(4, 1fr);
+}
+
+.saju-pillars-card.minimized .pillars-row .pillar-cell {
+  font-size: 14px;
+  padding: 5px 3px;
+}
+
+.saju-pillars-card.minimized .pillars-row.cheongan-row .pillar-cell,
+.saju-pillars-card.minimized .pillars-row.jiji-row .pillar-cell {
+  font-size: 16px;
+}
+
+.pillars-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.birth-date {
+  font-weight: 500;
+}
+
+.pillars-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pillars-row {
+  display: grid;
+  grid-template-columns: 70px repeat(4, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.pillars-row .row-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+.pillars-row .pillar-cell {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.pillars-row .pillar-cell.highlight {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(99, 102, 241, 0.4));
+  border: 1px solid rgba(139, 92, 246, 0.5);
+}
+
+.pillars-row .pillar-cell.small {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 2px;
+}
+
+.pillars-row.header-row .row-label {
+  background: transparent;
+}
+
+.pillars-row.header-row .pillar-cell {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  padding: 4px;
+}
+
+.pillars-row.header-row .pillar-cell.highlight {
+  background: transparent;
+  border: none;
+  color: #a78bfa;
+}
+
+.pillars-row.cheongan-row .pillar-cell,
+.pillars-row.jiji-row .pillar-cell {
+  font-size: 18px;
+}
+
+.pillars-row.sipsung-row .pillar-cell {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 2px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 천간 십성 - Purple styling */
+.pillars-row.cheongan-sipsung-row .pillar-cell {
+  color: #a78bfa;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-radius: 6px;
+}
+
+/* 지지 십성 - Blue styling */
+.pillars-row.jiji-sipsung-row .pillar-cell {
+  color: #60a5fa;
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.2) 100%);
+  border-radius: 6px;
+}
+
+/* 12운성 - Green styling */
+.pillars-row.unseong-row .pillar-cell {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 2px;
+  color: #10b981;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.25) 100%);
+  border-radius: 6px;
+}
+
+/* 12신살 - Red styling */
+.pillars-row.sinsal-row .pillar-cell {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 2px;
+  color: #f87171;
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.15) 0%, rgba(248, 113, 113, 0.25) 100%);
+  border-radius: 6px;
+}
+
+/* Content Section */
+.content-section {
+  padding: 40px 20px 100px;
+  max-width: 600px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.5s ease;
+}
+
+.content-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Replay button */
+.replay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  cursor: pointer;
+  margin-bottom: 32px;
+  transition: all 0.2s ease;
+}
+
+.replay-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* 일주론 Header */
+.ilju-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ilju-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.ilju-header h2 .highlight {
+  color: #a78bfa;
+}
+
+.ilju-header p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* 일주론 Sections */
+.ilju-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.ilju-section.expanded {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 18px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.section-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.section-header .chevron {
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.ilju-section.expanded .chevron {
+  transform: rotate(180deg);
+  color: #a78bfa;
+}
+
+.section-content {
+  padding: 0 20px 20px;
+}
+
+.content-preview {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.content-html {
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.content-html h1,
+.content-html h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #a78bfa;
+  margin: 24px 0 12px 0;
+}
+
+.content-html h1:first-child,
+.content-html h2:first-child {
+  margin-top: 0;
+}
+
+.content-html p {
+  margin: 0 0 16px 0;
+  white-space: pre-wrap;
+}
+
+/* Teaser Section */
+.teaser-section {
+  margin: 32px 0;
+  text-align: center;
+}
+
+.teaser-blur {
+  padding: 40px 20px;
+  background: linear-gradient(to bottom, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
+  border-radius: 20px;
+  position: relative;
+}
+
+.teaser-blur::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+}
+
+.teaser-blur p {
+  position: relative;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* CTA Section */
+.cta-section {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.2));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.cta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #B8860B, #DAA520);
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.cta-section h3 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.cta-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 24px 0;
+}
+
+.cta-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cta-features li {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cta-features li:last-child {
+  border-bottom: none;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 18px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.5);
+}
+
+/* Back home button */
+.back-home-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-home-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .video-container {
+    max-width: 260px;
+    aspect-ratio: 9/14;
+    border-radius: 18px;
+  }
+
+  .video-section.ended .video-container {
+    max-width: 180px;
+    border-radius: 12px;
+  }
+
+  .zodiac-day-title {
+    font-size: 36px;
+  }
+
+  .zodiac-korean {
+    font-size: 20px;
+  }
+
+  .saju-pillars-card {
+    width: calc(100% - 40px);
+    max-width: 360px;
+    padding: 14px 12px;
+  }
+
+  .saju-pillars-card.minimized {
+    max-width: 100%;
+  }
+
+  .pillars-row {
+    grid-template-columns: 55px repeat(4, 1fr);
+    gap: 3px;
+  }
+
+  .pillars-row .row-label {
+    font-size: 10px;
+    padding-right: 4px;
+  }
+
+  .pillars-row .pillar-cell {
+    font-size: 13px;
+    padding: 5px 2px;
+  }
+
+  .pillars-row.cheongan-row .pillar-cell,
+  .pillars-row.jiji-row .pillar-cell {
+    font-size: 15px;
+  }
+
+  .pillars-row.header-row .pillar-cell {
+    font-size: 10px;
+  }
+
+  .pillars-row.sipsung-row .pillar-cell,
+  .pillars-row.unseong-row .pillar-cell,
+  .pillars-row.sinsal-row .pillar-cell {
+    font-size: 10px;
+  }
+}
+
+/* Video newspaper effect animation */
+@keyframes newspaperReveal {
+  0% {
+    clip-path: inset(50% 50% 50% 50%);
+    opacity: 0;
+  }
+  50% {
+    clip-path: inset(20% 20% 20% 20%);
+    opacity: 0.5;
+  }
+  100% {
+    clip-path: inset(0% 0% 0% 0%);
+    opacity: 1;
+  }
+}
+
+.video-container {
+  animation: newspaperReveal 1s ease-out forwards;
+}
+
+/* Shimmer effect for loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.content-html {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  background-size: 200% 100%;
+}

@@ -614,7 +614,7 @@ body:has(.user-info-page) {
 }
 
 /* 수정 중 완료 버튼 - 부각된 스타일 */
-.next-step-btn {
+.user-info-wrapper .next-step-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -638,7 +638,7 @@ body:has(.user-info-page) {
     inset 0 0 20px rgba(244, 208, 63, 0.2);
 }
 
-.next-step-btn:hover:not(:disabled) {
+.user-info-wrapper .next-step-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   background: rgba(212, 175, 55, 0.6);
   border-color: #ffe066;
@@ -647,11 +647,11 @@ body:has(.user-info-page) {
     inset 0 0 25px rgba(244, 208, 63, 0.3);
 }
 
-.next-step-btn:active:not(:disabled) {
+.user-info-wrapper .next-step-btn:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.next-step-btn:disabled {
+.user-info-wrapper .next-step-btn:disabled {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.4);

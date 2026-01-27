@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronDown, Map, ArrowRight } from 'lucide-react';
+import { ChevronDown, Map, ArrowRight, Sparkles } from 'lucide-react';
 import { initTracking } from '../lib/tracking';
 import './LandingPage.css';
 
@@ -184,6 +184,28 @@ function LandingPage() {
                 <div className="card-shine"></div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Free Saju Section */}
+        <section className="free-saju-section">
+          <div className="free-saju-card" onClick={() => navigate('/free-saju')}>
+            <div className="free-saju-left">
+              <div className="free-saju-icon">
+                <Sparkles size={24} />
+              </div>
+              <div className="free-saju-text">
+                <div className="free-saju-label">
+                  <span className="free-tag">무료</span>
+                  <h3>무료 사주진단</h3>
+                </div>
+                <p>생년월일로 알아보는 나의 타고난 기운</p>
+              </div>
+            </div>
+            <div className="free-saju-cta">
+              <span>시작</span>
+              <ArrowRight size={16} />
+            </div>
           </div>
         </section>
 

@@ -9,7 +9,8 @@ import {
   Crown,
   FileEdit,
   BookOpen,
-  UserCog
+  UserCog,
+  MessageSquare
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -19,6 +20,7 @@ const menuItems = [
   { path: '/admin/suggestions', icon: FileEdit, label: '수정 제안' },
   { path: '/admin/lectures', icon: BookOpen, label: '강의' },
   { path: '/admin/profile', icon: UserCog, label: '내 프로필' },
+  { path: '/admin/reviews', icon: MessageSquare, label: '리뷰 관리', adminOnly: true },
   { path: '/admin/managers', icon: Users, label: '매니저 관리', adminOnly: true },
   { path: '/admin/settings', icon: Settings, label: '설정', adminOnly: true },
 ];

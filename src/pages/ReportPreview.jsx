@@ -48,7 +48,7 @@ function ReportPreview({ isAdminPreview = false }) {
 
   // Q&A 관련 상태 (Chapter 10)
   const [qaStatus, setQaStatus] = useState(null); // { has_question, status, question, answer }
-  const [questionText, setQuestionText] = useState('');
+  const [questionTexts, setQuestionTexts] = useState(['', '']); // 최대 2개 질문 (PRO: 2, LITE: 1)
   const [questionEmail, setQuestionEmail] = useState('');
   const [questionSubmitting, setQuestionSubmitting] = useState(false);
   const [questionError, setQuestionError] = useState(null);
@@ -191,21 +191,38 @@ function ReportPreview({ isAdminPreview = false }) {
   // Q&A 상태 조회
   const fetchQaStatus = async () => {
     try {
+      console.log('[fetchQaStatus] Fetching Q&A status for token:', token);
       const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/question_status`, {
         headers: { 'Content-Type': 'application/json' }
       });
+      console.log('[fetchQaStatus] Response status:', response.status);
       const data = await response.json();
+      console.log('[fetchQaStatus] Response data:', data);
       if (data.success) {
         setQaStatus(data);
+      } else {
+        console.error('[fetchQaStatus] API returned error:', data.error);
       }
     } catch (err) {
-      console.error('Q&A 상태 조회 실패:', err);
+      console.error('[fetchQaStatus] Q&A 상태 조회 실패:', err);
     }
   };
 
-  // 질문 제출
+  // 질문 텍스트 업데이트 헬퍼
+  const updateQuestionText = (index, value) => {
+    setQuestionTexts(prev => {
+      const newTexts = [...prev];
+      newTexts[index] = value;
+      return newTexts;
+    });
+  };
+
+  // 질문 제출 (여러 질문을 한 번에 제출)
   const submitQuestion = async () => {
-    if (!questionText.trim()) {
+    // 유효한 질문들 필터링
+    const validQuestions = questionTexts.filter(q => q.trim());
+
+    if (validQuestions.length === 0) {
       setQuestionError('질문을 입력해주세요.');
       return;
     }
@@ -221,32 +238,48 @@ function ReportPreview({ isAdminPreview = false }) {
     setQuestionError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/question`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: questionText,
-          email: questionEmail || reportData?.order?.email || ''
-        })
-      });
-      const data = await response.json();
+      // 각 질문을 순차적으로 제출
+      let lastData = null;
+      const newQuestions = [];
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '질문 제출에 실패했습니다.');
-      }
+      for (const questionText of validQuestions) {
+        const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/question`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: questionText,
+            email: email
+          })
+        });
+        const data = await response.json();
 
-      // 성공 시 Q&A 상태 업데이트
-      setQaStatus({
-        has_question: true,
-        status: 'pending',
-        question: {
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || '질문 제출에 실패했습니다.');
+        }
+
+        lastData = data;
+        newQuestions.push({
           content: questionText,
           submitted_at: new Date().toISOString(),
-          user_email: questionEmail
-        },
-        answer: null
-      });
-      setQuestionText('');
+          user_email: email,
+          status: 'pending',
+          answer: null
+        });
+      }
+
+      // 성공 시 Q&A 상태 업데이트 (마지막 백엔드 응답으로)
+      setQaStatus(prev => ({
+        ...prev,
+        has_question: true,
+        status: 'pending',
+        question: prev?.question || newQuestions[0],
+        questions: [...(prev?.questions || []), ...newQuestions],
+        question_count: lastData.question_count,
+        max_questions: lastData.max_questions,
+        remaining_questions: lastData.remaining_questions,
+        can_ask_more: lastData.remaining_questions > 0
+      }));
+      setQuestionTexts(['', '']);
       setQuestionEmail('');
     } catch (err) {
       setQuestionError(err.message);
@@ -258,15 +291,20 @@ function ReportPreview({ isAdminPreview = false }) {
   // 리뷰 상태 조회
   const fetchReviewStatus = async () => {
     try {
+      console.log('[fetchReviewStatus] Fetching review status for token:', token);
       const response = await fetch(`${API_BASE_URL}/api/v1/report/${token}/review_status`, {
         headers: { 'Content-Type': 'application/json' }
       });
+      console.log('[fetchReviewStatus] Response status:', response.status);
       const data = await response.json();
+      console.log('[fetchReviewStatus] Response data:', data);
       if (data.success) {
         setReviewStatus(data);
+      } else {
+        console.error('[fetchReviewStatus] API returned error:', data.error);
       }
     } catch (err) {
-      console.error('리뷰 상태 조회 실패:', err);
+      console.error('[fetchReviewStatus] 리뷰 상태 조회 실패:', err);
     }
   };
 
@@ -2968,8 +3006,12 @@ function ReportPreview({ isAdminPreview = false }) {
         </div>
 
         {/* 리뷰 섹션 */}
-        {!isAdminPreview && (
-          <div className="appendix-review-section">
+        <div className="appendix-review-section">
+          {isAdminPreview && (
+            <div className="admin-preview-notice" style={{ background: '#fef3c7', color: '#92400e', padding: '8px 12px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>
+              관리자 미리보기 - 실제 사용자에게 표시되는 화면입니다
+            </div>
+          )}
             {reviewStatus?.has_review || reviewSuccess ? (
               <div className="appendix-review-submitted">
                 <div className="review-success-icon">✨</div>
@@ -3025,11 +3067,12 @@ function ReportPreview({ isAdminPreview = false }) {
               </div>
             )}
           </div>
-        )}
 
         {/* 질문 섹션 */}
-        {!isAdminPreview && (
-          <div className="appendix-question-section">
+        <div className="appendix-question-section">
+            {/* 디버깅: qaStatus 상태 확인 */}
+            {console.log('[renderAppendix] qaStatus:', qaStatus)}
+
             {/* 제출된 질문들 표시 */}
             {qaStatus?.questions?.length > 0 && (
               <div className="appendix-questions-list">
@@ -3065,14 +3108,20 @@ function ReportPreview({ isAdminPreview = false }) {
                   )}
                 </p>
 
-                <textarea
-                  className="question-textarea"
-                  placeholder="질문을 입력해주세요..."
-                  value={questionText}
-                  onChange={(e) => setQuestionText(e.target.value)}
-                  rows={4}
-                  disabled={questionSubmitting}
-                />
+                {/* 질문 입력 필드들 - remaining_questions 수만큼 표시 */}
+                {Array.from({ length: Math.min(qaStatus?.remaining_questions || qaStatus?.max_questions || 1, 2) }).map((_, idx) => (
+                  <div key={idx} className="question-input-group">
+                    <label className="question-input-label">질문 {idx + 1}</label>
+                    <textarea
+                      className="question-textarea"
+                      placeholder={`질문 ${idx + 1}을 입력해주세요...`}
+                      value={questionTexts[idx] || ''}
+                      onChange={(e) => updateQuestionText(idx, e.target.value)}
+                      rows={3}
+                      disabled={questionSubmitting}
+                    />
+                  </div>
+                ))}
 
                 <input
                   type="email"
@@ -3091,7 +3140,7 @@ function ReportPreview({ isAdminPreview = false }) {
                 <button
                   className="btn-submit-question"
                   onClick={submitQuestion}
-                  disabled={questionSubmitting || !questionText.trim()}
+                  disabled={questionSubmitting || !questionTexts.some(q => q.trim())}
                 >
                   {questionSubmitting ? (
                     <>
@@ -3112,7 +3161,6 @@ function ReportPreview({ isAdminPreview = false }) {
               </div>
             )}
           </div>
-        )}
       </div>
     );
   };
