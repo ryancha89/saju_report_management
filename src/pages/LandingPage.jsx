@@ -59,7 +59,7 @@ function LandingPage() {
       price: formatPrice(PRICING.BLUEPRINT_LITE.currentPrice),
       originalPrice: formatPrice(PRICING.BLUEPRINT_LITE.originalPrice),
       subtitle: '현재/다음 대운 + 3개년 운세',
-      features: ['나의 아이덴티티 잠재력 분석', '현재 & 다음 대운 분석', '3개년 전략 로드맵', '맞춤 개운법 가이드']
+      features: ['나의 아이덴티티 잠재력 분석', '현재 & 다음 대운 분석', '3개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     }
   };
 
