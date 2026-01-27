@@ -2696,6 +2696,37 @@ function ReportPreview({ isAdminPreview = false }) {
     };
 
     const dayGan = getSky('day'); // 일간 (나)
+    const dayEarth = getEarth('day'); // 일지
+
+    // 천간 → 색깔 매핑 (오행)
+    const skyColorMap = {
+      '甲': 'green', '乙': 'green',  // 목
+      '丙': 'red', '丁': 'red',      // 화
+      '戊': 'yellow', '己': 'yellow', // 토
+      '庚': 'white', '辛': 'white',   // 금
+      '壬': 'grey', '癸': 'grey'      // 수
+    };
+
+    // 지지 → 동물 매핑
+    const earthAnimalMap = {
+      '子': 'mouse',
+      '丑': 'cow',
+      '寅': 'tiger',
+      '卯': 'rabbit',
+      '辰': 'dragon',
+      '巳': 'snake',
+      '午': 'horse',
+      '未': 'sheep',
+      '申': 'monkey',
+      '酉': 'chiken',  // 폴더명이 chiken으로 되어있음
+      '戌': 'dog',
+      '亥': 'pig'
+    };
+
+    // 60갑자 영상 파일 경로 생성
+    const animalColor = skyColorMap[dayGan] || 'green';
+    const animalName = earthAnimalMap[dayEarth] || 'dog';
+    const animalVideoSrc = `/img/animals/${animalName}/${animalColor}_${animalName}.mp4`;
 
     const pillars = [
       { label: '시주', key: 'time' },
@@ -2715,15 +2746,17 @@ function ReportPreview({ isAdminPreview = false }) {
           </div>
         </div>
 
-        <div className="profile-video-container">
+        <div className="profile-video-container" style={{ maxWidth: '200px', width: '100%', margin: '24px auto' }}>
           <video
             className="green-monkey-video"
             autoPlay
             loop
             muted
             playsInline
+            key={animalVideoSrc}
+            style={{ width: '100%', maxWidth: '200px', height: 'auto', display: 'block' }}
           >
-            <source src="/img/green_monkey.mp4" type="video/mp4" />
+            <source src={animalVideoSrc} type="video/mp4" />
           </video>
         </div>
 
