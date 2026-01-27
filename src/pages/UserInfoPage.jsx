@@ -873,13 +873,13 @@ function UserInfoPage() {
                     <div className="pillar-cell">년주</div>
                   </div>
                   <div className="pillar-row cheongan">
-                    <div className="pillar-cell">{sajuData.ganji_time?.[0] || '?'}</div>
+                    <div className="pillar-cell">{formData.birthTimeUnknown ? '?' : (sajuData.ganji_time?.[0] || '?')}</div>
                     <div className="pillar-cell highlight">{sajuData.ganji_day?.[0] || '?'}</div>
                     <div className="pillar-cell">{sajuData.ganji_month?.[0] || '?'}</div>
                     <div className="pillar-cell">{sajuData.ganji_year?.[0] || '?'}</div>
                   </div>
                   <div className="pillar-row jiji">
-                    <div className="pillar-cell">{sajuData.ganji_time?.[1] || '?'}</div>
+                    <div className="pillar-cell">{formData.birthTimeUnknown ? '?' : (sajuData.ganji_time?.[1] || '?')}</div>
                     <div className="pillar-cell">{sajuData.ganji_day?.[1] || '?'}</div>
                     <div className="pillar-cell">{sajuData.ganji_month?.[1] || '?'}</div>
                     <div className="pillar-cell">{sajuData.ganji_year?.[1] || '?'}</div>
