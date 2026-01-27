@@ -559,7 +559,6 @@ function YearCareerEditor({
           </div>
 
           {/* 생성된 콘텐츠 */}
-          {console.log(`[CareerEditor] ${yearData.year}년 상태:`, { isRegenerating, hasContent: !!yearData.generated_content, contentType: typeof yearData.generated_content })}
           {isRegenerating ? (
             <div className="generated-content-section" style={{ background: '#f0fdf4' }}>
               <div className="section-loading">
@@ -570,9 +569,6 @@ function YearCareerEditor({
           ) : yearData.generated_content ? (
             <div className="generated-content-section">
               <div className="content-title">생성된 직업운</div>
-              {console.log(`[CareerEditor 렌더링] ${yearData.year}년 generated_content:`, yearData.generated_content)}
-              {console.log(`[CareerEditor 렌더링] ${yearData.year}년 타입:`, typeof yearData.generated_content)}
-              {console.log(`[CareerEditor 렌더링] ${yearData.year}년 sky:`, yearData.generated_content?.sky?.substring?.(0, 100) || yearData.generated_content?.sky)}
               {/* 객체인 경우 섹션별로 표시, 문자열인 경우 그대로 표시 */}
               {typeof yearData.generated_content === 'object' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1077,10 +1073,6 @@ const CareerEditor = forwardRef(function CareerEditor({
       });
 
       const data = await response.json();
-      console.log('[CareerEditor regenerateYear] API 응답:', data);
-      console.log('[CareerEditor regenerateYear] data.career:', data.career);
-      console.log('[CareerEditor regenerateYear] generated_content:', data.career?.generated_content);
-      console.log('[CareerEditor regenerateYear] generated_content 타입:', typeof data.career?.generated_content);
       if (!response.ok) {
         throw new Error(data.error || '재생성에 실패했습니다.');
       }

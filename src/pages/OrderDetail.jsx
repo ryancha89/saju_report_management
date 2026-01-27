@@ -3178,16 +3178,11 @@ function OrderDetail() {
             body: JSON.stringify({ year_count: yearCount })
           });
           const data = await res.json();
-          console.log('[직업운 생성] API 응답:', data);
-          console.log('[직업운 생성] data.careers:', data.careers);
           if (res.ok && data.careers) {
             const yearlyCareers = Object.entries(data.careers).map(([year, career]) => ({
               year: parseInt(year),
               ...career
             })).sort((a, b) => a.year - b.year);
-            console.log('[직업운 생성] yearlyCareers 변환 결과:', yearlyCareers);
-            console.log('[직업운 생성] 첫번째 연도 generated_content:', yearlyCareers[0]?.generated_content);
-            console.log('[직업운 생성] generated_content 타입:', typeof yearlyCareers[0]?.generated_content);
             setCareerEditorData(yearlyCareers);
             await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_career`, {
               method: 'POST',
@@ -3196,7 +3191,6 @@ function OrderDetail() {
             });
             results.push('직업운 ✓');
           } else {
-            console.log('[직업운 생성] 실패 - res.ok:', res.ok, 'data:', data);
             results.push('직업운 ✗');
           }
         } catch (err) {
