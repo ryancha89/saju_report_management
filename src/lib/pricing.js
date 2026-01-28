@@ -8,7 +8,7 @@ export const PRICING = {
   },
   // Blueprint Lite
   BLUEPRINT_LITE: {
-    originalPrice: 77000,
+    originalPrice: 100000,
     currentPrice: 44000,
     discountPercent: 29,
   },
