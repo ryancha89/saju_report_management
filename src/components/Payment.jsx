@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Building2, Loader, Lock, AlertCircle } from 'lucide-react';
 import { useToast } from './Toast';
 import './Payment.css';
@@ -7,11 +7,18 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 const PORTONE_MERCHANT_ID = 'imp81781713';
 
-function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode, couponInfo, onPaymentSuccess, onPaymentError }) {
-  const [payMethod, setPayMethod] = useState('card');
+function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode, couponInfo, onPaymentSuccess, onPaymentError, paymentMethod }) {
+  const [payMethod, setPayMethod] = useState(paymentMethod || 'card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const { addToast } = useToast();
+
+  // paymentMethod prop이 변경되면 payMethod 상태 동기화
+  useEffect(() => {
+    if (paymentMethod && paymentMethod !== payMethod) {
+      setPayMethod(paymentMethod);
+    }
+  }, [paymentMethod]);
 
   // 쿠폰 적용 시 할인된 가격 계산
   const discountedPrice = couponInfo?.discount_percent
@@ -372,10 +379,12 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
 
   return (
     <div className="payment-container">
-      <div className="payment-header">
-        <h2>결제하기</h2>
-        <p>결제 수단을 선택해주세요</p>
-      </div>
+      {!paymentMethod && (
+        <div className="payment-header">
+          <h2>결제하기</h2>
+          <p>결제 수단을 선택해주세요</p>
+        </div>
+      )}
 
       {error && (
         <div className="payment-error">
@@ -405,40 +414,42 @@ function Payment({ productInfo, userInfo, trackingData, referralCode, couponCode
         )}
       </div>
 
-      {/* 결제 수단 선택 */}
-      <div className="payment-methods">
-        <button
-          type="button"
-          className={`payment-method-btn ${payMethod === 'card' ? 'active' : ''}`}
-          onClick={() => setPayMethod('card')}
-          disabled={isProcessing}
-        >
-          <div className="method-icon">
-            <CreditCard size={24} />
-          </div>
-          <div className="method-info">
-            <span className="method-name">신용카드</span>
-            <span className="method-desc">즉시 결제</span>
-          </div>
-          {payMethod === 'card' && <div className="method-check">✓</div>}
-        </button>
+      {/* 결제 수단 선택 - paymentMethod prop이 없을 때만 표시 */}
+      {!paymentMethod && (
+        <div className="payment-methods">
+          <button
+            type="button"
+            className={`payment-method-btn ${payMethod === 'card' ? 'active' : ''}`}
+            onClick={() => setPayMethod('card')}
+            disabled={isProcessing}
+          >
+            <div className="method-icon">
+              <CreditCard size={24} />
+            </div>
+            <div className="method-info">
+              <span className="method-name">신용카드</span>
+              <span className="method-desc">즉시 결제</span>
+            </div>
+            {payMethod === 'card' && <div className="method-check">✓</div>}
+          </button>
 
-        <button
-          type="button"
-          className={`payment-method-btn ${payMethod === 'vbank' ? 'active' : ''}`}
-          onClick={() => setPayMethod('vbank')}
-          disabled={isProcessing}
-        >
-          <div className="method-icon">
-            <Building2 size={24} />
-          </div>
-          <div className="method-info">
-            <span className="method-name">가상계좌</span>
-            <span className="method-desc">입금 후 처리</span>
-          </div>
-          {payMethod === 'vbank' && <div className="method-check">✓</div>}
-        </button>
-      </div>
+          <button
+            type="button"
+            className={`payment-method-btn ${payMethod === 'vbank' ? 'active' : ''}`}
+            onClick={() => setPayMethod('vbank')}
+            disabled={isProcessing}
+          >
+            <div className="method-icon">
+              <Building2 size={24} />
+            </div>
+            <div className="method-info">
+              <span className="method-name">가상계좌</span>
+              <span className="method-desc">입금 후 처리</span>
+            </div>
+            {payMethod === 'vbank' && <div className="method-check">✓</div>}
+          </button>
+        </div>
+      )}
 
       {/* 결제 버튼 */}
       <button

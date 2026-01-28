@@ -78,6 +78,27 @@ body:has(.user-info-page) {
   background: transparent;
 }
 
+.header-payment-method {
+  padding: 6px 12px;
+  background: rgba(244, 208, 63, 0.2);
+  border: 1px solid rgba(244, 208, 63, 0.5);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f4d03f;
+}
+
+.payment-methods-top-banner {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 4px 16px 0;
+  margin-bottom: -18px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .back-btn {
   background: none;
   border: none;
@@ -778,16 +799,20 @@ body:has(.user-info-page) {
 
 /* Order Complete Screen */
 .order-complete-content {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 40px 24px;
   text-align: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
+  overflow-y: auto;
 }
 
 .order-complete-icon {
@@ -869,6 +894,69 @@ body:has(.user-info-page) {
   font-size: 1.1rem;
   color: #f4e078;
   text-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
+}
+
+.email-display-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.email-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.email-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.email-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-edit-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(244, 208, 63, 0.5);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 1rem;
+  outline: none;
+}
+
+.email-edit-input:focus {
+  border-color: #f4d03f;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.email-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: rgba(244, 208, 63, 0.3);
+  border: 1px solid #f4d03f;
+  border-radius: 8px;
+  color: #f4d03f;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.email-save-btn:hover {
+  background: rgba(244, 208, 63, 0.5);
 }
 
 .order-complete-home-btn {
@@ -1488,5 +1576,253 @@ body:has(.user-info-page) {
     flex-direction: column;
     gap: 8px;
     text-align: center;
+  }
+}
+
+/* ==================== */
+/* 입력 안내 문구 */
+/* ==================== */
+.input-notice {
+  font-size: 0.85rem;
+  color: #f4d03f;
+  text-align: center;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(244, 208, 63, 0.5);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+/* ==================== */
+/* 결제 방법 선택 */
+/* ==================== */
+.payment-method-selector {
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.payment-method-title {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.payment-method-options {
+  display: flex;
+  gap: 8px;
+}
+
+.payment-method-btn {
+  flex: 1;
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.payment-method-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.payment-method-btn.active {
+  background: rgba(212, 175, 55, 0.3);
+  border-color: #f4d03f;
+  color: #f4e078;
+  text-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
+}
+
+/* ==================== */
+/* 계좌이체 정보 */
+/* ==================== */
+.bank-transfer-info {
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(244, 208, 63, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.bank-transfer-account {
+  margin-bottom: 12px;
+}
+
+.bank-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bank-row:last-child {
+  border-bottom: none;
+}
+
+.bank-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.bank-value {
+  font-size: 1rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.bank-value.account-number {
+  font-family: monospace;
+  letter-spacing: 1px;
+  color: #f4e078;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bank-value.account-number .copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(244, 208, 63, 0.2);
+  border: 1px solid rgba(244, 208, 63, 0.4);
+  border-radius: 6px;
+  color: #f4e078;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bank-value.account-number .copy-btn:hover {
+  background: rgba(244, 208, 63, 0.3);
+}
+
+.bank-value.price {
+  color: #f4e078;
+  text-shadow: 0 0 8px rgba(244, 208, 63, 0.4);
+  font-size: 1.1rem;
+}
+
+.bank-transfer-notice {
+  padding: 12px;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #fbbf24;
+  text-align: center;
+}
+
+.bank-transfer-notice strong {
+  color: #f4e078;
+}
+
+/* 계좌이체 신청 버튼 */
+.bank-transfer-submit-btn {
+  width: 100%;
+  padding: 18px 24px;
+  background: rgba(212, 175, 55, 0.5);
+  border: 2px solid #f4d03f;
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(244, 208, 63, 1);
+  box-shadow:
+    0 0 30px rgba(212, 175, 55, 0.6),
+    inset 0 0 20px rgba(244, 208, 63, 0.2);
+  margin-bottom: 16px;
+}
+
+.bank-transfer-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: rgba(212, 175, 55, 0.6);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.8),
+    inset 0 0 25px rgba(244, 208, 63, 0.3);
+}
+
+.bank-transfer-submit-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.4);
+  text-shadow: none;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==================== */
+/* 계좌이체 완료 화면 Q&A */
+/* ==================== */
+.bank-transfer-complete {
+  justify-content: flex-start;
+  padding-top: 80px;
+  padding-bottom: 40px;
+}
+
+.bank-transfer-qna {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.qna-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f4e078;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.qna-item {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qna-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.qna-question {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 8px;
+}
+
+.qna-answer {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  padding-left: 8px;
+}
+
+/* 모바일 반응형 - 결제 방법 */
+@media (max-width: 400px) {
+  .payment-method-options {
+    flex-direction: column;
+  }
+
+  .payment-method-btn {
+    width: 100%;
   }
 }

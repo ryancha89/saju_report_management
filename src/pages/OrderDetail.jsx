@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3, MessageCircle, Wand2, Save, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, Loader, User, Phone, Mail, Calendar, Clock, FileText, Search, X, ChevronDown, ChevronRight, Sparkles, AlertCircle, Download, Edit3, MessageCircle, Wand2, Save, RefreshCw, CircleDollarSign } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import html2pdf from 'html2pdf.js';
 import FortuneEditor from '../components/FortuneEditor';
 import CareerEditor from '../components/CareerEditor';
@@ -122,6 +123,11 @@ function JsonViewer({ data, name = 'root', level = 0 }) {
 
 function SajuValidationDisplay({ data, orderId }) {
   const { order_info, saju_data, current_decade, current_year_luck, type_analysis, decade_luck } = data;
+
+  // 디버깅: luck-result-section 표시 여부 확인
+  console.log('[DEBUG] type_analysis:', type_analysis);
+  console.log('[DEBUG] decade_luck:', decade_luck);
+  console.log('[DEBUG] current_decade:', current_decade);
 
   // 수정 제안 모달 상태
   const [suggestionModalOpen, setSuggestionModalOpen] = useState(false);
@@ -272,12 +278,18 @@ function SajuValidationDisplay({ data, orderId }) {
 
   // 선택된 대운 정보
   const getSelectedDecade = () => {
-    if (!decade_luck?.decade_array || selectedDecadeIndex < 0) return null;
-    const ganji = decade_luck.decade_array[selectedDecadeIndex];
+    if (!decade_luck?.decade_array || decade_luck.decade_array.length === 0) return null;
+
+    // 현재 대운이 없거나 유효하지 않으면 첫 대운으로 기본 설정
+    const validIndex = (selectedDecadeIndex >= 0 && selectedDecadeIndex < decade_luck.decade_array.length)
+      ? selectedDecadeIndex
+      : 0;
+
+    const ganji = decade_luck.decade_array[validIndex];
     if (!ganji) return null;
-    const startAge = Math.max((decade_luck.start_age || 1) - 1, 0) + (selectedDecadeIndex * 10);
+    const startAge = Math.max((decade_luck.start_age || 1) - 1, 0) + (validIndex * 10);
     return {
-      index: selectedDecadeIndex,
+      index: validIndex,
       ganji: ganji,
       sky: ganji?.charAt(0),
       earth: ganji?.charAt(1),
@@ -1151,10 +1163,12 @@ function SajuValidationDisplay({ data, orderId }) {
 function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAdmin, getToken } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [confirmingDeposit, setConfirmingDeposit] = useState(false);
 
   // 사주 검증 상태
   const [validating, setValidating] = useState(false);
@@ -1735,6 +1749,38 @@ function OrderDetail() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 계좌이체 입금 확인
+  const handleConfirmDeposit = async () => {
+    if (!window.confirm(`${order.name}님의 입금을 확인하시겠습니까?`)) {
+      return;
+    }
+
+    setConfirmingDeposit(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/confirm_deposit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '입금 확인 처리에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      alert(data.message);
+      // 주문 정보 업데이트
+      setOrder(prev => ({ ...prev, payment_status: 'paid' }));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setConfirmingDeposit(false);
     }
   };
 
@@ -4935,17 +4981,30 @@ function OrderDetail() {
               </div>
               <div className="info-row">
                 <label>결제 상태</label>
-                {order.origin === 'blueprint_app' ? (
-                  <span className="payment-status-badge paid">앱결제 / 결제완료</span>
-                ) : order.payment_method ? (
-                  <span className={`payment-status-badge ${order.payment_status || 'none'}`}>
-                    {order.payment_method === 'card' ? '카드' : '가상계좌'}
-                    {order.payment_status && ` / ${order.payment_status === 'paid' ? '결제완료' : order.payment_status === 'ready' ? '입금대기' : order.payment_status}`}
-                    {order.payment_amount && ` (${order.payment_amount.toLocaleString()}원)`}
-                  </span>
-                ) : (
-                  <span className="payment-status-badge none">미등록</span>
-                )}
+                <div className="payment-status-row">
+                  {order.origin === 'blueprint_app' ? (
+                    <span className="payment-status-badge paid">앱결제 / 결제완료</span>
+                  ) : order.payment_method ? (
+                    <span className={`payment-status-badge ${order.payment_status || 'none'}`}>
+                      {order.payment_method === 'card' ? '카드' : order.payment_method === 'bank_transfer' ? '계좌이체' : '가상계좌'}
+                      {order.payment_status && ` / ${order.payment_status === 'paid' ? '결제완료' : order.payment_status === 'ready' ? '입금대기' : order.payment_status === 'pending' ? '입금대기' : order.payment_status}`}
+                      {order.payment_amount && ` (${order.payment_amount.toLocaleString()}원)`}
+                    </span>
+                  ) : (
+                    <span className="payment-status-badge none">미등록</span>
+                  )}
+                  {/* 계좌이체 입금 대기 중인 경우 입금완료 버튼 표시 (admin only) */}
+                  {isAdmin() && order.payment_method === 'bank_transfer' && order.payment_status === 'pending' && (
+                    <button
+                      className="confirm-deposit-btn"
+                      onClick={handleConfirmDeposit}
+                      disabled={confirmingDeposit}
+                    >
+                      <CircleDollarSign size={16} />
+                      {confirmingDeposit ? '처리중...' : '입금완료'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

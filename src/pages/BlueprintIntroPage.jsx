@@ -365,7 +365,7 @@ function BlueprintIntroPage() {
                 <div className="process-content">
                   <h4>사주 검증 & 리포트 제작</h4>
                   <p>결제 확인 후 전문 상담사가 직접 사주를 검증하고 맞춤 리포트를 제작합니다.</p>
-                  <span className="process-badge">보통 몇 시간 ~ 1일 (최대 3일) 소요</span>
+                  <span className="process-badge">보통 몇 시간 ~ 1일 소요</span>
                 </div>
               </div>
               <div className="process-item">

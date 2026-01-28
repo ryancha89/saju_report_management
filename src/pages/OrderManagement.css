@@ -509,6 +509,16 @@
   color: #15803d;
 }
 
+.action-btn.deposit-confirm-btn {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.action-btn.deposit-confirm-btn:hover {
+  background: #fde68a;
+  color: #b45309;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .order-content {

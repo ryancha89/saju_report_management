@@ -188,6 +188,44 @@
   border: 1px solid #e5e7eb;
 }
 
+.payment-status-badge.pending {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e !important;
+  border: 1px solid #fcd34d;
+}
+
+.payment-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirm-deposit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-deposit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.confirm-deposit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .status-select {
   padding: 10px 16px;
   border: 1px solid #e2e8f0;

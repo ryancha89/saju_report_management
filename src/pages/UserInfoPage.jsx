@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download, Copy, Check } from 'lucide-react';
+import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download, Copy, Check, Pencil } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking, getTrackingData } from '../lib/tracking';
 import { PRICING } from '../lib/pricing';
@@ -60,6 +60,11 @@ function UserInfoPage() {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false); // 입금 확인 상태
   const [checkingPayment, setCheckingPayment] = useState(false); // 입금 확인 중 상태
   const [paymentCheckMessage, setPaymentCheckMessage] = useState(''); // 입금 확인 결과 메시지
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 결제 방법: card, vbank, bank_transfer
+  const [isBankTransferComplete, setIsBankTransferComplete] = useState(false); // 계좌이체 신청 완료 상태
+  const [isEditingEmail, setIsEditingEmail] = useState(false); // 완료 화면에서 이메일 수정 중
+  const [tempEmail, setTempEmail] = useState(''); // 임시 이메일
+  const [savingEmail, setSavingEmail] = useState(false); // 이메일 저장 중
   const nameTimeoutRef = useRef(null);
   const isTransitioning = useRef(false);
   const pollingIntervalRef = useRef(null);
@@ -450,6 +455,106 @@ function UserInfoPage() {
     console.error('Payment error:', errorMsg);
   };
 
+  // 이메일 변경 저장 핸들러
+  const handleSaveEmail = async (newEmail) => {
+    const orderId = paymentResult?.orderId;
+    if (!orderId || !newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      return;
+    }
+
+    setSavingEmail(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`,
+        },
+        body: JSON.stringify({ email: newEmail }),
+      });
+
+      if (response.ok) {
+        setFormData({ ...formData, email: newEmail });
+        setIsEditingEmail(false);
+      } else {
+        alert('이메일 변경에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error('Email update error:', error);
+      alert('이메일 변경 중 오류가 발생했습니다.');
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+
+  // 계좌이체 신청 핸들러
+  const handleBankTransferSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      // 비어있지 않은 질문만 필터링
+      const validQuestions = formData.questions.filter(q => q.trim());
+
+      // 주문 생성 API 호출
+      const response = await fetch(`${API_BASE_URL}/api/v1/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Saju-Authorization': `Bearer-${API_TOKEN}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          birth_year: formData.birthDate ? parseInt(formData.birthDate.split('-')[0]) : null,
+          birth_month: formData.birthDate ? parseInt(formData.birthDate.split('-')[1]) : null,
+          birth_day: formData.birthDate ? parseInt(formData.birthDate.split('-')[2]) : null,
+          birth_hour: formData.birthTimeUnknown ? null : (formData.birthTime ? parseInt(formData.birthTime.split(':')[0]) : null),
+          birth_minute: formData.birthTimeUnknown ? null : (formData.birthTime ? parseInt(formData.birthTime.split(':')[1]) : null),
+          time_known: !formData.birthTimeUnknown && formData.birthTime,
+          gender: formData.gender,
+          calendar_type: formData.calendarType,
+          birth_place: formData.birthPlace,
+          birth_lat: formData.birthLat,
+          birth_lon: formData.birthLon,
+          time_adjustment: formData.timeAdjustment,
+          time_adjust_minutes: formData.timeAdjustMinutes,
+          questions: validQuestions.length > 0 ? validQuestions : null,
+          product_id: productInfo.id,
+          product_name: productInfo.name,
+          amount: couponInfo?.discount_amount
+            ? productInfo.price - couponInfo.discount_amount
+            : productInfo.price,
+          payment_method: 'bank_transfer',
+          payment_status: 'pending',
+          referral_code: referralCode,
+          coupon_code: couponCode,
+          tracking_data: getTrackingForAPI(),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentResult({
+          orderId: data.order?.id || data.id,
+          method: 'bank_transfer',
+          amount: couponInfo?.discount_amount
+            ? productInfo.price - couponInfo.discount_amount
+            : productInfo.price,
+        });
+        setIsBankTransferComplete(true);
+      } else {
+        const errorData = await response.json();
+        console.error('Order creation failed:', errorData);
+        alert('신청에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error('Bank transfer submit error:', error);
+      alert('신청 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Payment 컴포넌트에 전달할 사용자 정보
   const getUserInfoForPayment = () => {
     // 비어있지 않은 질문만 필터링
@@ -754,6 +859,9 @@ function UserInfoPage() {
       case 5: // 이메일
         return (
           <div className="input-group">
+            <div className="input-notice">
+              리포트 발송 및 알림을 위해 입력이 필요합니다
+            </div>
             <input
               type="email"
               value={formData.email}
@@ -779,6 +887,9 @@ function UserInfoPage() {
       case 6: // 전화번호
         return (
           <div className="input-group">
+            <div className="input-notice">
+              리포트 발송 및 알림을 위해 입력이 필요합니다
+            </div>
             <input
               type="tel"
               inputMode="numeric"
@@ -839,17 +950,59 @@ function UserInfoPage() {
               </div>
             ) : sajuData ? (
               <>
-                {/* 결제 컴포넌트 */}
-                <Payment
-                  productInfo={productInfo}
-                  userInfo={getUserInfoForPayment()}
-                  trackingData={getTrackingForAPI()}
-                  referralCode={referralCode}
-                  couponCode={couponCode}
-                  couponInfo={couponInfo}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
-                />
+                {/* 결제 방법 선택 */}
+                <div className="payment-method-selector">
+                  <div className="payment-method-title">결제 방법</div>
+                  <div className="payment-method-options">
+                    <button
+                      type="button"
+                      className={`payment-method-btn ${paymentMethod === 'card' ? 'active' : ''}`}
+                      onClick={() => setPaymentMethod('card')}
+                    >
+                      카드결제
+                    </button>
+                    <button
+                      type="button"
+                      className={`payment-method-btn ${paymentMethod === 'vbank' ? 'active' : ''}`}
+                      onClick={() => setPaymentMethod('vbank')}
+                    >
+                      무통장입금
+                    </button>
+                    <button
+                      type="button"
+                      className={`payment-method-btn ${paymentMethod === 'bank_transfer' ? 'active' : ''}`}
+                      onClick={() => setPaymentMethod('bank_transfer')}
+                    >
+                      계좌이체
+                    </button>
+                  </div>
+                </div>
+
+                {/* 결제 컴포넌트 - 카드/무통장입금만 */}
+                {paymentMethod !== 'bank_transfer' && (
+                  <Payment
+                    productInfo={productInfo}
+                    userInfo={getUserInfoForPayment()}
+                    trackingData={getTrackingForAPI()}
+                    referralCode={referralCode}
+                    couponCode={couponCode}
+                    couponInfo={couponInfo}
+                    onPaymentSuccess={handlePaymentSuccess}
+                    onPaymentError={handlePaymentError}
+                    paymentMethod={paymentMethod}
+                  />
+                )}
+
+                {/* 계좌이체 신청 버튼 */}
+                {paymentMethod === 'bank_transfer' && (
+                  <button
+                    className="bank-transfer-submit-btn"
+                    onClick={handleBankTransferSubmit}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? '신청 중...' : '신청하기'}
+                  </button>
+                )}
 
                 {/* 사용자 정보 요약 */}
                 <div className="preview-user-info">
@@ -933,6 +1086,138 @@ function UserInfoPage() {
         return null;
     }
   };
+
+  // 계좌이체 신청 완료 화면
+  if (isBankTransferComplete) {
+    return (
+      <div className="user-info-page">
+        <div className="user-info-wrapper">
+          {/* 배경 영상 */}
+          <video
+            className="background-video"
+            autoPlay
+            loop
+            muted
+            playsInline
+          >
+            <source src={(productId === 'blueprint' || productId === 'blueprint_lite') ? '/theblueprint.mp4' : '/img/2026_video_03.mp4'} type="video/mp4" />
+          </video>
+
+          <div className="overlay" />
+
+          <div className="order-complete-content bank-transfer-complete">
+            <div className="order-complete-icon">
+              <CheckCircle size={80} />
+            </div>
+            <h2 className="order-complete-title">The Blueprint 신청완료</h2>
+            <p className="order-complete-message">
+              아래 계좌로 입금해주시면<br />
+              확인 후 리포트가 제작됩니다.
+            </p>
+
+            {/* 계좌 정보 */}
+            <div className="vbank-info">
+              <div className="vbank-row">
+                <span className="vbank-label">은행</span>
+                <span className="vbank-value">신한은행</span>
+              </div>
+              <div className="vbank-row">
+                <span className="vbank-label">예금주</span>
+                <span className="vbank-value">차정민(포춘톨치)</span>
+              </div>
+              <div className="vbank-row">
+                <span className="vbank-label">계좌번호</span>
+                <span className="vbank-value account-number">
+                  110-447-120561
+                  <button
+                    className="copy-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText('110447120561');
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    <span>{copied ? '복사됨' : '복사'}</span>
+                  </button>
+                </span>
+              </div>
+              <div className="vbank-row">
+                <span className="vbank-label">입금액</span>
+                <span className="vbank-value price">
+                  {(paymentResult?.amount || productInfo.price).toLocaleString()}원
+                </span>
+              </div>
+              <div className="vbank-warning" style={{ marginTop: '16px', textAlign: 'center' }}>
+                입금자 성함과 신청자 성함이 다르면 <strong>입금자(신청자)</strong>로 해주세요
+              </div>
+            </div>
+
+            {/* Q&A 섹션 */}
+            <div className="bank-transfer-qna">
+              <h3 className="qna-title">자주 묻는 질문</h3>
+              <div className="qna-item">
+                <div className="qna-question">Q. 입금 후 언제 리포트를 받을 수 있나요?</div>
+                <div className="qna-answer">A. 입금 확인 후 영업일 기준 1~3일 이내에 입력하신 이메일로 리포트가 발송됩니다.</div>
+              </div>
+              <div className="qna-item">
+                <div className="qna-question">Q. 입금자명이 다르면 어떻게 하나요?</div>
+                <div className="qna-answer">A. 입금자명이 신청자명과 다른 경우 카카오톡(@포춘톨치)으로 연락 부탁드립니다.</div>
+              </div>
+              <div className="qna-item">
+                <div className="qna-question">Q. 환불은 어떻게 하나요?</div>
+                <div className="qna-answer">A. 리포트 발송 전에는 전액 환불 가능합니다. 카카오톡(@포춘톨치)으로 문의해주세요.</div>
+              </div>
+            </div>
+
+            <div className="order-complete-email">
+              <span>발송 이메일</span>
+              {isEditingEmail ? (
+                <div className="email-edit-row">
+                  <input
+                    type="email"
+                    value={tempEmail}
+                    onChange={(e) => setTempEmail(e.target.value)}
+                    className="email-edit-input"
+                    autoFocus
+                    disabled={savingEmail}
+                  />
+                  <button
+                    className="email-save-btn"
+                    onClick={() => handleSaveEmail(tempEmail)}
+                    disabled={savingEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tempEmail)}
+                  >
+                    {savingEmail ? <Loader size={16} className="spinning" /> : <Check size={16} />}
+                  </button>
+                </div>
+              ) : (
+                <div className="email-display-row">
+                  <strong>{formData.email}</strong>
+                  <button
+                    className="email-edit-btn"
+                    onClick={() => {
+                      setTempEmail(formData.email);
+                      setIsEditingEmail(true);
+                    }}
+                  >
+                    <Pencil size={14} />
+                    <span>변경</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="order-complete-home-btn"
+              onClick={() => navigate('/')}
+            >
+              홈으로 돌아가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 주문 완료 화면
   if (isOrderComplete) {
@@ -1047,7 +1332,39 @@ function UserInfoPage() {
 
             <div className="order-complete-email">
               <span>발송 이메일</span>
-              <strong>{formData.email}</strong>
+              {isEditingEmail ? (
+                <div className="email-edit-row">
+                  <input
+                    type="email"
+                    value={tempEmail}
+                    onChange={(e) => setTempEmail(e.target.value)}
+                    className="email-edit-input"
+                    autoFocus
+                    disabled={savingEmail}
+                  />
+                  <button
+                    className="email-save-btn"
+                    onClick={() => handleSaveEmail(tempEmail)}
+                    disabled={savingEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tempEmail)}
+                  >
+                    {savingEmail ? <Loader size={16} className="spinning" /> : <Check size={16} />}
+                  </button>
+                </div>
+              ) : (
+                <div className="email-display-row">
+                  <strong>{formData.email}</strong>
+                  <button
+                    className="email-edit-btn"
+                    onClick={() => {
+                      setTempEmail(formData.email);
+                      setIsEditingEmail(true);
+                    }}
+                  >
+                    <Pencil size={14} />
+                    <span>변경</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 앱 다운로드 유도 섹션 - 임시 비표시 */}
@@ -1114,6 +1431,13 @@ function UserInfoPage() {
 
         <div className="overlay" />
 
+        {/* 결제방법 안내 - 맨 위에 작게 */}
+        {currentStep !== 8 && (
+          <div className="payment-methods-top-banner">
+            카드 · 계좌이체 · 가상계좌 결제 가능
+          </div>
+        )}
+
         {/* 헤더 */}
         <header className="user-info-header">
           <button className="back-btn" onClick={handleBack}>
@@ -1127,7 +1451,13 @@ function UserInfoPage() {
               />
             ))}
           </div>
-          <div style={{ width: 24 }} />
+          {currentStep === 8 ? (
+            <div className="header-payment-method">
+              {paymentMethod === 'card' ? '카드결제' : paymentMethod === 'bank_transfer' ? '계좌이체' : '가상계좌'}
+            </div>
+          ) : (
+            <div style={{ width: 24 }} />
+          )}
         </header>
 
         {/* 메인 콘텐츠 */}

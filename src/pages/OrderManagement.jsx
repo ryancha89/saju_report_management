@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Eye, Send, ChevronLeft, ChevronRight, Loader, RefreshCw, Ban, RotateCcw } from 'lucide-react';
+import { Search, Filter, Eye, Send, ChevronLeft, ChevronRight, Loader, RefreshCw, Ban, RotateCcw, CircleDollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './OrderManagement.css';
 
@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 
 function OrderManagement() {
   const navigate = useNavigate();
-  const { getToken } = useAuth();
+  const { getToken, user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -110,6 +110,38 @@ function OrderManagement() {
       // 목록 업데이트
       setOrders(prev => prev.map(o =>
         o.id === order.id ? { ...o, invalidated: data.invalidated } : o
+      ));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  // 계좌이체 입금 확인 (admin only)
+  const handleConfirmDeposit = async (e, order) => {
+    e.stopPropagation();
+    if (!window.confirm(`#${order.id} ${order.name}님의 입금을 확인하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${order.id}/confirm_deposit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '처리에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      alert(data.message);
+      // 목록 업데이트
+      setOrders(prev => prev.map(o =>
+        o.id === order.id ? { ...o, payment_status: 'paid' } : o
       ));
     } catch (err) {
       alert(err.message);
@@ -324,6 +356,16 @@ function OrderManagement() {
                             >
                               <Send size={16} />
                             </button>
+                            {/* 계좌이체 입금 대기 중인 주문에만 입금확인 버튼 표시 (admin only) */}
+                            {user?.role === 'admin' && order.payment_method === 'bank_transfer' && order.payment_status === 'pending' && (
+                              <button
+                                className="action-btn deposit-confirm-btn"
+                                title="입금 확인"
+                                onClick={(e) => handleConfirmDeposit(e, order)}
+                              >
+                                <CircleDollarSign size={16} />
+                              </button>
+                            )}
                             <button
                               className={`action-btn ${order.invalidated ? 'restore-btn' : 'invalidate-btn'}`}
                               title={order.invalidated ? '구매 복원' : '구매 무효화'}
