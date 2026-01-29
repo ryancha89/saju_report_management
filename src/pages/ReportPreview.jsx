@@ -1369,261 +1369,38 @@ function ReportPreview({ isAdminPreview = false }) {
       if (deg === 'difficult' || deg === '흉') return 'difficult';
     }
 
-    // 0.5. 연애운/5년운세 manager_edit.fortune_level 필드 확인
-    if (decade.manager_edit?.fortune_level) {
-      const level = decade.manager_edit.fortune_level;
-      if (level === 'very_good') return 'excellent';
-      if (level === 'good') return 'good';
-      if (level === 'normal') return 'neutral';
-      if (level === 'caution') return 'caution';
-      if (level === 'difficult') return 'difficult';
-    }
-
-    // 0.55. type_analysis가 있으면 extractYearLuckResult로 직접 계산 (FortuneEditor와 동일)
-    if (decade.year === 2026 || decade.year === 2030) {
-      console.log('[getOverallRating] 0.55 check:', {
-        year: decade.year,
-        hasTypeAnalysis: !!reportData?.type_analysis,
-        hasDecadeLuck: !!reportData?.decade_luck,
-        ganji: decade.ganji,
-        keys: Object.keys(decade)
-      });
-    }
-    if (decade.year && reportData?.type_analysis) {
-      const ganji = decade.ganji || getYearGanji(decade.year);
-      const sky = ganji?.charAt(0);
-      const earth = ganji?.charAt(1);
-      const decadeForYear = findDecadeForYear(decade.year);
-
-      if (decadeForYear && sky && earth) {
-        const yearLuckResult = extractYearLuckResult(decade.year, sky, earth, reportData.type_analysis, decadeForYear);
-        const skyResult = yearLuckResult.sky?.result;
-        const earthResult = yearLuckResult.earth?.result;
-
-        console.log('[getOverallRating] 0.55 extractYearLuckResult:', {
-          year: decade.year,
-          ganji,
-          decadeForYear,
-          skyResult,
-          earthResult
-        });
-
-        if (skyResult || earthResult) {
-          // 성패 판정 로직 (FortuneEditor와 동일)
-          const isPureSuccess = (result) => {
-            if (!result) return false;
-            if (result.includes('성중유패') || result.includes('패중유성') || result.includes('성패공존')) return false;
-            return result.includes('성') || result.includes('成');
-          };
-          const isSuccess = (result) => {
-            if (!result) return false;
-            if (result.includes('성중유패')) return false;
-            if (result.includes('성패공존')) return false;
-            return result.includes('성') || result.includes('패중유성');
-          };
-          const isFailure = (result) => {
-            if (!result) return false;
-            if (result.includes('패중유성')) return false;
-            if (result.includes('성패공존')) return false;
-            return result.includes('패') || result.includes('성중유패');
-          };
-
-          const skyIsSuccess = isSuccess(skyResult);
-          const skyIsFailure = isFailure(skyResult);
-          const earthIsSuccess = isSuccess(earthResult);
-          const earthIsFailure = isFailure(earthResult);
-          const skyIsPure = isPureSuccess(skyResult);
-          const earthIsPure = isPureSuccess(earthResult);
-
-          // 둘 다 순수 성공 (成) → 최고
-          if (skyIsPure && earthIsPure) return 'excellent';
-          // 성공 + 실패 혼재 → 도전
-          if ((skyIsSuccess && earthIsFailure) || (skyIsFailure && earthIsSuccess)) return 'caution';
-          // 둘 다 성공 패턴
-          if (skyIsSuccess && earthIsSuccess) {
-            if (skyIsPure || earthIsPure) return 'good';
-            return 'neutral'; // 둘 다 패중유성
-          }
-          // 둘 다 실패 패턴 → 어려움
-          if (skyIsFailure && earthIsFailure) return 'difficult';
-          // 하나만 성공
-          if (skyIsSuccess || earthIsSuccess) {
-            if (skyIsPure || earthIsPure) return 'good';
-            return 'neutral';
-          }
-          // 하나만 실패 → 도전
-          if (skyIsFailure || earthIsFailure) return 'caution';
-          return 'neutral';
-        }
-      }
-    }
-
-    // 0.6. 재물운/직업운 - sky.result/earth.result가 있으면 그걸 우선 사용 (아래 1에서 처리)
-    // sky.result/earth.result가 없을 때만 manager_edit.fortune_level/career_level 사용
-    const hasSkyResult = decade.sky?.result;
-    const hasEarthResult = decade.earth?.result;
-
-    if (!hasSkyResult && !hasEarthResult) {
-      const skyFortuneLevel = decade.manager_edit?.sky?.fortune_level || decade.manager_edit?.sky?.career_level;
-      const earthFortuneLevel = decade.manager_edit?.earth?.fortune_level || decade.manager_edit?.earth?.career_level;
-
-      // 디버그 로그
-      console.log('[getOverallRating] 0.6 check (no sky/earth result):', {
-        year: decade.year,
-        manager_edit: decade.manager_edit,
-        skyFortuneLevel,
-        earthFortuneLevel
-      });
-
-      if (skyFortuneLevel || earthFortuneLevel) {
-        const skyLevel = skyFortuneLevel;
-        const earthLevel = earthFortuneLevel;
-
-        // sky와 earth 점수 합산으로 전체 등급 계산
-        const levelToScore = (level) => {
-          if (level === 'very_good') return 2;
-          if (level === 'good') return 1;
-          if (level === 'normal') return 0;
-          if (level === 'caution') return -1;
-          if (level === 'difficult') return -2;
-          return 0;
-        };
-
-        const totalScore = levelToScore(skyLevel) + levelToScore(earthLevel);
-        if (totalScore >= 3) return 'excellent';
-        if (totalScore >= 1) return 'good';
-        if (totalScore >= -1) return 'neutral';
-        if (totalScore >= -3) return 'caution';
-        return 'difficult';
-      }
-    }
-
-    // 1. result 문자열로 판정 (sky_result/earth_result 또는 sky_analysis.result/earth_analysis.result)
-    // 백엔드 calculate_default_fortune_level 로직과 일치시킴:
-    // - 成/성: 순수 성공, 敗中有成/패중유성: 어려움 속 성공 → 좋음
-    // - 敗/패: 순수 실패, 成中有敗/성중유패: 성공 속 실패 → 나쁨
-    // - 成敗共存/성패공존: 중립
-    const normalizeResult = (result) => {
-      if (!result || typeof result !== 'string') return '';
-      return result.trim();
+    // 1. result 문자열로 판정 (OrderDetail과 동일 로직)
+    const isGood = (result) => {
+      if (!result || typeof result !== 'string') return false;
+      return result === '成' || result === '성' ||
+             result.includes('敗中有成') || result.includes('패중유성');
     };
-    const isPureSuccess = (result) => {
-      const r = normalizeResult(result);
-      // 순수 성공: '成' 또는 '성'만 (복합 결과 제외)
-      if (r.includes('成中有敗') || r.includes('성중유패') ||
-          r.includes('敗中有成') || r.includes('패중유성') ||
-          r.includes('成敗共存') || r.includes('성패공존')) return false;
-      return r.includes('成') || r.includes('성');
-    };
-    const isSuccess = (result) => {
-      const r = normalizeResult(result);
-      // 먼저 실패 패턴 제외 (成中有敗는 실패로 분류)
-      if (r.includes('成中有敗') || r.includes('성중유패')) return false;
-      // 성패공존도 성공이 아님
-      if (r.includes('成敗共存') || r.includes('성패공존')) return false;
-      // 成/성 또는 敗中有成/패중유성 (어려움 속에서 성공 찾음)
-      return r.includes('成') || r.includes('성') ||
-             r.includes('敗中有成') || r.includes('패중유성');
-    };
-    const isFailure = (result) => {
-      const r = normalizeResult(result);
-      // 먼저 성공 패턴 제외 (敗中有成은 성공으로 분류)
-      if (r.includes('敗中有成') || r.includes('패중유성')) return false;
-      // 성패공존도 실패가 아님
-      if (r.includes('成敗共存') || r.includes('성패공존')) return false;
-      // 敗/패 또는 成中有敗/성중유패 (성공 속에서 실패 있음)
-      return r.includes('敗') || r.includes('패') ||
-             r.includes('成中有敗') || r.includes('성중유패');
-    };
-    const isMixed = (result) => {
-      const r = normalizeResult(result);
-      // 成敗共存/성패공존 (성공과 실패가 공존)
-      return r.includes('成敗共存') || r.includes('성패공존');
+    const isBad = (result) => {
+      if (!result || typeof result !== 'string') return false;
+      return result === '敗' || result === '패' ||
+             result.includes('成中有敗') || result.includes('성중유패');
     };
 
-    // FortuneEditor/CareerEditor에서 저장된 데이터를 우선 사용
     // 우선순위: sky.result → sky_result → sky_analysis.result
-    if (decade.year === 2030) {
-      console.log('[getOverallRating 2030] keys:', Object.keys(decade));
-      console.log('[getOverallRating 2030] sky_result:', decade.sky_result);
-      console.log('[getOverallRating 2030] earth_result:', decade.earth_result);
-    }
     const skyResult = decade.sky?.result || decade.sky_result || decade.sky_analysis?.result;
     const earthResult = decade.earth?.result || decade.earth_result || decade.earth_analysis?.result;
 
-    // 결과가 있으면 결과로 판정 (백엔드 로직과 일치)
+    const skyGood = isGood(skyResult);
+    const skyBad = isBad(skyResult);
+    const earthGood = isGood(earthResult);
+    const earthBad = isBad(earthResult);
+
+    // 결과가 있으면 결과로 판정
     if (skyResult || earthResult) {
-      const skyIsSuccess = isSuccess(skyResult);
-      const skyIsFailure = isFailure(skyResult);
-      const skyIsMixed = isMixed(skyResult);
-      const earthIsSuccess = isSuccess(earthResult);
-      const earthIsFailure = isFailure(earthResult);
-      const earthIsMixed = isMixed(earthResult);
-      const bothPureSuccess = isPureSuccess(skyResult) && isPureSuccess(earthResult);
-
-      // 디버그 로그 (개발 환경에서만)
-      if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') {
-        console.log('[getOverallRating] results:', {
-          year: decade.year,
-          skyResult,
-          earthResult,
-          source: {
-            sky: decade.sky?.result ? 'sky.result' : (decade.sky_result ? 'sky_result' : 'sky_analysis.result'),
-            earth: decade.earth?.result ? 'earth.result' : (decade.earth_result ? 'earth_result' : 'earth_analysis.result')
-          },
-          skyIsSuccess, skyIsFailure, skyIsMixed,
-          earthIsSuccess, earthIsFailure, earthIsMixed,
-          bothPureSuccess
-        });
-      }
-
-      // 순수 성공 여부 체크
-      const skyIsPure = isPureSuccess(skyResult);
-      const earthIsPure = isPureSuccess(earthResult);
-
-      // 둘 다 순수 성공 (成) → 최고
-      if (bothPureSuccess) {
-        console.log('[getOverallRating] → excellent (bothPureSuccess)');
-        return 'excellent';
-      }
-      // 성공 + 실패 혼재 → 도전 (먼저 체크해야 함!)
-      if ((skyIsSuccess && earthIsFailure) || (skyIsFailure && earthIsSuccess)) return 'caution';
-      // 둘 다 성공 패턴
-      if (skyIsSuccess && earthIsSuccess) {
-        // 하나라도 순수 성공(成)이면 좋음, 둘 다 패중유성이면 보통
-        if (skyIsPure || earthIsPure) return 'good';
-        return 'neutral'; // 둘 다 패중유성
-      }
-      // 둘 다 실패 패턴 (敗 또는 成中有敗) → 어려움
-      if (skyIsFailure && earthIsFailure) return 'difficult';
-      // 성공 + 성패공존 → 평탄 (좋음으로 표시하면 안됨)
-      if ((skyIsSuccess && earthIsMixed) || (skyIsMixed && earthIsSuccess)) return 'neutral';
-      // 실패 + 성패공존 → 도전
-      if ((skyIsFailure && earthIsMixed) || (skyIsMixed && earthIsFailure)) return 'caution';
-      // 하나만 성공 (다른 쪽은 중립/없음)
-      if (skyIsSuccess || earthIsSuccess) {
-        // 순수 성공이면 좋음, 패중유성이면 보통
-        if (skyIsPure || earthIsPure) return 'good';
-        return 'neutral';
-      }
-      // 하나만 실패 (다른 쪽은 중립/없음) → 도전
-      if (skyIsFailure || earthIsFailure) return 'caution';
-      // 둘 다 중립 (成敗共存 등) → 평탄
-      return 'neutral';
+      if (skyGood && earthGood) return 'excellent';
+      if (skyGood && !earthBad) return 'good';
+      if (earthGood && !skyBad) return 'good';
+      if (skyBad && earthBad) return 'difficult';
+      if (skyBad || earthBad) return 'caution';
+      if (skyGood || earthGood) return 'neutral';
     }
 
-    // 2. fortune_level 또는 career_level로 판정 (fallback - 백엔드에서 '좋음', '나쁨', '보통' 한국어로 반환)
-    const levelField = decade.fortune_level || decade.career_level;
-    if (levelField) {
-      const level = levelField;
-      if (level === 'very_good' || level === 'excellent') return 'excellent';
-      if (level === 'good' || level === '좋음') return 'good';
-      if (level === 'caution') return 'caution';
-      if (level === 'difficult' || level === 'bad' || level === '나쁨') return 'difficult';
-      if (level === 'normal' || level === 'neutral' || level === '보통') return 'neutral';
-    }
-
-    // 3. score로 판정 (fallback)
+    // 2. score로 판정 (fallback)
     if (typeof decade.sky_score === 'number' && typeof decade.earth_score === 'number') {
       const totalScore = decade.sky_score + decade.earth_score;
       if (totalScore >= 3) return 'excellent';
