@@ -271,7 +271,7 @@ function BlueprintIntroPage() {
               실제 리포트 미리보기
             </div>
             <h3 className="showcase-title">
-              매 챕터마다<br />
+              리포트 곳곳에<br />
               <span className="gold-text">상담사가 직접 작성한</span><br />
               핵심 포인트가 담겨 있습니다
             </h3>
