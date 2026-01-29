@@ -31,8 +31,8 @@ body:has(.blueprint-intro-page) {
 /* Hero Section */
 .blueprint-hero {
   position: relative;
-  height: 60vh;
-  min-height: 400px;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -349,6 +349,141 @@ body:has(.blueprint-intro-page) {
 
 .appeal-message strong {
   color: #d4af37;
+}
+
+/* Counselor Showcase Section */
+.counselor-showcase-section {
+  margin: 48px -24px;
+  padding: 48px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(20, 18, 40, 1) 0%, rgba(30, 25, 55, 1) 50%, rgba(20, 18, 40, 1) 100%);
+  border-top: 1px solid rgba(212, 175, 55, 0.12);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+.showcase-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d4af37;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+.showcase-label-dot {
+  width: 6px;
+  height: 6px;
+  background: #d4af37;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.showcase-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.showcase-title .gold-text {
+  color: #d4af37;
+}
+
+.showcase-desc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.8;
+  margin: 0 0 32px;
+}
+
+.showcase-screenshots {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.showcase-screenshot-item {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 12px 40px rgba(212, 175, 55, 0.15), 0 4px 16px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.06) 0%, rgba(30, 30, 50, 1) 100%);
+  padding: 12px;
+  position: relative;
+}
+
+.showcase-screenshot-item::before {
+  content: '리포트 샘플';
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  color: #1a1a2e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.showcase-screenshot {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+}
+
+.showcase-trust-items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.showcase-trust-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.showcase-trust-item:hover {
+  background: rgba(212, 175, 55, 0.05);
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.showcase-trust-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.showcase-trust-text {
+  flex: 1;
+}
+
+.showcase-trust-text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.showcase-trust-text p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* Precision Section */
@@ -1016,8 +1151,8 @@ body:has(.blueprint-intro-page) {
 /* Responsive */
 @media (max-width: 480px) {
   .blueprint-hero {
-    height: auto;
-    min-height: 450px;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 60px 0 40px;
   }
 

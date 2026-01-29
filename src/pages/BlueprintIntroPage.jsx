@@ -264,6 +264,58 @@ function BlueprintIntroPage() {
             </p>
           </div>
 
+          {/* Counselor Showcase Section */}
+          <div className="counselor-showcase-section">
+            <div className="showcase-label">
+              <span className="showcase-label-dot"></span>
+              실제 리포트 미리보기
+            </div>
+            <h3 className="showcase-title">
+              매 챕터마다<br />
+              <span className="gold-text">상담사가 직접 작성한</span><br />
+              핵심 포인트가 담겨 있습니다
+            </h3>
+            <p className="showcase-desc">
+              자동 생성된 문장이 아닙니다.<br />
+              수천 건의 실전 상담 경험을 가진 전문 상담사가<br />
+              당신의 사주를 직접 읽고, 진심을 담아 작성합니다.
+            </p>
+
+            {/* 실제 리포트 스크린샷 */}
+            <div className="showcase-screenshots">
+              <div className="showcase-screenshot-item">
+                <img src="/img/marketing1.png" alt="상담사의 핵심 포인트 예시 1" className="showcase-screenshot" />
+              </div>
+              <div className="showcase-screenshot-item">
+                <img src="/img/marketing2.jpg" alt="상담사의 핵심 포인트 예시 2" className="showcase-screenshot" />
+              </div>
+            </div>
+
+            <div className="showcase-trust-items">
+              <div className="showcase-trust-item">
+                <span className="showcase-trust-icon">🔍</span>
+                <div className="showcase-trust-text">
+                  <strong>상담사의 육성이 담긴 분석</strong>
+                  <p>기계가 아닌, 사람이 직접 당신의 사주를 읽고 핵심을 짚어드립니다</p>
+                </div>
+              </div>
+              <div className="showcase-trust-item">
+                <span className="showcase-trust-icon">💎</span>
+                <div className="showcase-trust-text">
+                  <strong>세상에 단 하나뿐인 맞춤 리포트</strong>
+                  <p>같은 생년월일이라도 다른 분석, 오직 당신만을 위한 인사이트</p>
+                </div>
+              </div>
+              <div className="showcase-trust-item">
+                <span className="showcase-trust-icon">🤝</span>
+                <div className="showcase-trust-text">
+                  <strong>리포트로 끝이 아닌 진짜 상담</strong>
+                  <p>궁금한 점은 추가 질문으로 상담사에게 직접 물어보세요</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Precision Section */}
           <div className="precision-section">
             <h3 className="precision-title">
@@ -332,7 +384,7 @@ function BlueprintIntroPage() {
                 <span className="plan-badge">PRO</span>
                 <span className="plan-title">인생 청사진</span>
                 <span className="plan-subtitle">평생 대운 + 5개년 전략</span>
-                <span className="plan-price">{plans.full.currentPrice.toLocaleString()}원</span>
+                <span className="plan-price">{pricing.loading ? '···' : `${plans.full.currentPrice.toLocaleString()}원`}</span>
               </button>
               <button
                 className={`plan-toggle-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
@@ -341,7 +393,7 @@ function BlueprintIntroPage() {
                 <span className="plan-badge lite">LITE</span>
                 <span className="plan-title">3년 플랜</span>
                 <span className="plan-subtitle">현재/다음 대운 + 3개년 운세</span>
-                <span className="plan-price">{plans.lite.currentPrice.toLocaleString()}원</span>
+                <span className="plan-price">{pricing.loading ? '···' : `${plans.lite.currentPrice.toLocaleString()}원`}</span>
               </button>
             </div>
             <p className="price-message">
@@ -474,7 +526,7 @@ function BlueprintIntroPage() {
           </button>
         </div>
         <button className="floating-cta-button" onClick={handleStartClick}>
-          <span>{currentPlan.currentPrice.toLocaleString()}원</span>
+          <span>{pricing.loading ? '···' : `${currentPlan.currentPrice.toLocaleString()}원`}</span>
           <span className="floating-divider">|</span>
           <span>시작하기</span>
           <ArrowRight size={18} />
