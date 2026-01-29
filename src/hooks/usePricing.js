@@ -13,15 +13,21 @@ export function usePricing() {
   });
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/blueprint/sale_status?platform=web`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/blueprint/sale_status?platform=web&_t=${Date.now()}`, {
           headers: {
             'Saju-Authorization': `Bearer-${API_TOKEN}`,
           },
+          cache: 'no-store',
         });
+        if (cancelled) return;
+
         if (response.ok) {
           const data = await response.json();
+          if (cancelled) return;
 
           const parsePrice = (val) => {
             if (!val && val !== 0) return null;
@@ -48,6 +54,18 @@ export function usePricing() {
             loading: false,
           });
         } else {
+          if (!cancelled) {
+            setPricing({
+              pro: { ...PRICING.BLUEPRINT_PRO },
+              lite: { ...PRICING.BLUEPRINT_LITE },
+              saleActive: false,
+              loading: false,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch pricing:', err);
+        if (!cancelled) {
           setPricing({
             pro: { ...PRICING.BLUEPRINT_PRO },
             lite: { ...PRICING.BLUEPRINT_LITE },
@@ -55,18 +73,14 @@ export function usePricing() {
             loading: false,
           });
         }
-      } catch (err) {
-        console.error('Failed to fetch pricing:', err);
-        setPricing({
-          pro: { ...PRICING.BLUEPRINT_PRO },
-          lite: { ...PRICING.BLUEPRINT_LITE },
-          saleActive: false,
-          loading: false,
-        });
       }
     };
 
     fetchPricing();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return pricing;
