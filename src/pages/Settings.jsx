@@ -466,7 +466,7 @@ function Settings() {
                     <h3>PRO</h3>
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="pro_original_price">원가 (코인)</label>
+                        <label htmlFor="pro_original_price">앱 원가 (코인)</label>
                         <input
                           type="number"
                           id="pro_original_price"
@@ -496,15 +496,57 @@ function Settings() {
                       </div>
                     </div>
                     <p className="price-preview">
-                      원가: <strong>{discountSettings.pro_original_price.toLocaleString()}</strong> 코인 | 기본 할인가: <span className="highlight">{Math.round(discountSettings.pro_original_price * (1 - discountSettings.pro_discount_rate / 100)).toLocaleString()}</span> 코인 ({discountSettings.pro_discount_rate}% OFF)
+                      앱: <strong>{discountSettings.pro_original_price.toLocaleString()}</strong> 코인 → <span className="highlight">{Math.round(discountSettings.pro_original_price * (1 - discountSettings.pro_discount_rate / 100)).toLocaleString()}</span> 코인 ({discountSettings.pro_discount_rate}% OFF)
                     </p>
+                    <div className="web-price-sub">
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>웹 원가 (원)</label>
+                          <input
+                            type="number"
+                            value={discountSettings.pro_original_price_web}
+                            onChange={(e) => setDiscountSettings(prev => ({
+                              ...prev,
+                              pro_original_price_web: e.target.value ? parseInt(e.target.value) : ''
+                            }))}
+                            placeholder="미설정"
+                            disabled={savingDiscount}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>웹 할인가 (원)</label>
+                          <input
+                            type="number"
+                            value={discountSettings.pro_sale_price_web}
+                            onChange={(e) => setDiscountSettings(prev => ({
+                              ...prev,
+                              pro_sale_price_web: e.target.value ? parseInt(e.target.value) : ''
+                            }))}
+                            placeholder="자동 계산"
+                            disabled={savingDiscount}
+                          />
+                        </div>
+                      </div>
+                      {(() => {
+                        const webOrig = discountSettings.pro_original_price_web;
+                        const webSale = discountSettings.pro_sale_price_web;
+                        if (!webOrig && !webSale) return <p className="price-preview not-set-preview">웹 가격 미설정 (앱 코인 가격 사용)</p>;
+                        const origVal = webOrig || discountSettings.pro_original_price;
+                        const saleVal = webSale || Math.round(origVal * (1 - discountSettings.pro_discount_rate / 100));
+                        return (
+                          <p className="price-preview">
+                            웹: <span className="strike">{Number(origVal).toLocaleString()}</span> → <span className="highlight">{Number(saleVal).toLocaleString()}</span> 원 ({discountSettings.pro_discount_rate}% OFF)
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </div>
 
                   <div className="discount-plan-card">
                     <h3>LITE</h3>
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="lite_original_price">원가 (코인)</label>
+                        <label htmlFor="lite_original_price">앱 원가 (코인)</label>
                         <input
                           type="number"
                           id="lite_original_price"
@@ -534,8 +576,50 @@ function Settings() {
                       </div>
                     </div>
                     <p className="price-preview">
-                      원가: <strong>{discountSettings.lite_original_price.toLocaleString()}</strong> 코인 | 기본 할인가: <span className="highlight">{Math.round(discountSettings.lite_original_price * (1 - discountSettings.lite_discount_rate / 100)).toLocaleString()}</span> 코인 ({discountSettings.lite_discount_rate}% OFF)
+                      앱: <strong>{discountSettings.lite_original_price.toLocaleString()}</strong> 코인 → <span className="highlight">{Math.round(discountSettings.lite_original_price * (1 - discountSettings.lite_discount_rate / 100)).toLocaleString()}</span> 코인 ({discountSettings.lite_discount_rate}% OFF)
                     </p>
+                    <div className="web-price-sub">
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>웹 원가 (원)</label>
+                          <input
+                            type="number"
+                            value={discountSettings.lite_original_price_web}
+                            onChange={(e) => setDiscountSettings(prev => ({
+                              ...prev,
+                              lite_original_price_web: e.target.value ? parseInt(e.target.value) : ''
+                            }))}
+                            placeholder="미설정"
+                            disabled={savingDiscount}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>웹 할인가 (원)</label>
+                          <input
+                            type="number"
+                            value={discountSettings.lite_sale_price_web}
+                            onChange={(e) => setDiscountSettings(prev => ({
+                              ...prev,
+                              lite_sale_price_web: e.target.value ? parseInt(e.target.value) : ''
+                            }))}
+                            placeholder="자동 계산"
+                            disabled={savingDiscount}
+                          />
+                        </div>
+                      </div>
+                      {(() => {
+                        const webOrig = discountSettings.lite_original_price_web;
+                        const webSale = discountSettings.lite_sale_price_web;
+                        if (!webOrig && !webSale) return <p className="price-preview not-set-preview">웹 가격 미설정 (앱 코인 가격 사용)</p>;
+                        const origVal = webOrig || discountSettings.lite_original_price;
+                        const saleVal = webSale || Math.round(origVal * (1 - discountSettings.lite_discount_rate / 100));
+                        return (
+                          <p className="price-preview">
+                            웹: <span className="strike">{Number(origVal).toLocaleString()}</span> → <span className="highlight">{Number(saleVal).toLocaleString()}</span> 원 ({discountSettings.lite_discount_rate}% OFF)
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
               )}
