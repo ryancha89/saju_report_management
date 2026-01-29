@@ -2,32 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Building, CreditCard, FileText, Save, Loader, Link, Copy, Check, DollarSign, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { PRICING } from '../lib/pricing';
+import { usePricing } from '../hooks/usePricing';
 import './Profile.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const REFERRAL_BASE_URL = import.meta.env.VITE_REFERRAL_BASE_URL || 'https://fortunetorch.com';
 
-const PRODUCTS_CONFIG = {
-  blueprint: {
-    name: 'Blueprint Pro',
-    display_name: 'Blueprint Pro (5년)',
-    price: PRICING.BLUEPRINT_PRO.currentPrice,
-    description: '평생 대운 + 5년 운세 분석',
-    max_questions: 2
-  },
-  blueprint_lite: {
-    name: 'Blueprint Lite',
-    display_name: 'Blueprint Lite (3년)',
-    price: PRICING.BLUEPRINT_LITE.currentPrice,
-    description: '현재/다음 대운 + 3년 운세 분석',
-    max_questions: 1
-  }
-};
-
 function Profile() {
   const navigate = useNavigate();
   const { getToken, manager, refreshManager } = useAuth();
+  const pricing = usePricing();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -45,7 +29,22 @@ function Profile() {
   const [referralCode, setReferralCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [commissionRate, setCommissionRate] = useState(50);
-  const products = PRODUCTS_CONFIG;
+  const products = {
+    blueprint: {
+      name: 'Blueprint Pro',
+      display_name: 'Blueprint Pro (5년)',
+      price: pricing.pro.currentPrice,
+      description: '평생 대운 + 5년 운세 분석',
+      max_questions: 2
+    },
+    blueprint_lite: {
+      name: 'Blueprint Lite',
+      display_name: 'Blueprint Lite (3년)',
+      price: pricing.lite.currentPrice,
+      description: '현재/다음 대운 + 3년 운세 분석',
+      max_questions: 1
+    }
+  };
   const isProfileCompleted = manager?.profile_completed;
   const isAdmin = manager?.role?.toLowerCase() === 'admin';
 

@@ -1,19 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Check, Sparkles, ChevronDown, Star } from 'lucide-react';
-import { PRICING } from '../lib/pricing';
+import { ArrowRight, Check, Sparkles, ChevronDown } from 'lucide-react';
+import { usePricing } from '../hooks/usePricing';
 import { getTrackingData } from '../lib/tracking';
 import './BlueprintIntroPage.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
+
+const RATING_LABELS = {
+  0: { emoji: '👍', label: '도움이 돼요' },
+  1: { emoji: '😊', label: '재밌어요' },
+  2: { emoji: '📚', label: '공부가 돼요' },
+  3: { emoji: '💪', label: '격려가 돼요' },
+};
 
 function BlueprintIntroPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [openFaq, setOpenFaq] = useState(null);
+  const [reviews, setReviews] = useState([]);
 
   // URL에서 plan, ref 파라미터 읽기
   const params = new URLSearchParams(location.search);
   const initialPlan = params.get('plan') === 'lite' ? 'lite' : 'full';
   const [selectedPlan, setSelectedPlan] = useState(initialPlan);
+  const pricing = usePricing();
 
   // ref 파라미터: URL > sessionStorage > localStorage(tracking) 순서로 확인
   const urlRef = params.get('ref');
@@ -26,6 +38,27 @@ function BlueprintIntroPage() {
       sessionStorage.setItem('blueprint_ref', urlRef);
     }
   }, [urlRef]);
+
+  // 리뷰 가져오기
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const headers = { 'Saju-Authorization': `Bearer-${API_TOKEN}` };
+        const [bpRes, liteRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/report_reviews?type=blueprint`, { headers }),
+          fetch(`${API_BASE_URL}/api/v1/report_reviews?type=blueprint_lite`, { headers }),
+        ]);
+        const bpData = bpRes.ok ? await bpRes.json() : [];
+        const liteData = liteRes.ok ? await liteRes.json() : [];
+        const allReviews = [...bpData, ...liteData]
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setReviews(allReviews);
+      } catch (err) {
+        console.error('Failed to fetch reviews:', err);
+      }
+    };
+    fetchReviews();
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -56,17 +89,17 @@ function BlueprintIntroPage() {
       name: 'PRO',
       title: '인생 청사진',
       subtitle: '평생 대운 + 5개년 전략',
-      originalPrice: PRICING.BLUEPRINT_PRO.originalPrice,
-      currentPrice: PRICING.BLUEPRINT_PRO.currentPrice,
-      discount: Math.round((1 - PRICING.BLUEPRINT_PRO.currentPrice / PRICING.BLUEPRINT_PRO.originalPrice) * 100)
+      originalPrice: pricing.pro.originalPrice,
+      currentPrice: pricing.pro.currentPrice,
+      discount: pricing.pro.discountPercent
     },
     lite: {
       name: 'LITE',
       title: '3년 플랜',
       subtitle: '현재/다음 대운 + 3개년 운세',
-      originalPrice: PRICING.BLUEPRINT_LITE.originalPrice,
-      currentPrice: PRICING.BLUEPRINT_LITE.currentPrice,
-      discount: Math.round((1 - PRICING.BLUEPRINT_LITE.currentPrice / PRICING.BLUEPRINT_LITE.originalPrice) * 100)
+      originalPrice: pricing.lite.originalPrice,
+      currentPrice: pricing.lite.currentPrice,
+      discount: pricing.lite.discountPercent
     }
   };
 
@@ -101,27 +134,6 @@ function BlueprintIntroPage() {
   };
 
   const features = featuresData[selectedPlan];
-
-  const reviews = [
-    {
-      name: '김**',
-      age: '32세',
-      rating: 5,
-      text: '제 성격과 적성을 정확히 짚어줘서 놀랐어요. 커리어 방향을 고민하던 중이었는데 큰 도움이 됐습니다.'
-    },
-    {
-      name: '이**',
-      age: '28세',
-      rating: 5,
-      text: '단순한 운세가 아니라 실질적인 인생 전략을 알려줘서 좋았어요. 5개년 로드맵이 특히 유용했습니다.'
-    },
-    {
-      name: '박**',
-      age: '45세',
-      rating: 5,
-      text: '대운 분석이 정말 신기했어요. 지난 일들이 왜 그랬는지 이해가 되고, 앞으로의 방향이 보였습니다.'
-    }
-  ];
 
   const faqs = [
     {
@@ -392,27 +404,29 @@ function BlueprintIntroPage() {
           </div>
 
           {/* Reviews Section */}
-          <div className="reviews-section">
-            <h3 className="section-title">실제 후기</h3>
-            <div className="reviews-list">
-              {reviews.map((review, index) => (
-                <div key={index} className="review-card">
-                  <div className="review-header">
-                    <div className="review-info">
-                      <span className="review-name">{review.name}</span>
-                      <span className="review-age">{review.age}</span>
+          {reviews.length > 0 && (
+            <div className="reviews-section">
+              <h3 className="section-title">실제 후기</h3>
+              <div className="reviews-list">
+                {reviews.map((review) => (
+                  <div key={review.id} className="review-card">
+                    <div className="review-header">
+                      <div className="review-info">
+                        <span className="review-name">{review.nickname}</span>
+                      </div>
+                      {RATING_LABELS[review.rating] && (
+                        <div className="review-rating-badge">
+                          <span>{RATING_LABELS[review.rating].emoji}</span>
+                          <span>{RATING_LABELS[review.rating].label}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="review-stars">
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} size={14} fill="#B8860B" color="#B8860B" />
-                      ))}
-                    </div>
+                    <p className="review-text">{review.content}</p>
                   </div>
-                  <p className="review-text">{review.text}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* FAQ Section */}
           <div className="faq-section">

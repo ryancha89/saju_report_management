@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, Map, ArrowRight, Sparkles, Download } from 'lucide-react';
 import { initTracking } from '../lib/tracking';
-import { PRICING, formatPrice } from '../lib/pricing';
+import { formatPrice } from '../lib/pricing';
+import { usePricing } from '../hooks/usePricing';
 import './LandingPage.css';
 
 function LandingPage() {
@@ -10,6 +11,7 @@ function LandingPage() {
   const location = useLocation();
   const [footerOpen, setFooterOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('full'); // 'full' or 'lite'
+  const pricing = usePricing();
 
   // 페이지 진입 시 추적 데이터 저장
   useEffect(() => {
@@ -50,14 +52,14 @@ function LandingPage() {
   // 플랜별 데이터
   const blueprintPlans = {
     full: {
-      price: formatPrice(PRICING.BLUEPRINT_PRO.currentPrice),
-      originalPrice: formatPrice(PRICING.BLUEPRINT_PRO.originalPrice),
+      price: formatPrice(pricing.pro.currentPrice),
+      originalPrice: formatPrice(pricing.pro.originalPrice),
       subtitle: '평생 대운 + 5개년 전략',
       features: ['나의 아이덴티티 잠재력 분석', '평생 대운 흐름 분석', '5개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     },
     lite: {
-      price: formatPrice(PRICING.BLUEPRINT_LITE.currentPrice),
-      originalPrice: formatPrice(PRICING.BLUEPRINT_LITE.originalPrice),
+      price: formatPrice(pricing.lite.currentPrice),
+      originalPrice: formatPrice(pricing.lite.originalPrice),
       subtitle: '현재/다음 대운 + 3개년 운세',
       features: ['나의 아이덴티티 잠재력 분석', '현재 & 다음 대운 분석', '3개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     }

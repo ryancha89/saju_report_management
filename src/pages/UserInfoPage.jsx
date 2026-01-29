@@ -3,27 +3,27 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Loader, CheckCircle, Building2, Sparkles, ArrowRight, Smartphone, Download, Copy, Check, Pencil } from 'lucide-react';
 import { KOREAN_CITIES, findCityByName, calculateTimeAdjustment } from '../lib/koreanCities';
 import { getTrackingForAPI, initTracking, getTrackingData } from '../lib/tracking';
-import { PRICING } from '../lib/pricing';
+import { usePricing } from '../hooks/usePricing';
 import Payment from '../components/Payment';
 import './UserInfoPage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
-// 상품 정보
-const PRODUCT_INFO = {
+// 상품 정보 (blueprint 가격은 컴포넌트 내에서 동적으로 설정)
+const BASE_PRODUCT_INFO = {
   blueprint: {
     id: 'blueprint',
     name: 'The Blueprint: 당신만을 위한 인생 최적화 가이드',
     description: '평생 대운과 5개년도의 전략 리포트',
-    price: PRICING.BLUEPRINT_PRO.currentPrice,
+    price: 0,
     yearCount: 5
   },
   blueprint_lite: {
     id: 'blueprint_lite',
     name: 'The Blueprint Lite: 3년 플랜',
     description: '현재/다음 대운과 3개년 운세 리포트',
-    price: PRICING.BLUEPRINT_LITE.currentPrice,
+    price: 0,
     yearCount: 3
   },
   new_year: { id: 'new_year', name: '2026 신년운세 리포트', price: 29000 },
@@ -73,7 +73,19 @@ function UserInfoPage() {
   const searchParams = new URLSearchParams(location.search);
   const productId = searchParams.get('product') || 'blueprint';
   const couponCode = searchParams.get('coupon');
-  const productInfo = PRODUCT_INFO[productId] || PRODUCT_INFO.blueprint;
+  const pricing = usePricing();
+
+  // 동적 가격 적용
+  const productInfo = (() => {
+    const base = BASE_PRODUCT_INFO[productId] || BASE_PRODUCT_INFO.blueprint;
+    if (productId === 'blueprint') {
+      return { ...base, price: pricing.pro.currentPrice };
+    }
+    if (productId === 'blueprint_lite') {
+      return { ...base, price: pricing.lite.currentPrice };
+    }
+    return base;
+  })();
 
   // ref 파라미터: URL에서 먼저 확인, 없으면 sessionStorage, 없으면 tracking data에서 가져옴
   const urlRef = searchParams.get('ref');

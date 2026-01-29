@@ -2004,7 +2004,8 @@ function OrderDetail() {
     setChapter2Error(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
+      // AI 콘텐츠만 별도 생성 (basis는 이미 가져온 상태)
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_chapter3_ai`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2015,7 +2016,7 @@ function OrderDetail() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '챕터2 생성에 실패했습니다.');
+        throw new Error(data.error || '챕터3(잠재력) AI 생성에 실패했습니다.');
       }
 
       setChapter2Data(data.chapter);
@@ -2029,7 +2030,7 @@ function OrderDetail() {
             'Saju-Authorization': `Bearer-${API_TOKEN}`
           },
           body: JSON.stringify({
-            chapter_number: 3,  // 잠재력은 chapter3
+            chapter_number: 3,
             content: data.chapter.content,
             basis: data.chapter.basis || basis2Data
           })
@@ -3010,9 +3011,9 @@ function OrderDetail() {
     const results = [];
 
     try {
-      // 챕터1 (아이덴티티) 생성
+      // 챕터2 (아이덴티티) 생성
       if (missingChapters.includes('chapter1')) {
-        setGeneratingChapter(1);
+        setGeneratingChapter(2);
         try {
           const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter1`, {
             method: 'POST',
@@ -3027,34 +3028,50 @@ function OrderDetail() {
           }
         } catch (err) {
           results.push('아이덴티티 ✗');
-          console.error('챕터1 생성 실패:', err);
+          console.error('챕터2(아이덴티티) 생성 실패:', err);
         }
       }
 
-      // 챕터2 (잠재력) 생성
+      // 챕터3 (잠재력) 생성 - 2단계 분리: basis 먼저, AI 별도 호출
       if (missingChapters.includes('chapter2')) {
-        setGeneratingChapter(2);
+        setGeneratingChapter(3);
         try {
-          const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
+          // 1단계: basis 데이터 먼저 가져오기 (AI 없이, 빠름)
+          console.log('[handleRegenerateMissingChapters] 챕터3(잠재력) basis 데이터 가져오기 시작');
+          const basisRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/basis_chapter2`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const basisData = await basisRes.json();
+
+          if (!basisRes.ok || !basisData.success) {
+            throw new Error(basisData.error || '챕터3(잠재력) basis 데이터 조회 실패');
+          }
+          console.log('[handleRegenerateMissingChapters] 챕터3(잠재력) basis 데이터 조회 완료');
+
+          // 2단계: AI 콘텐츠 생성 (GPT 호출만, 분리된 요청)
+          console.log('[handleRegenerateMissingChapters] 챕터3(잠재력) AI 생성 시작');
+          const aiRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_chapter3_ai`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            setChapter2Data(data.chapter);
+          const aiData = await aiRes.json();
+
+          if (aiRes.ok && aiData.success) {
+            setChapter2Data(aiData.chapter);
             results.push('잠재력 ✓');
           } else {
             results.push(`잠재력 ✗`);
           }
         } catch (err) {
           results.push('잠재력 ✗');
-          console.error('챕터2 생성 실패:', err);
+          console.error('챕터3(잠재력) 생성 실패:', err);
         }
       }
 
-      // 챕터3 (대운흐름) 생성
+      // 챕터4 (대운흐름) 생성
       if (missingChapters.includes('chapter3')) {
-        setGeneratingChapter(3);
+        setGeneratingChapter(4);
         try {
           // 1. 기본 구조만 먼저 가져오기 (skip_ai=true)
           setChapter3Progress({ progress: 10, message: '대운 기본 정보 가져오는 중...' });
@@ -3172,9 +3189,9 @@ function OrderDetail() {
         }
       }
 
-      // 챕터4 (5년운세) 생성
+      // 챕터5 (5년운세) 생성
       if (missingChapters.includes('chapter4')) {
-        setGeneratingChapter(4);
+        setGeneratingChapter(5);
         try {
           const dataRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/five_year_fortune_data?year_count=${yearCount}`, {
             method: 'GET',
@@ -3195,7 +3212,7 @@ function OrderDetail() {
 
       // 재물운 생성
       if (missingChapters.includes('fortune')) {
-        setGeneratingChapter(5);
+        setGeneratingChapter(6);
         setFortuneProgress({ progress: 50, message: '재물운 생성 중...' });
         try {
           const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_fortune_all`, {
@@ -3229,7 +3246,7 @@ function OrderDetail() {
 
       // 직업운 생성
       if (missingChapters.includes('career')) {
-        setGeneratingChapter(6);
+        setGeneratingChapter(7);
         setCareerProgress({ progress: 50, message: '직업운 생성 중...' });
         try {
           const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_career_all`, {
@@ -3263,7 +3280,7 @@ function OrderDetail() {
 
       // 연애운 생성 - 연도별 순차 호출
       if (missingChapters.includes('love')) {
-        setGeneratingChapter(7);
+        setGeneratingChapter(8);
         const currentYear = new Date().getFullYear();
         const yearsToGenerate = Array.from({ length: yearCount }, (_, i) => currentYear + i);
         const loveResults = [];
@@ -3318,7 +3335,7 @@ function OrderDetail() {
 
       // 코칭 생성
       if (missingChapters.includes('coaching')) {
-        setGeneratingChapter(8);
+        setGeneratingChapter(9);
         setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
         try {
           const res = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_coaching`, {
@@ -3668,14 +3685,14 @@ function OrderDetail() {
   const progressYearCount = order?.report_type === 'blueprint_lite' ? 3 : 5;
   const chapterInfo = {
     validating: { icon: '🔍', title: '사주 검증' },
-    1: { icon: '🧭', title: '나의 아이덴티티' },
-    2: { icon: '🏛️', title: '나의 잠재력과 사회적 역할' },
-    3: { icon: '📊', title: '대운 흐름 분석' },
-    4: { icon: '🔮', title: `향후 ${progressYearCount}년간의 운세` },
-    5: { icon: '💰', title: `재물운 (향후 ${progressYearCount}년)` },
-    6: { icon: '💼', title: `직업운/사회운 (향후 ${progressYearCount}년)` },
-    7: { icon: '💕', title: `연애운/배우자운 (향후 ${progressYearCount}년)` },
-    8: { icon: '💬', title: '상담사의 코칭' },
+    2: { icon: '🧭', title: '나의 아이덴티티' },
+    3: { icon: '🏛️', title: '나의 잠재력과 사회적 역할' },
+    4: { icon: '📊', title: '대운 흐름 분석' },
+    5: { icon: '🔮', title: `향후 ${progressYearCount}년간의 운세` },
+    6: { icon: '💰', title: `재물운 (향후 ${progressYearCount}년)` },
+    7: { icon: '💼', title: `직업운/사회운 (향후 ${progressYearCount}년)` },
+    8: { icon: '💕', title: `연애운/배우자운 (향후 ${progressYearCount}년)` },
+    9: { icon: '💬', title: '상담사의 코칭' },
     saving: { icon: '💾', title: '레포트 저장' }
   };
 
@@ -3722,8 +3739,8 @@ function OrderDetail() {
     const generationResults = [];
 
     try {
-      // 챕터1 생성
-      setGeneratingChapter(1);
+      // 챕터2 (아이덴티티) 생성
+      setGeneratingChapter(2);
       if (forceRegenerate || !chapter1Data?.content) {
         setChapter1Loading(true);
         try {
@@ -3760,46 +3777,61 @@ function OrderDetail() {
         setChapter1Loading(false);
       }
 
-      // 챕터2 생성
-      setGeneratingChapter(2);
+      // 챕터3(잠재력) 생성 - 2단계 분리: basis 먼저, AI 별도 호출
+      setGeneratingChapter(3);
       if (forceRegenerate || !chapter2Data?.content) {
         setChapter2Loading(true);
         try {
-          console.log('[generateAllChapters] 챕터2 (잠재력) 생성 시작');
-          const res2 = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/generate_chapter2`, {
+          // 1단계: basis 데이터 먼저 가져오기 (AI 없이, 빠름)
+          console.log('[generateAllChapters] 챕터3(잠재력) basis 데이터 가져오기 시작');
+          const basisRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/basis_chapter2`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
+          });
+          const basisData = await basisRes.json();
+
+          if (!basisRes.ok || !basisData.success) {
+            throw new Error(basisData.error || '챕터3(잠재력) basis 데이터 조회 실패');
+          }
+          console.log('[generateAllChapters] 챕터3(잠재력) basis 데이터 조회 완료');
+
+          // 2단계: AI 콘텐츠 생성 (GPT 호출만, 분리된 요청)
+          console.log('[generateAllChapters] 챕터3(잠재력) AI 생성 시작');
+          const aiRes = await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/regenerate_chapter3_ai`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` }
           });
-          const data2 = await res2.json();
-          console.log('[generateAllChapters] 챕터2 응답:', { ok: res2.ok, success: data2.success, hasContent: !!data2.chapter?.content });
-          if (res2.ok && data2.success) {
-            setChapter2Data(data2.chapter);
-            newChapter2Data = data2.chapter;
+          const aiData = await aiRes.json();
+          console.log('[generateAllChapters] 챕터3(잠재력) AI 응답:', { ok: aiRes.ok, success: aiData.success, hasContent: !!aiData.chapter?.content });
+
+          if (aiRes.ok && aiData.success) {
+            setChapter2Data(aiData.chapter);
+            newChapter2Data = aiData.chapter;
 
             // 즉시 DB에 저장 (chapter3 = 잠재력)
-            if (data2.chapter?.content) {
+            if (aiData.chapter?.content) {
               await fetch(`${API_BASE_URL}/api/v1/admin/orders/${id}/save_chapter_to_report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Saju-Authorization': `Bearer-${API_TOKEN}` },
                 body: JSON.stringify({
                   chapter_number: 3,
-                  content: data2.chapter.content,
-                  basis: data2.chapter.basis
+                  content: aiData.chapter.content,
+                  basis: aiData.chapter.basis
                 })
               });
-              console.log('[generateAllChapters] 챕터2(잠재력) DB 저장 완료');
+              console.log('[generateAllChapters] 챕터3(잠재력) DB 저장 완료');
             }
           } else {
-            console.error('[generateAllChapters] 챕터2 생성 실패:', data2.error);
+            console.error('[generateAllChapters] 챕터3(잠재력) AI 생성 실패:', aiData.error);
           }
         } catch (err) {
-          console.error('[generateAllChapters] 챕터2 생성 에러:', err);
+          console.error('[generateAllChapters] 챕터3(잠재력) 생성 에러:', err);
         }
         setChapter2Loading(false);
       }
 
-      // 챕터3 생성 (대운 흐름 분석) - 대운별 순차 생성
-      setGeneratingChapter(3);
+      // 챕터4 생성 (대운 흐름 분석) - 대운별 순차 생성
+      setGeneratingChapter(4);
       if (forceRegenerate || !chapter3Data?.content) {
         try {
           console.log('[generateAllChapters] 챕터3 (대운흐름) 순차 생성 시작');
@@ -3960,8 +3992,8 @@ function OrderDetail() {
         }
       }
 
-      // 챕터4 생성 (향후 N년간의 운세 - 세운)
-      setGeneratingChapter(4);
+      // 챕터5 생성 (향후 N년간의 운세 - 세운)
+      setGeneratingChapter(5);
       if (forceRegenerate || !fiveYearFortuneData?.content) {
         setChapter4Loading(true);
         try {
@@ -4092,8 +4124,8 @@ function OrderDetail() {
         setChapter4Loading(false);
       }
 
-      // 챕터5 (재물운) - 연도별 순차 생성
-      setGeneratingChapter(5);
+      // 챕터6 (재물운) - 연도별 순차 생성
+      setGeneratingChapter(6);
       const currentYear = new Date().getFullYear();
       const years = Array.from({ length: yearCount }, (_, i) => currentYear + i);
 
@@ -4168,8 +4200,8 @@ function OrderDetail() {
         generationResults.push('재물운 ✗');
       }
 
-      // 챕터6 (직업운) - 연도별 순차 생성
-      setGeneratingChapter(6);
+      // 챕터7 (직업운) - 연도별 순차 생성
+      setGeneratingChapter(7);
       console.log(`[generateAllChapters] 직업운 연도별 순차 생성 시작 (${yearCount}년)`);
       setYearsProgress({
         isActive: true,
@@ -4241,8 +4273,8 @@ function OrderDetail() {
         generationResults.push('직업운 ✗');
       }
 
-      // 챕터7 (연애운) - 연도별 순차 생성
-      setGeneratingChapter(7);
+      // 챕터8 (연애운) - 연도별 순차 생성
+      setGeneratingChapter(8);
       console.log(`[generateAllChapters] 연애운 연도별 순차 생성 시작 (${yearCount}년)`);
       setYearsProgress({
         isActive: true,
@@ -4334,8 +4366,8 @@ function OrderDetail() {
         failedYears: []
       });
 
-      // 챕터8 (코칭) - 동기 생성
-      setGeneratingChapter(8);
+      // 챕터9 (코칭) - 동기 생성
+      setGeneratingChapter(9);
       setCoachingProgress({ progress: 50, message: '코칭 생성 중...' });
       try {
         console.log('[generateAllChapters] 코칭 동기 생성 시작');
@@ -5462,7 +5494,7 @@ function OrderDetail() {
                   <span className="step-icon">🔍</span>
                 </div>
                 {/* 챕터 1-8 */}
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                {[2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                   <div
                     key={num}
                     className={`progress-step ${
@@ -6009,8 +6041,8 @@ function OrderDetail() {
                                 월지의 격국(천간격국, 지지격국)을 중심으로 해석합니다.
                               </p>
 
-                              {/* 명리학적 근거 조회 영역 */}
-                              {!basis2Data && !basis2Loading && (
+                              {/* 명리학적 근거 조회 및 AI 생성 버튼 영역 */}
+                              {!basis2Data && !basis2Loading && !chapter2Data && !chapter2Loading && (
                                 <div className="basis-preview-section">
                                   <button
                                     className="btn btn-basis-preview"
@@ -6019,6 +6051,14 @@ function OrderDetail() {
                                   >
                                     <FileText size={18} />
                                     명리학적 근거 살펴보기
+                                  </button>
+                                  <button
+                                    className="btn btn-generate-chapter2"
+                                    onClick={generateChapter2}
+                                    disabled={chapter2Loading}
+                                  >
+                                    <Search size={18} />
+                                    AI 리포트 생성하기
                                   </button>
                                   {basis2Error && (
                                     <p className="basis-error">{basis2Error}</p>
@@ -6233,12 +6273,18 @@ function OrderDetail() {
                             </div>
                           )}
 
-                          {/* 로딩 상태 */}
+                          {/* 로딩 상태 - 모달 오버레이 */}
                           {chapter2Loading && (
-                            <div className="chapter2-loading">
-                              <Loader size={32} className="spinning" />
-                              <p>AI가 월주 및 격국 분석 리포트를 생성하고 있습니다...</p>
-                              <p className="loading-note">잠시만 기다려주세요 (약 10-15초 소요)</p>
+                            <div className="chapter2-loading-overlay">
+                              <div className="chapter2-loading-modal">
+                                <div className="chapter2-spinner-container">
+                                  <div className="chapter2-spinner"></div>
+                                  <div className="chapter2-modal-icon">🏛️</div>
+                                </div>
+                                <h3 className="chapter2-modal-title">AI가 리포트를 생성하고 있습니다</h3>
+                                <p className="chapter2-modal-desc">월주 및 격국 분석 기반 잠재력 리포트</p>
+                                <p className="chapter2-modal-note">잠시만 기다려주세요 (약 10-15초 소요)</p>
+                              </div>
                             </div>
                           )}
 

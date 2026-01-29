@@ -811,14 +811,15 @@ body:has(.blueprint-intro-page) {
   color: #fff;
 }
 
-.review-age {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.review-stars {
+.review-rating-badge {
   display: flex;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
 }
 
 .review-text {

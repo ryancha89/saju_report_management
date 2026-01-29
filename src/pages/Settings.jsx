@@ -31,13 +31,30 @@ function Settings() {
   // Discount settings (특별할인)
   const [discountSettings, setDiscountSettings] = useState({
     sale_active: false,
+    pro_original_price: 15000,
     pro_sale_price: 10000,
     pro_discount_rate: 33,
+    lite_original_price: 10000,
     lite_sale_price: 5000,
     lite_discount_rate: 50,
+    // 플랫폼별 원가
+    pro_original_price_web: '',
+    pro_original_price_ios: '',
+    pro_original_price_android: '',
+    lite_original_price_web: '',
+    lite_original_price_ios: '',
+    lite_original_price_android: '',
+    // 플랫폼별 할인후 가격
+    pro_sale_price_web: '',
+    pro_sale_price_ios: '',
+    pro_sale_price_android: '',
+    lite_sale_price_web: '',
+    lite_sale_price_ios: '',
+    lite_sale_price_android: '',
   });
   const [savingDiscount, setSavingDiscount] = useState(false);
   const [discountMessage, setDiscountMessage] = useState({ type: '', text: '' });
+  const [platformTab, setPlatformTab] = useState('common'); // 'common' | 'web' | 'ios' | 'android'
 
   useEffect(() => {
     if (isAdmin()) {
@@ -104,10 +121,26 @@ function Settings() {
         const data = await response.json();
         setDiscountSettings({
           sale_active: data.sale_active || false,
+          pro_original_price: data.pro_original_price || 15000,
           pro_sale_price: parseInt(String(data.pro_sale_price || '10000').replace(/,/g, '')) || 10000,
           pro_discount_rate: data.pro_discount_rate || 33,
+          lite_original_price: data.lite_original_price || 10000,
           lite_sale_price: parseInt(String(data.lite_sale_price || '5000').replace(/,/g, '')) || 5000,
           lite_discount_rate: data.lite_discount_rate || 50,
+          // 플랫폼별 원가
+          pro_original_price_web: data.pro_original_price_web || '',
+          pro_original_price_ios: data.pro_original_price_ios || '',
+          pro_original_price_android: data.pro_original_price_android || '',
+          lite_original_price_web: data.lite_original_price_web || '',
+          lite_original_price_ios: data.lite_original_price_ios || '',
+          lite_original_price_android: data.lite_original_price_android || '',
+          // 플랫폼별 할인후 가격
+          pro_sale_price_web: data.pro_sale_price_web || '',
+          pro_sale_price_ios: data.pro_sale_price_ios || '',
+          pro_sale_price_android: data.pro_sale_price_android || '',
+          lite_sale_price_web: data.lite_sale_price_web || '',
+          lite_sale_price_ios: data.lite_sale_price_ios || '',
+          lite_sale_price_android: data.lite_sale_price_android || '',
         });
       }
     } catch (err) {
@@ -129,10 +162,26 @@ function Settings() {
         },
         body: JSON.stringify({
           sale_active: discountSettings.sale_active,
-          pro_sale_price: discountSettings.pro_sale_price,
+          pro_original_price: discountSettings.pro_original_price,
+          pro_sale_price: Math.round(discountSettings.pro_original_price * (1 - discountSettings.pro_discount_rate / 100)),
           pro_discount_rate: discountSettings.pro_discount_rate,
-          lite_sale_price: discountSettings.lite_sale_price,
+          lite_original_price: discountSettings.lite_original_price,
+          lite_sale_price: Math.round(discountSettings.lite_original_price * (1 - discountSettings.lite_discount_rate / 100)),
           lite_discount_rate: discountSettings.lite_discount_rate,
+          // 플랫폼별 원가
+          pro_original_price_web: discountSettings.pro_original_price_web || null,
+          pro_original_price_ios: discountSettings.pro_original_price_ios || null,
+          pro_original_price_android: discountSettings.pro_original_price_android || null,
+          lite_original_price_web: discountSettings.lite_original_price_web || null,
+          lite_original_price_ios: discountSettings.lite_original_price_ios || null,
+          lite_original_price_android: discountSettings.lite_original_price_android || null,
+          // 플랫폼별 할인후 가격
+          pro_sale_price_web: discountSettings.pro_sale_price_web || null,
+          pro_sale_price_ios: discountSettings.pro_sale_price_ios || null,
+          pro_sale_price_android: discountSettings.pro_sale_price_android || null,
+          lite_sale_price_web: discountSettings.lite_sale_price_web || null,
+          lite_sale_price_ios: discountSettings.lite_sale_price_ios || null,
+          lite_sale_price_android: discountSettings.lite_sale_price_android || null,
         }),
       });
 
@@ -396,87 +445,185 @@ function Settings() {
           </div>
 
           {discountSettings.sale_active && (
-            <div className="discount-plans">
-              <div className="discount-plan-card">
-                <h3>👑 PRO 플랜</h3>
-                <p className="plan-info">기본: 15,000 → 12,000 코인</p>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="pro_sale_price">특별할인 가격 (코인)</label>
-                    <input
-                      type="number"
-                      id="pro_sale_price"
-                      value={discountSettings.pro_sale_price}
-                      onChange={(e) => setDiscountSettings(prev => ({
-                        ...prev,
-                        pro_sale_price: parseInt(e.target.value) || 10000
-                      }))}
-                      min="1000"
-                      max="15000"
-                      disabled={savingDiscount}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="pro_discount_rate">할인율 (%)</label>
-                    <input
-                      type="number"
-                      id="pro_discount_rate"
-                      value={discountSettings.pro_discount_rate}
-                      onChange={(e) => setDiscountSettings(prev => ({
-                        ...prev,
-                        pro_discount_rate: parseInt(e.target.value) || 33
-                      }))}
-                      min="1"
-                      max="90"
-                      disabled={savingDiscount}
-                    />
-                  </div>
-                </div>
-                <p className="price-preview">
-                  표시: <span className="strike">12,000</span> → <span className="highlight">{discountSettings.pro_sale_price.toLocaleString()}</span> 코인 ({discountSettings.pro_discount_rate}% OFF)
-                </p>
+            <>
+              {/* 플랫폼 탭 */}
+              <div className="platform-tabs">
+                {['common', 'web', 'ios', 'android'].map(tab => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={`platform-tab ${platformTab === tab ? 'active' : ''}`}
+                    onClick={() => setPlatformTab(tab)}
+                  >
+                    {tab === 'common' ? '원가 설정' : `${tab.toUpperCase()} 할인가`}
+                  </button>
+                ))}
               </div>
 
-              <div className="discount-plan-card">
-                <h3>✨ LITE 플랜</h3>
-                <p className="plan-info">기본: 10,000 → 7,000 코인</p>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="lite_sale_price">특별할인 가격 (코인)</label>
-                    <input
-                      type="number"
-                      id="lite_sale_price"
-                      value={discountSettings.lite_sale_price}
-                      onChange={(e) => setDiscountSettings(prev => ({
-                        ...prev,
-                        lite_sale_price: parseInt(e.target.value) || 5000
-                      }))}
-                      min="1000"
-                      max="10000"
-                      disabled={savingDiscount}
-                    />
+              {platformTab === 'common' && (
+                <div className="discount-plans">
+                  <div className="discount-plan-card">
+                    <h3>PRO</h3>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="pro_original_price">원가 (코인)</label>
+                        <input
+                          type="number"
+                          id="pro_original_price"
+                          value={discountSettings.pro_original_price}
+                          onChange={(e) => setDiscountSettings(prev => ({
+                            ...prev,
+                            pro_original_price: parseInt(e.target.value) || 15000
+                          }))}
+                          min="1000"
+                          disabled={savingDiscount}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="pro_discount_rate">할인율 (%)</label>
+                        <input
+                          type="number"
+                          id="pro_discount_rate"
+                          value={discountSettings.pro_discount_rate}
+                          onChange={(e) => setDiscountSettings(prev => ({
+                            ...prev,
+                            pro_discount_rate: parseInt(e.target.value) || 33
+                          }))}
+                          min="1"
+                          max="90"
+                          disabled={savingDiscount}
+                        />
+                      </div>
+                    </div>
+                    <p className="price-preview">
+                      원가: <strong>{discountSettings.pro_original_price.toLocaleString()}</strong> 코인 | 기본 할인가: <span className="highlight">{Math.round(discountSettings.pro_original_price * (1 - discountSettings.pro_discount_rate / 100)).toLocaleString()}</span> 코인 ({discountSettings.pro_discount_rate}% OFF)
+                    </p>
                   </div>
-                  <div className="form-group">
-                    <label htmlFor="lite_discount_rate">할인율 (%)</label>
-                    <input
-                      type="number"
-                      id="lite_discount_rate"
-                      value={discountSettings.lite_discount_rate}
-                      onChange={(e) => setDiscountSettings(prev => ({
-                        ...prev,
-                        lite_discount_rate: parseInt(e.target.value) || 50
-                      }))}
-                      min="1"
-                      max="90"
-                      disabled={savingDiscount}
-                    />
+
+                  <div className="discount-plan-card">
+                    <h3>LITE</h3>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="lite_original_price">원가 (코인)</label>
+                        <input
+                          type="number"
+                          id="lite_original_price"
+                          value={discountSettings.lite_original_price}
+                          onChange={(e) => setDiscountSettings(prev => ({
+                            ...prev,
+                            lite_original_price: parseInt(e.target.value) || 10000
+                          }))}
+                          min="1000"
+                          disabled={savingDiscount}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="lite_discount_rate">할인율 (%)</label>
+                        <input
+                          type="number"
+                          id="lite_discount_rate"
+                          value={discountSettings.lite_discount_rate}
+                          onChange={(e) => setDiscountSettings(prev => ({
+                            ...prev,
+                            lite_discount_rate: parseInt(e.target.value) || 50
+                          }))}
+                          min="1"
+                          max="90"
+                          disabled={savingDiscount}
+                        />
+                      </div>
+                    </div>
+                    <p className="price-preview">
+                      원가: <strong>{discountSettings.lite_original_price.toLocaleString()}</strong> 코인 | 기본 할인가: <span className="highlight">{Math.round(discountSettings.lite_original_price * (1 - discountSettings.lite_discount_rate / 100)).toLocaleString()}</span> 코인 ({discountSettings.lite_discount_rate}% OFF)
+                    </p>
                   </div>
                 </div>
-                <p className="price-preview">
-                  표시: <span className="strike">7,000</span> → <span className="highlight">{discountSettings.lite_sale_price.toLocaleString()}</span> 코인 ({discountSettings.lite_discount_rate}% OFF)
-                </p>
-              </div>
-            </div>
+              )}
+
+              {['web', 'ios', 'android'].includes(platformTab) && (
+                <div className="discount-plans">
+                  <div className="discount-plan-card">
+                    <h3>PRO ({platformTab.toUpperCase()})</h3>
+                    <div className="form-group">
+                      <label>원가 ({platformTab === 'web' ? '원' : '코인'})</label>
+                      <input
+                        type="number"
+                        value={discountSettings[`pro_original_price_${platformTab}`]}
+                        onChange={(e) => setDiscountSettings(prev => ({
+                          ...prev,
+                          [`pro_original_price_${platformTab}`]: e.target.value ? parseInt(e.target.value) : ''
+                        }))}
+                        placeholder={`공통 원가 사용 (${discountSettings.pro_original_price.toLocaleString()})`}
+                        disabled={savingDiscount}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>할인후 가격 ({platformTab === 'web' ? '원' : '코인'})</label>
+                      <input
+                        type="number"
+                        value={discountSettings[`pro_sale_price_${platformTab}`]}
+                        onChange={(e) => setDiscountSettings(prev => ({
+                          ...prev,
+                          [`pro_sale_price_${platformTab}`]: e.target.value ? parseInt(e.target.value) : ''
+                        }))}
+                        placeholder="자동 계산"
+                        disabled={savingDiscount}
+                      />
+                    </div>
+                    {(() => {
+                      const origPrice = discountSettings[`pro_original_price_${platformTab}`] || discountSettings.pro_original_price;
+                      const salePrice = discountSettings[`pro_sale_price_${platformTab}`] || Math.round(origPrice * (1 - discountSettings.pro_discount_rate / 100));
+                      const unit = platformTab === 'web' ? '원' : '코인';
+                      return (
+                        <p className="price-preview">
+                          표시: <span className="strike">{Number(origPrice).toLocaleString()}</span> &rarr; <span className="highlight">{Number(salePrice).toLocaleString()}</span> {unit} ({discountSettings.pro_discount_rate}% OFF)
+                        </p>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="discount-plan-card">
+                    <h3>LITE ({platformTab.toUpperCase()})</h3>
+                    <div className="form-group">
+                      <label>원가 ({platformTab === 'web' ? '원' : '코인'})</label>
+                      <input
+                        type="number"
+                        value={discountSettings[`lite_original_price_${platformTab}`]}
+                        onChange={(e) => setDiscountSettings(prev => ({
+                          ...prev,
+                          [`lite_original_price_${platformTab}`]: e.target.value ? parseInt(e.target.value) : ''
+                        }))}
+                        placeholder={`공통 원가 사용 (${discountSettings.lite_original_price.toLocaleString()})`}
+                        disabled={savingDiscount}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>할인후 가격 ({platformTab === 'web' ? '원' : '코인'})</label>
+                      <input
+                        type="number"
+                        value={discountSettings[`lite_sale_price_${platformTab}`]}
+                        onChange={(e) => setDiscountSettings(prev => ({
+                          ...prev,
+                          [`lite_sale_price_${platformTab}`]: e.target.value ? parseInt(e.target.value) : ''
+                        }))}
+                        placeholder="자동 계산"
+                        disabled={savingDiscount}
+                      />
+                    </div>
+                    {(() => {
+                      const origPrice = discountSettings[`lite_original_price_${platformTab}`] || discountSettings.lite_original_price;
+                      const salePrice = discountSettings[`lite_sale_price_${platformTab}`] || Math.round(origPrice * (1 - discountSettings.lite_discount_rate / 100));
+                      const unit = platformTab === 'web' ? '원' : '코인';
+                      return (
+                        <p className="price-preview">
+                          표시: <span className="strike">{Number(origPrice).toLocaleString()}</span> &rarr; <span className="highlight">{Number(salePrice).toLocaleString()}</span> {unit} ({discountSettings.lite_discount_rate}% OFF)
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <button type="submit" className="save-button" disabled={savingDiscount}>
