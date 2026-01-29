@@ -28,10 +28,10 @@ export function usePricing() {
             return parseInt(String(val).replace(/,/g, ''));
           };
 
-          const proOriginal = parsePrice(data.pro_original_price) || PRICING.BLUEPRINT_PRO.originalPrice;
-          const proSale = parsePrice(data.pro_sale_price) || PRICING.BLUEPRINT_PRO.currentPrice;
-          const liteOriginal = parsePrice(data.lite_original_price) || PRICING.BLUEPRINT_LITE.originalPrice;
-          const liteSale = parsePrice(data.lite_sale_price) || PRICING.BLUEPRINT_LITE.currentPrice;
+          const proOriginal = parsePrice(data.pro_original_price) ?? PRICING.BLUEPRINT_PRO.originalPrice;
+          const proSale = parsePrice(data.pro_sale_price) ?? PRICING.BLUEPRINT_PRO.currentPrice;
+          const liteOriginal = parsePrice(data.lite_original_price) ?? PRICING.BLUEPRINT_LITE.originalPrice;
+          const liteSale = parsePrice(data.lite_sale_price) ?? PRICING.BLUEPRINT_LITE.currentPrice;
 
           setPricing({
             pro: {

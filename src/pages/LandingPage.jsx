@@ -52,14 +52,10 @@ function LandingPage() {
   // 플랜별 데이터
   const blueprintPlans = {
     full: {
-      price: formatPrice(pricing.pro.currentPrice),
-      originalPrice: formatPrice(pricing.pro.originalPrice),
       subtitle: '평생 대운 + 5개년 전략',
       features: ['나의 아이덴티티 잠재력 분석', '평생 대운 흐름 분석', '5개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     },
     lite: {
-      price: formatPrice(pricing.lite.currentPrice),
-      originalPrice: formatPrice(pricing.lite.originalPrice),
       subtitle: '현재/다음 대운 + 3개년 운세',
       features: ['나의 아이덴티티 잠재력 분석', '현재 & 다음 대운 분석', '3개년 전략 로드맵', '커리어/재물/연애운', '맞춤 개운법 가이드']
     }
@@ -78,8 +74,6 @@ function LandingPage() {
         : '현재와 다음 대운, 3개년 운세로 지금 필요한 방향을 제시합니다.',
       icon: Map,
       image: '/img/theblueprint2.png',
-      price: currentBlueprintPlan.price,
-      originalPrice: currentBlueprintPlan.originalPrice,
       badge: 'PREMIUM',
       gradient: 'from-dark to-gold',
       features: currentBlueprintPlan.features
@@ -152,7 +146,7 @@ function LandingPage() {
                         <span className="plan-btn-badge">FULL</span>
                         <span className="plan-btn-name">인생 청사진</span>
                         <span className="plan-btn-desc">평생 대운 + 5개년</span>
-                        <span className="plan-btn-price">{pricing.loading ? '···' : `${blueprintPlans.full.price}원`}</span>
+                        <span className="plan-btn-price">{pricing.loading ? '···' : `${formatPrice(pricing.pro.currentPrice)}원`}</span>
                       </button>
                       <button
                         className={`plan-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
@@ -161,7 +155,7 @@ function LandingPage() {
                         <span className="plan-btn-badge lite">LITE</span>
                         <span className="plan-btn-name">3년 플랜</span>
                         <span className="plan-btn-desc">현재/다음 대운 + 3개년</span>
-                        <span className="plan-btn-price">{pricing.loading ? '···' : `${blueprintPlans.lite.price}원`}</span>
+                        <span className="plan-btn-price">{pricing.loading ? '···' : `${formatPrice(pricing.lite.currentPrice)}원`}</span>
                       </button>
                     </div>
                   )}
