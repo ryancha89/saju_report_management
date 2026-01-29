@@ -152,7 +152,7 @@ function LandingPage() {
                         <span className="plan-btn-badge">FULL</span>
                         <span className="plan-btn-name">인생 청사진</span>
                         <span className="plan-btn-desc">평생 대운 + 5개년</span>
-                        <span className="plan-btn-price">{blueprintPlans.full.price}원</span>
+                        <span className="plan-btn-price">{pricing.loading ? '···' : `${blueprintPlans.full.price}원`}</span>
                       </button>
                       <button
                         className={`plan-btn ${selectedPlan === 'lite' ? 'active' : ''}`}
@@ -161,7 +161,7 @@ function LandingPage() {
                         <span className="plan-btn-badge lite">LITE</span>
                         <span className="plan-btn-name">3년 플랜</span>
                         <span className="plan-btn-desc">현재/다음 대운 + 3개년</span>
-                        <span className="plan-btn-price">{blueprintPlans.lite.price}원</span>
+                        <span className="plan-btn-price">{pricing.loading ? '···' : `${blueprintPlans.lite.price}원`}</span>
                       </button>
                     </div>
                   )}

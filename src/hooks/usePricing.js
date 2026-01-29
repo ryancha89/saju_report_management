@@ -6,8 +6,8 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 export function usePricing() {
   const [pricing, setPricing] = useState({
-    pro: { ...PRICING.BLUEPRINT_PRO },
-    lite: { ...PRICING.BLUEPRINT_LITE },
+    pro: { originalPrice: 0, currentPrice: 0, discountPercent: 0 },
+    lite: { originalPrice: 0, currentPrice: 0, discountPercent: 0 },
     saleActive: false,
     loading: true,
   });
@@ -48,11 +48,21 @@ export function usePricing() {
             loading: false,
           });
         } else {
-          setPricing(prev => ({ ...prev, loading: false }));
+          setPricing({
+            pro: { ...PRICING.BLUEPRINT_PRO },
+            lite: { ...PRICING.BLUEPRINT_LITE },
+            saleActive: false,
+            loading: false,
+          });
         }
       } catch (err) {
         console.error('Failed to fetch pricing:', err);
-        setPricing(prev => ({ ...prev, loading: false }));
+        setPricing({
+          pro: { ...PRICING.BLUEPRINT_PRO },
+          lite: { ...PRICING.BLUEPRINT_LITE },
+          saleActive: false,
+          loading: false,
+        });
       }
     };
 
